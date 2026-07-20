@@ -149,7 +149,7 @@ class UnauthorizedError(VelontriError):
 
 
 class ValidationError(VelontriError):
-    http_status = status.HTTP_422_UNPROCESSABLE_CONTENT
+    http_status = status.HTTP_422_UNPROCESSABLE_ENTITY
     error_code = ErrorCode.VALIDATION_ERROR
 
 
@@ -184,7 +184,7 @@ class InvalidCredentialsError(VelontriError):
 
 
 class InsufficientFundsError(VelontriError):
-    http_status = status.HTTP_422_UNPROCESSABLE_CONTENT
+    http_status = status.HTTP_422_UNPROCESSABLE_ENTITY
     error_code = ErrorCode.INSUFFICIENT_FUNDS
 
 
