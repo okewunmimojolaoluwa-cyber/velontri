@@ -329,7 +329,7 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
     _db_file = _os.environ.get("SQLITE_DB_PATH", "./dev_gateway.db")
     engine = create_engine(f"sqlite+aiosqlite:///{_db_file}")
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(lambda c: Base.metadata.create_all(c, checkfirst=True))
         await conn.run_sync(_apply_sqlite_migrations)
 
     app.state.engine = engine
