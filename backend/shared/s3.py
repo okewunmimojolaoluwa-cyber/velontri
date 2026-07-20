@@ -20,7 +20,13 @@ import uuid
 from enum import Enum
 from typing import BinaryIO
 
-import aioboto3  # async boto3 wrapper
+try:
+    import aioboto3  # async boto3 wrapper
+    _AIOBOTO3_AVAILABLE = True
+except ImportError:
+    aioboto3 = None  # type: ignore[assignment]
+    _AIOBOTO3_AVAILABLE = False
+
 try:
     import magic  # python-magic for MIME sniffing (requires libmagic)
     _MAGIC_AVAILABLE = True

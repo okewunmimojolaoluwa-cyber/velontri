@@ -330,7 +330,6 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
     engine = create_engine(f"sqlite+aiosqlite:///{_db_file}")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        # Run additive migrations for columns added after the DB was first created
         await conn.run_sync(_apply_sqlite_migrations)
 
     app.state.engine = engine
@@ -338,38 +337,63 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
         bind=engine, autocommit=False, autoflush=False, expire_on_commit=False
     )
 
-    from shared.redis_client import close_redis_pool, create_redis_pool, get_redis_client
-    pool = create_redis_pool("redis://localhost:6379/0")
-    app.state.redis      = get_redis_client(pool)
-    app.state.redis_pool = pool
+    # ── Redis (graceful fallback to in-memory stub) ────────────────────────
+    pool = None
+    try:
+        from shared.redis_client import close_redis_pool, create_redis_pool, get_redis_client
+        redis_url = _os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+        pool = create_redis_pool(redis_url)
+        app.state.redis      = get_redis_client(pool)
+        app.state.redis_pool = pool
+        logger.info("redis_connected")
+    except Exception as _re:
+        logger.warning(f"redis_unavailable: {_re} — using in-memory stub")
+        # native_stubs already patches redis so this branch handles Render free tier
+        app.state.redis      = None
+        app.state.redis_pool = None
 
-    from shared.rabbitmq import connect_with_backoff, setup_infrastructure
-    mq = await connect_with_backoff("amqp://velontri:velontri@localhost:5672/")
-    ch = await mq.channel()
-    await setup_infrastructure(ch)
-    app.state.rabbitmq_connection = mq
-    app.state.rabbitmq_channel    = ch
+    # ── RabbitMQ (graceful fallback to no-op stub) ─────────────────────────
+    mq = None
+    ch = None
+    try:
+        from shared.rabbitmq import connect_with_backoff, setup_infrastructure
+        rabbitmq_url = _os.environ.get("RABBITMQ_URL", "amqp://velontri:velontri@localhost:5672/")
+        mq = await connect_with_backoff(rabbitmq_url)
+        ch = await mq.channel()
+        await setup_infrastructure(ch)
+        app.state.rabbitmq_connection = mq
+        app.state.rabbitmq_channel    = ch
+        logger.info("rabbitmq_connected")
+    except Exception as _mq:
+        logger.warning(f"rabbitmq_unavailable: {_mq} — using no-op stub")
+        app.state.rabbitmq_connection = None
+        app.state.rabbitmq_channel    = None
 
-    # Search service requires Elasticsearch + HTTP client on app.state
+    # ── Elasticsearch (graceful fallback — SQLite search used instead) ─────
     import httpx
-    from elasticsearch import AsyncElasticsearch
+    es_client = None
+    try:
+        from elasticsearch import AsyncElasticsearch
+        es_url = _os.environ.get("ELASTICSEARCH_URL", "http://localhost:9200")
+        es_client = AsyncElasticsearch(hosts=[es_url])
+        app.state.es_client = es_client
+        logger.info("elasticsearch_connected")
+    except Exception as _es:
+        logger.warning(f"elasticsearch_unavailable: {_es} — SQLite search fallback active")
+        app.state.es_client = None
 
-    es_client = AsyncElasticsearch(hosts=["http://localhost:9200"])
-    app.state.es_client = es_client
     app.state.http_client = httpx.AsyncClient(timeout=30.0)
 
     logger.info("gateway_ready")
 
-    # ── Start subscription expiry background task ──────────────────────────
+    # ── Subscription expiry background task ────────────────────────────────
     import asyncio as _asyncio
 
     async def _expiry_loop():
-        """Run subscription expiry check every 6 hours."""
         import importlib
         _run_expiry = None
         while True:
             try:
-                # Lazy import to avoid circular dependency
                 if _run_expiry is None:
                     mod = importlib.import_module(
                         "_svc_subscription_service.app.routers.subscriptions"
@@ -379,7 +403,7 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
                     await _run_expiry(app.state.session_factory)
             except Exception as e:
                 logger.warning(f"expiry_check_error: {e}")
-            await _asyncio.sleep(6 * 3600)  # 6 hours
+            await _asyncio.sleep(6 * 3600)
 
     _expiry_task = _asyncio.create_task(_expiry_loop())
 
@@ -392,11 +416,20 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
         pass
 
     await app.state.http_client.aclose()
-    await es_client.close()
-    await ch.close()
-    await mq.close()
-    from shared.redis_client import close_redis_pool as _cp
-    await _cp(pool)
+    if es_client:
+        try: await es_client.close()
+        except Exception: pass
+    if ch:
+        try: await ch.close()
+        except Exception: pass
+    if mq:
+        try: await mq.close()
+        except Exception: pass
+    if pool:
+        try:
+            from shared.redis_client import close_redis_pool as _cp
+            await _cp(pool)
+        except Exception: pass
     await dispose_engine(engine)
 
 
