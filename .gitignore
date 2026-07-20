@@ -1,0 +1,50 @@
+# Secrets — NEVER commit
+secrets/
+*.pem
+.env
+*.env
+backend/.env
+frontend/.env.local
+
+# Local dev databases
+*.db
+
+# Node / Next.js
+node_modules/
+frontend/.next/
+frontend/out/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Testing
+.pytest_cache/
+.hypothesis/
+*.coverage
+.coverage
+htmlcov/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# Docker
+*.tar
+
+# Alembic
+*.pyc

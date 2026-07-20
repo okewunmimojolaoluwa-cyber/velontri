@@ -1,0 +1,115 @@
+Epic ID,Epic Name,Story ID,Story Name,Task ID,Task Name,Sprint,Phase,Complexity,Dependencies,Page Route,Status
+EPIC-00,Foundation & Platform,S0-API,API Integration Layer,S0-05,Implement Axios client + interceptors,0,Foundation,L,S0-02,,Todo
+EPIC-00,Foundation & Platform,S0-API,API Integration Layer,S0-06,Implement TanStack Query client,0,Foundation,M,S0-05,,Todo
+EPIC-00,Foundation & Platform,S0-API,API Integration Layer,S0-07,Generate OpenAPI types from gateway,0,Foundation,M,S0-05,,Todo
+EPIC-00,Foundation & Platform,S0-UI,Design System,S0-03,Configure Tailwind + design tokens + dark mode,0,Foundation,M,S0-02,,Todo
+EPIC-00,Foundation & Platform,S0-UI,Design System,S0-04,Initialize shadcn/ui primitives,0,Foundation,L,S0-03,,Todo
+EPIC-00,Foundation & Platform,S0-UI,Design System,S0-10,Shared states EmptyState ErrorState Skeleton,0,Foundation,M,S0-04,,Todo
+EPIC-00,Foundation & Platform,S0-AUTH,Auth Shell,S0-08,Auth session provider + cookie utilities,0,Foundation,L,S0-05,,Todo
+EPIC-00,Foundation & Platform,S0-AUTH,Auth Shell,S0-13,Extend middleware for full route tree,0,Foundation,M,S0-08,,Todo
+EPIC-00,Foundation & Platform,S0-RBAC,RBAC Primitives,S0-09,Implement Can RoleGate TierGate,0,Foundation,M,S0-08,,Todo
+EPIC-00,Foundation & Platform,S0-TEST,Test Harness,S0-11,Vitest + RTL + MSW setup,0,Foundation,M,S0-02,,Todo
+EPIC-00,Foundation & Platform,S0-TEST,Test Harness,S0-12,GitHub Actions CI pipeline,0,Foundation,M,S0-11,,Todo
+EPIC-00,Foundation & Platform,S0-SCAFFOLD,Project Scaffold,S0-01,Install frontend dependencies,0,Foundation,S,,,Todo
+EPIC-00,Foundation & Platform,S0-SCAFFOLD,Project Scaffold,S0-02,Scaffold folder structure,0,Foundation,M,S0-01,,Todo
+EPIC-01,Phase 1 MVP,ST-101,Public Browse,P01,Home page,/,1,MVP,M,S0-UI,/,Todo
+EPIC-01,Phase 1 MVP,ST-101,Public Browse,P02,Listings browse page,1,MVP,L,S0-API,/listings,Todo
+EPIC-01,Phase 1 MVP,ST-101,Public Browse,P03,Product listing detail,1,MVP,L,P02,/listings/[id],Todo
+EPIC-01,Phase 1 MVP,ST-101,Public Browse,P04,Search results page,1,MVP,L,S0-API,/search,Todo
+EPIC-01,Phase 1 MVP,ST-101,Public Browse,S1-01,PublicLayout Navbar Footer MobileNav,1,MVP,L,S0-UI,,Todo
+EPIC-01,Phase 1 MVP,ST-102,Auth Flow,P05,Login page,1,MVP,M,S0-AUTH,/login,Todo
+EPIC-01,Phase 1 MVP,ST-102,Auth Flow,P06,Register page,1,MVP,M,S0-AUTH,/register,Todo
+EPIC-01,Phase 1 MVP,ST-102,Auth Flow,P07,Verify phone page,1,MVP,M,P06,/verify-phone,Todo
+EPIC-01,Phase 1 MVP,ST-102,Auth Flow,P08,Dashboard hub redirect,1,MVP,S,P05,/dashboard,Todo
+EPIC-01,Phase 1 MVP,ST-103,Buyer Wallet,P09,Buyer dashboard,2,MVP,M,ST-102,/buyer/dashboard,Todo
+EPIC-01,Phase 1 MVP,ST-103,Buyer Wallet,P10,Buyer profile,2,MVP,M,ST-102,/buyer/profile,Todo
+EPIC-01,Phase 1 MVP,ST-103,Buyer Wallet,P11,Buyer wallet,2,MVP,L,ST-102,/buyer/wallet,Todo
+EPIC-01,Phase 1 MVP,ST-103,Buyer Wallet,P12,Wallet top-up,2,MVP,M,P11,/buyer/wallet/topup,Todo
+EPIC-01,Phase 1 MVP,ST-103,Buyer Wallet,P21,Wallet withdraw,3,MVP,M,P11,/buyer/wallet/withdraw,Todo
+EPIC-01,Phase 1 MVP,ST-103,Buyer Wallet,P22,Wallet transfer,3,MVP,M,P11,/buyer/wallet/transfer,Todo
+EPIC-01,Phase 1 MVP,ST-103,Buyer Wallet,P23,Wallet rewards,3,MVP,M,P11,/buyer/wallet/rewards,Todo
+EPIC-01,Phase 1 MVP,ST-104,Seller Listings,P13,Seller dashboard,2,MVP,M,ST-102,/seller/dashboard,Todo
+EPIC-01,Phase 1 MVP,ST-104,Seller Listings,P14,Seller listings list,2,MVP,M,P13,/seller/listings,Todo
+EPIC-01,Phase 1 MVP,ST-104,Seller Listings,P15,Create product listing,2,MVP,XL,P14,/seller/listings/create/product,Todo
+EPIC-01,Phase 1 MVP,ST-104,Seller Listings,P16,Edit listing,2,MVP,L,P15,/seller/listings/[id]/edit,Todo
+EPIC-01,Phase 1 MVP,ST-105,Checkout Escrow,P17,Checkout page,3,MVP,L,P03,/buyer/checkout/[listingId],Todo
+EPIC-01,Phase 1 MVP,ST-105,Checkout Escrow,P18,Payment escrow detail,3,MVP,L,P17,/payments/[id],Todo
+EPIC-01,Phase 1 MVP,ST-105,Checkout Escrow,P20,Buyer orders list,3,MVP,M,P18,/buyer/orders,Todo
+EPIC-01,Phase 1 MVP,ST-106,Legal Static,P24,Terms page,3,MVP,S,S1-01,/terms,Todo
+EPIC-01,Phase 1 MVP,ST-106,Legal Static,P25,Privacy page,3,MVP,S,S1-01,/privacy,Todo
+EPIC-01,Phase 1 MVP,ST-106,Legal Static,P26,About page,3,MVP,S,S1-01,/about,Todo
+EPIC-01,Phase 1 MVP,ST-106,Legal Static,P27,Contact page,3,MVP,S,S1-01,/contact,Todo
+EPIC-01,Phase 1 MVP,ST-107,MVP E2E,S3-09,E2E full purchase flow,3,MVP,L,ST-105,,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-201,Vertical Browse,P28,Products category browse,4,Phase 2,M,P02,/listings/products,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-201,Vertical Browse,P29,Services browse,4,Phase 2,M,P02,/listings/services,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-201,Vertical Browse,P30,Jobs browse,4,Phase 2,M,P02,/listings/jobs,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-201,Vertical Browse,P31,Property browse,4,Phase 2,M,P02,/listings/property,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-201,Vertical Browse,P32,Vehicles browse,4,Phase 2,M,P02,/listings/vehicles,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-202,Vertical Detail,P33,Service detail page,4,Phase 2,L,P29,/listings/[id],Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-202,Vertical Detail,P34,Job detail page,4,Phase 2,L,P30,/listings/[id],Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-202,Vertical Detail,P35,Property detail page,4,Phase 2,L,P31,/listings/[id],Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-202,Vertical Detail,P36,Vehicle detail page,4,Phase 2,L,P32,/listings/[id],Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-202,Vertical Detail,P37,Job application page,4,Phase 2,M,P34,/listings/[id]/apply,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-202,Vertical Detail,P38,Service booking page,4,Phase 2,M,P33,/listings/[id]/book,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-203,Vertical Create,P39,Create service listing,4,Phase 2,L,P15,/seller/listings/create/service,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-203,Vertical Create,P40,Create job listing,4,Phase 2,L,P15,/seller/listings/create/job,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-203,Vertical Create,P41,Create property listing,4,Phase 2,L,P15,/seller/listings/create/property,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-203,Vertical Create,P42,Create vehicle listing,4,Phase 2,L,P15,/seller/listings/create/vehicle,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-204,Advanced Search,P44,Search autocomplete,5,Phase 2,S,P04,,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-204,Advanced Search,P45,AI natural language search,5,Phase 2,L,P04,/search,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-204,Advanced Search,P46,Voice search UI,5,Phase 2,M,P04,,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-205,Chat,P47,Messages inbox,5,Phase 2,L,ST-102,/buyer/messages,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-205,Chat,P48,Chat thread page,5,Phase 2,XL,P47,/buyer/messages/[threadId],Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-206,Notifications,P49,Notifications centre,5,Phase 2,L,ST-102,/buyer/notifications,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-207,Reviews Stores,P50,Listing reviews tab,6,Phase 2,M,P03,/listings/[id]/reviews,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-207,Reviews Stores,P51,Seller reviews page,6,Phase 2,M,P13,/seller/reviews,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-207,Reviews Stores,P52,Stores directory,6,Phase 2,M,P02,/stores,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-207,Reviews Stores,P53,Store profile page,6,Phase 2,L,P52,/stores/[slug],Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-207,Reviews Stores,P54,Seller store management,6,Phase 2,L,P13,/seller/store,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-208,Logistics AI,P55,Shipment tracking page,6,Phase 2,L,ST-105,/logistics/track/[trackingNo],Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-208,Logistics AI,P56,AI assistant page,6,Phase 2,L,P04,/ai/assistant,Todo
+EPIC-02,Phase 2 Marketplace Expansion,ST-208,Logistics AI,P57,Subscription tiers public,6,Phase 2,S,S1-01,/subscriptions/tiers,Todo
+EPIC-03,Phase 3 Business Tools,ST-301,Analytics Subs,P58,Seller analytics dashboard,7,Phase 3,L,P13,/seller/analytics,Todo
+EPIC-03,Phase 3 Business Tools,ST-301,Analytics Subs,P59,Analytics CSV PDF export,7,Phase 3,M,P58,,Todo
+EPIC-03,Phase 3 Business Tools,ST-301,Analytics Subs,P62,Subscription management,7,Phase 3,L,P09,/buyer/settings/subscription,Todo
+EPIC-03,Phase 3 Business Tools,ST-301,Analytics Subs,P63,Business invoices,7,Phase 3,M,P62,/business/subscriptions/invoices,Todo
+EPIC-03,Phase 3 Business Tools,ST-302,KYC Settings,P60,Buyer seller settings shell,7,Phase 3,M,P09,/buyer/settings,Todo
+EPIC-03,Phase 3 Business Tools,ST-302,KYC Settings,P61,KYC upload flow,7,Phase 3,L,P10,/buyer/settings/kyc,Todo
+EPIC-03,Phase 3 Business Tools,ST-303,Multi-Branch,P64,Business owner dashboard,8,Phase 3,L,ST-104,/business/dashboard,Todo
+EPIC-03,Phase 3 Business Tools,ST-303,Multi-Branch,P65,Branches list,8,Phase 3,L,P64,/business/branches,Todo
+EPIC-03,Phase 3 Business Tools,ST-303,Multi-Branch,P66,Branch detail page,8,Phase 3,M,P65,/business/branches/[id],Todo
+EPIC-03,Phase 3 Business Tools,ST-303,Multi-Branch,P67,Branch manager dashboard,8,Phase 3,L,P65,/branch/dashboard,Todo
+EPIC-03,Phase 3 Business Tools,ST-304,Inventory,P68,Inventory stock table,8,Phase 3,XL,P67,/branch/inventory/stock,Todo
+EPIC-03,Phase 3 Business Tools,ST-304,Inventory,P69,Inventory transfers,8,Phase 3,L,P68,/branch/inventory/transfers,Todo
+EPIC-03,Phase 3 Business Tools,ST-304,Inventory,P70,Inventory damage recording,8,Phase 3,M,P68,/branch/inventory/damage,Todo
+EPIC-03,Phase 3 Business Tools,ST-304,Inventory,P71,SKU detail page,8,Phase 3,M,P68,/branch/inventory/sku/[sku],Todo
+EPIC-03,Phase 3 Business Tools,ST-304,Inventory,P72,Business cross-branch inventory,8,Phase 3,L,P64,/business/inventory,Todo
+EPIC-03,Phase 3 Business Tools,ST-305,Business Analytics,P73,Business analytics page,8,Phase 3,L,P64,/business/analytics,Todo
+EPIC-03,Phase 3 Business Tools,ST-306,CRM Agent,P74,CRM customer list,9,Phase 3,L,P13,/business/crm,Todo
+EPIC-03,Phase 3 Business Tools,ST-306,CRM Agent,P75,CRM customer detail,9,Phase 3,L,P74,/business/crm/customers/[id],Todo
+EPIC-03,Phase 3 Business Tools,ST-306,CRM Agent,P76,Agent dashboard,9,Phase 3,L,ST-104,/agent/dashboard,Todo
+EPIC-03,Phase 3 Business Tools,ST-306,CRM Agent,P77,Agent listings page,9,Phase 3,M,P76,/agent/listings,Todo
+EPIC-03,Phase 3 Business Tools,ST-307,Security Auth,P78,Forgot password page,9,Phase 3,M,S0-AUTH,/forgot-password,Todo
+EPIC-03,Phase 3 Business Tools,ST-307,Security Auth,P79,Reset password page,9,Phase 3,M,P78,/reset-password/[token],Todo
+EPIC-03,Phase 3 Business Tools,ST-307,Security Auth,P80,2FA setup page,9,Phase 3,M,S0-AUTH,/auth/2fa,Todo
+EPIC-03,Phase 3 Business Tools,ST-307,Security Auth,P81,Device management,9,Phase 3,M,P80,/buyer/settings/security,Todo
+EPIC-04,Phase 4 Enterprise Launch,ST-401,Admin Console,P82,Admin dashboard,10,Phase 4,L,S0-RBAC,/admin/dashboard,Todo
+EPIC-04,Phase 4 Enterprise Launch,ST-401,Admin Console,P83,User management,10,Phase 4,L,P82,/admin/users,Todo
+EPIC-04,Phase 4 Enterprise Launch,ST-401,Admin Console,P84,Listing moderation queue,10,Phase 4,L,P82,/admin/listings/moderation,Todo
+EPIC-04,Phase 4 Enterprise Launch,ST-401,Admin Console,P85,Disputes queue,10,Phase 4,L,P82,/admin/disputes,Todo
+EPIC-04,Phase 4 Enterprise Launch,ST-401,Admin Console,P86,Dispute detail resolve,10,Phase 4,L,P85,/admin/disputes/[id],Todo
+EPIC-04,Phase 4 Enterprise Launch,ST-401,Admin Console,P89,Platform analytics,10,Phase 4,M,P82,/admin/analytics/platform,Todo
+EPIC-04,Phase 4 Enterprise Launch,ST-402,AI BI OAuth,P88,AI business intelligence,10,Phase 4,XL,P58,/ai/bi,Todo
+EPIC-04,Phase 4 Enterprise Launch,ST-402,AI BI OAuth,P90,OAuth Google Apple login,10,Phase 4,L,P05,,Todo
+EPIC-04,Phase 4 Enterprise Launch,ST-402,AI BI OAuth,P91,Enterprise contracts,10,Phase 4,M,P62,/business/subscriptions/enterprise,Todo
+EPIC-04,Phase 4 Enterprise Launch,ST-403,Buyer Disputes,P87,Buyer payment dispute form,10,Phase 4,M,P18,/payments/[id]/dispute,Todo
+EPIC-04,Phase 4 Enterprise Launch,ST-404,Staging Deploy,S11-01,Deploy staging environment,11,Phase 4,M,ST-401,,Todo
+EPIC-04,Phase 4 Enterprise Launch,ST-404,Staging Deploy,S11-02,Staging smoke E2E suite,11,Phase 4,L,S11-01,,Todo
+EPIC-04,Phase 4 Enterprise Launch,ST-405,Production Launch,S12-01,Production deployment,12,Phase 4,M,S11-02,,Todo
+EPIC-04,Phase 4 Enterprise Launch,ST-405,Production Launch,S12-02,Launch monitoring runbooks,12,Phase 4,M,S12-01,,Todo
+EPIC-05,Quality DevOps,ST-501,Unit Tests,S0-11,Unit test harness setup,0,Quality,M,,,Todo
+EPIC-05,Quality DevOps,ST-502,Component Tests,S1-11,Component tests Sprint 1,1,Quality,M,S0-11,,Todo
+EPIC-05,Quality DevOps,ST-503,Integration Tests,S2-11,Integration tests auth wallet,2,Quality,M,S0-11,,Todo
+EPIC-05,Quality DevOps,ST-504,E2E Playwright,S11-03,Full 40-flow E2E suite,11,Quality,XL,ST-404,,Todo
+EPIC-05,Quality DevOps,ST-505,A11y Audit,S11-04,WCAG AA accessibility audit,11,Quality,L,S11-03,,Todo
+EPIC-05,Quality DevOps,ST-506,Perf Security,S11-05,Performance and security audit,11,Quality,L,S11-03,,Todo

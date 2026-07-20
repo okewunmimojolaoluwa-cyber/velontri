@@ -1,0 +1,4 @@
+  File "<string>", line 2
+    import
+          ^
+SyntaxError: Expected one or more names after 'import'

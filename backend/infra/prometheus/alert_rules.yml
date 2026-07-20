@@ -1,0 +1,99 @@
+groups:
+  # ── Error Rate Alerts ────────────────────────────────────────────────────────
+  - name: velontri_error_rate
+    interval: 30s
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum by (job) (
+              rate(velontri_http_requests_total{status_code=~"5.."}[5m])
+            )
+            /
+            sum by (job) (
+              rate(velontri_http_requests_total[5m])
+            )
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "High error rate on {{ $labels.job }}"
+          description: "Error rate is {{ $value | humanizePercentage }} over 5 min (threshold: 5%)"
+
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "Prometheus cannot scrape {{ $labels.job }}"
+
+  # ── Latency Alerts ────────────────────────────────────────────────────────────
+  - name: velontri_latency
+    interval: 30s
+    rules:
+      - alert: HighP95Latency
+        expr: |
+          histogram_quantile(0.95,
+            sum by (job, le) (
+              rate(velontri_http_request_duration_seconds_bucket[5m])
+            )
+          ) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High p95 latency on {{ $labels.job }}"
+          description: "p95 latency is {{ $value | humanizeDuration }} (threshold: 2s)"
+
+      - alert: SearchServiceSlowResponse
+        expr: |
+          histogram_quantile(0.95,
+            sum by (job, le) (
+              rate(velontri_http_request_duration_seconds_bucket{job="search-service"}[5m])
+            )
+          ) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Search service p95 latency exceeds 500ms SLA"
+          description: "p95 latency: {{ $value | humanizeDuration }}"
+
+  # ── Dead Letter Queue Alerts ─────────────────────────────────────────────────
+  - name: velontri_dlq
+    interval: 60s
+    rules:
+      - alert: DLQMessageReceived
+        expr: |
+          increase(rabbitmq_queue_messages_total{queue="velontri.dead_letters"}[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Messages in Dead Letter Queue"
+          description: "{{ $value }} message(s) routed to DLQ in the last 5 min"
+
+  # ── Consumer Retry Alerts ─────────────────────────────────────────────────────
+  - name: velontri_consumers
+    interval: 30s
+    rules:
+      - alert: ConsumerHighRetryRate
+        expr: |
+          sum by (job, queue) (
+            rate(velontri_consumer_retry_total[5m])
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High consumer retry rate on {{ $labels.job }}"
+          description: "Queue {{ $labels.queue }} retry rate: {{ $value }} msg/s"

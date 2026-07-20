@@ -1,0 +1,567 @@
+# Velontri — Local Development Docker Compose
+# All 14 microservices + shared infrastructure.
+
+x-service-base: &service-base
+  restart: unless-stopped
+  networks:
+    - velontri
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+x-service-env: &service-env
+  REDIS_URL: redis://redis:6379/0
+  RABBITMQ_URL: amqp://velontri:velontri@rabbitmq:5672/
+  AWS_REGION: af-south-1
+  AWS_S3_BUCKET: velontri-local
+  AWS_ACCESS_KEY_ID: minioadmin
+  AWS_SECRET_ACCESS_KEY: minioadmin
+  JWT_PUBLIC_KEY_PATH: /run/secrets/jwt_public_key
+  LOG_LEVEL: DEBUG
+  ENVIRONMENT: development
+
+services:
+
+  # ── Infrastructure ─────────────────────────────────────────────────────────
+
+  postgres-auth:
+    image: postgres:16-alpine
+    <<: *service-base
+    environment:
+      POSTGRES_USER: velontri
+      POSTGRES_PASSWORD: velontri
+      POSTGRES_DB: auth_db
+    volumes:
+      - postgres-auth-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  postgres-user:
+    image: postgres:16-alpine
+    <<: *service-base
+    environment:
+      POSTGRES_USER: velontri
+      POSTGRES_PASSWORD: velontri
+      POSTGRES_DB: user_db
+    volumes:
+      - postgres-user-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  postgres-marketplace:
+    image: postgres:16-alpine
+    <<: *service-base
+    environment:
+      POSTGRES_USER: velontri
+      POSTGRES_PASSWORD: velontri
+      POSTGRES_DB: marketplace_db
+    volumes:
+      - postgres-marketplace-data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+
+  postgres-payment:
+    image: postgres:16-alpine
+    <<: *service-base
+    environment:
+      POSTGRES_USER: velontri
+      POSTGRES_PASSWORD: velontri
+      POSTGRES_DB: payment_db
+    volumes:
+      - postgres-payment-data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+
+  postgres-wallet:
+    image: postgres:16-alpine
+    <<: *service-base
+    environment:
+      POSTGRES_USER: velontri
+      POSTGRES_PASSWORD: velontri
+      POSTGRES_DB: wallet_db
+    volumes:
+      - postgres-wallet-data:/var/lib/postgresql/data
+    ports:
+      - "5436:5432"
+
+  postgres-inventory:
+    image: postgres:16-alpine
+    <<: *service-base
+    environment:
+      POSTGRES_USER: velontri
+      POSTGRES_PASSWORD: velontri
+      POSTGRES_DB: inventory_db
+    volumes:
+      - postgres-inventory-data:/var/lib/postgresql/data
+    ports:
+      - "5437:5432"
+
+  postgres-chat:
+    image: postgres:16-alpine
+    <<: *service-base
+    environment:
+      POSTGRES_USER: velontri
+      POSTGRES_PASSWORD: velontri
+      POSTGRES_DB: chat_db
+    volumes:
+      - postgres-chat-data:/var/lib/postgresql/data
+    ports:
+      - "5438:5432"
+
+  postgres-analytics:
+    image: postgres:16-alpine
+    <<: *service-base
+    environment:
+      POSTGRES_USER: velontri
+      POSTGRES_PASSWORD: velontri
+      POSTGRES_DB: analytics_db
+    volumes:
+      - postgres-analytics-data:/var/lib/postgresql/data
+    ports:
+      - "5439:5432"
+
+  postgres-notification:
+    image: postgres:16-alpine
+    <<: *service-base
+    environment:
+      POSTGRES_USER: velontri
+      POSTGRES_PASSWORD: velontri
+      POSTGRES_DB: notification_db
+    volumes:
+      - postgres-notification-data:/var/lib/postgresql/data
+    ports:
+      - "5440:5432"
+
+  postgres-crm:
+    image: postgres:16-alpine
+    <<: *service-base
+    environment:
+      POSTGRES_USER: velontri
+      POSTGRES_PASSWORD: velontri
+      POSTGRES_DB: crm_db
+    volumes:
+      - postgres-crm-data:/var/lib/postgresql/data
+    ports:
+      - "5441:5432"
+
+  postgres-subscription:
+    image: postgres:16-alpine
+    <<: *service-base
+    environment:
+      POSTGRES_USER: velontri
+      POSTGRES_PASSWORD: velontri
+      POSTGRES_DB: subscription_db
+    volumes:
+      - postgres-subscription-data:/var/lib/postgresql/data
+    ports:
+      - "5442:5432"
+
+  postgres-logistics:
+    image: postgres:16-alpine
+    <<: *service-base
+    environment:
+      POSTGRES_USER: velontri
+      POSTGRES_PASSWORD: velontri
+      POSTGRES_DB: logistics_db
+    volumes:
+      - postgres-logistics-data:/var/lib/postgresql/data
+    ports:
+      - "5443:5432"
+
+  redis:
+    image: redis:7-alpine
+    <<: *service-base
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru --requirepass velontri
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    <<: *service-base
+    environment:
+      RABBITMQ_DEFAULT_USER: velontri
+      RABBITMQ_DEFAULT_PASS: velontri
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  elasticsearch:
+    image: elasticsearch:8.13.0
+    <<: *service-base
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # MinIO — local S3-compatible object storage
+  minio:
+    image: minio/minio:latest
+    <<: *service-base
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio-data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    <<: *service-base
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:10.4.2
+    <<: *service-base
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: velontri
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  # ── Microservices ──────────────────────────────────────────────────────────
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    <<: *service-base
+    environment:
+      <<: *service-env
+      SERVICE_NAME: auth-service
+      DATABASE_URL: postgresql+asyncpg://velontri:velontri@postgres-auth:5432/auth_db
+      JWT_PRIVATE_KEY_PATH: /run/secrets/jwt_private_key
+    ports:
+      - "8001:8000"
+    depends_on:
+      - postgres-auth
+      - redis
+      - rabbitmq
+    secrets:
+      - jwt_public_key
+      - jwt_private_key
+
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    <<: *service-base
+    environment:
+      <<: *service-env
+      SERVICE_NAME: user-service
+      DATABASE_URL: postgresql+asyncpg://velontri:velontri@postgres-user:5432/user_db
+    ports:
+      - "8002:8000"
+    depends_on:
+      - postgres-user
+      - redis
+      - rabbitmq
+    secrets:
+      - jwt_public_key
+
+  marketplace-service:
+    build:
+      context: .
+      dockerfile: marketplace-service/Dockerfile
+    <<: *service-base
+    environment:
+      <<: *service-env
+      SERVICE_NAME: marketplace-service
+      DATABASE_URL: postgresql+asyncpg://velontri:velontri@postgres-marketplace:5432/marketplace_db
+    ports:
+      - "8003:8000"
+    depends_on:
+      - postgres-marketplace
+      - redis
+      - rabbitmq
+    secrets:
+      - jwt_public_key
+
+  search-service:
+    build:
+      context: .
+      dockerfile: search-service/Dockerfile
+    <<: *service-base
+    environment:
+      <<: *service-env
+      SERVICE_NAME: search-service
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    ports:
+      - "8004:8000"
+    depends_on:
+      - elasticsearch
+      - redis
+      - rabbitmq
+    secrets:
+      - jwt_public_key
+
+  ai-service:
+    build:
+      context: .
+      dockerfile: ai-service/Dockerfile
+    <<: *service-base
+    environment:
+      <<: *service-env
+      SERVICE_NAME: ai-service
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+    ports:
+      - "8005:8000"
+    depends_on:
+      - redis
+      - rabbitmq
+    secrets:
+      - jwt_public_key
+
+  chat-service:
+    build:
+      context: .
+      dockerfile: chat-service/Dockerfile
+    <<: *service-base
+    environment:
+      <<: *service-env
+      SERVICE_NAME: chat-service
+      DATABASE_URL: postgresql+asyncpg://velontri:velontri@postgres-chat:5432/chat_db
+    ports:
+      - "8006:8000"
+    depends_on:
+      - postgres-chat
+      - redis
+      - rabbitmq
+    secrets:
+      - jwt_public_key
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: payment-service/Dockerfile
+    <<: *service-base
+    environment:
+      <<: *service-env
+      SERVICE_NAME: payment-service
+      DATABASE_URL: postgresql+asyncpg://velontri:velontri@postgres-payment:5432/payment_db
+      PAYSTACK_SECRET_KEY: "${PAYSTACK_SECRET_KEY}"
+      FLUTTERWAVE_SECRET_KEY: "${FLUTTERWAVE_SECRET_KEY}"
+    ports:
+      - "8007:8000"
+    depends_on:
+      - postgres-payment
+      - redis
+      - rabbitmq
+    secrets:
+      - jwt_public_key
+
+  wallet-service:
+    build:
+      context: .
+      dockerfile: wallet-service/Dockerfile
+    <<: *service-base
+    environment:
+      <<: *service-env
+      SERVICE_NAME: wallet-service
+      DATABASE_URL: postgresql+asyncpg://velontri:velontri@postgres-wallet:5432/wallet_db
+    ports:
+      - "8008:8000"
+    depends_on:
+      - postgres-wallet
+      - redis
+      - rabbitmq
+    secrets:
+      - jwt_public_key
+
+  inventory-service:
+    build:
+      context: .
+      dockerfile: inventory-service/Dockerfile
+    <<: *service-base
+    environment:
+      <<: *service-env
+      SERVICE_NAME: inventory-service
+      DATABASE_URL: postgresql+asyncpg://velontri:velontri@postgres-inventory:5432/inventory_db
+    ports:
+      - "8009:8000"
+    depends_on:
+      - postgres-inventory
+      - redis
+      - rabbitmq
+    secrets:
+      - jwt_public_key
+
+  logistics-service:
+    build:
+      context: .
+      dockerfile: logistics-service/Dockerfile
+    <<: *service-base
+    environment:
+      <<: *service-env
+      SERVICE_NAME: logistics-service
+      DATABASE_URL: postgresql+asyncpg://velontri:velontri@postgres-logistics:5432/logistics_db
+    ports:
+      - "8010:8000"
+    depends_on:
+      - postgres-logistics
+      - redis
+      - rabbitmq
+    secrets:
+      - jwt_public_key
+
+  analytics-service:
+    build:
+      context: .
+      dockerfile: analytics-service/Dockerfile
+    <<: *service-base
+    environment:
+      <<: *service-env
+      SERVICE_NAME: analytics-service
+      DATABASE_URL: postgresql+asyncpg://velontri:velontri@postgres-analytics:5432/analytics_db
+    ports:
+      - "8011:8000"
+    depends_on:
+      - postgres-analytics
+      - redis
+      - rabbitmq
+    secrets:
+      - jwt_public_key
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: notification-service/Dockerfile
+    <<: *service-base
+    environment:
+      <<: *service-env
+      SERVICE_NAME: notification-service
+      DATABASE_URL: postgresql+asyncpg://velontri:velontri@postgres-notification:5432/notification_db
+    ports:
+      - "8012:8000"
+    depends_on:
+      - postgres-notification
+      - redis
+      - rabbitmq
+    secrets:
+      - jwt_public_key
+
+  crm-service:
+    build:
+      context: .
+      dockerfile: crm-service/Dockerfile
+    <<: *service-base
+    environment:
+      <<: *service-env
+      SERVICE_NAME: crm-service
+      DATABASE_URL: postgresql+asyncpg://velontri:velontri@postgres-crm:5432/crm_db
+    ports:
+      - "8013:8000"
+    depends_on:
+      - postgres-crm
+      - redis
+      - rabbitmq
+    secrets:
+      - jwt_public_key
+
+  subscription-service:
+    build:
+      context: .
+      dockerfile: subscription-service/Dockerfile
+    <<: *service-base
+    environment:
+      <<: *service-env
+      SERVICE_NAME: subscription-service
+      DATABASE_URL: postgresql+asyncpg://velontri:velontri@postgres-subscription:5432/subscription_db
+    ports:
+      - "8014:8000"
+    depends_on:
+      - postgres-subscription
+      - redis
+      - rabbitmq
+    secrets:
+      - jwt_public_key
+
+  # ── API Gateway (single port for frontend) ───────────────────────────────────
+
+  api-gateway:
+    image: nginx:1.27-alpine
+    <<: *service-base
+    ports:
+      - "8000:80"
+    volumes:
+      - ./infra/nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - auth-service
+      - user-service
+      - marketplace-service
+      - search-service
+      - ai-service
+      - chat-service
+      - payment-service
+      - wallet-service
+      - inventory-service
+      - logistics-service
+      - analytics-service
+      - notification-service
+      - crm-service
+      - subscription-service
+
+# ── Named volumes ─────────────────────────────────────────────────────────────
+volumes:
+  postgres-auth-data:
+  postgres-user-data:
+  postgres-marketplace-data:
+  postgres-payment-data:
+  postgres-wallet-data:
+  postgres-inventory-data:
+  postgres-chat-data:
+  postgres-analytics-data:
+  postgres-notification-data:
+  postgres-crm-data:
+  postgres-subscription-data:
+  postgres-logistics-data:
+  redis-data:
+  rabbitmq-data:
+  elasticsearch-data:
+  minio-data:
+  prometheus-data:
+  grafana-data:
+
+# ── Networks ──────────────────────────────────────────────────────────────────
+networks:
+  velontri:
+    driver: bridge
+
+# ── Secrets ───────────────────────────────────────────────────────────────────
+secrets:
+  jwt_public_key:
+    file: ./secrets/jwt_public_key.pem
+  jwt_private_key:
+    file: ./secrets/jwt_private_key.pem

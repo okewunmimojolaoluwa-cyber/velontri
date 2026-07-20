@@ -1,0 +1,927 @@
+openapi: 3.1.0
+info:
+  title: Velontri API
+  version: 1.0.0
+  description: |
+    Complete API for all 14 Velontri microservices.
+    All responses use a standard envelope: { success, message, data, meta }
+    All errors use: { success: false, error: { code, message, field }, request_id }
+  contact:
+    name: Velontri Engineering
+    email: dev@velontri.com
+servers:
+  - url: https://api.velontri.com/api/v1
+    description: Production
+  - url: https://api.staging.velontri.com/api/v1
+    description: Staging
+  - url: http://localhost:8001/api/v1
+    description: Auth service (local)
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: RS256 JWT. Access token TTL is 15 minutes.
+
+  schemas:
+    SuccessResponse:
+      type: object
+      required: [success, message]
+      properties:
+        success:  { type: boolean, example: true }
+        message:  { type: string,  example: "Operation successful" }
+        data:     {}
+        meta:     { $ref: '#/components/schemas/PaginationMeta' }
+
+    ErrorResponse:
+      type: object
+      required: [success, error]
+      properties:
+        success:    { type: boolean, example: false }
+        error:      { $ref: '#/components/schemas/ErrorDetail' }
+        request_id: { type: string, format: uuid, example: "550e8400-e29b-41d4-a716-446655440000" }
+
+    ErrorDetail:
+      type: object
+      required: [code, message]
+      properties:
+        code:    { type: string, example: "INVALID_CREDENTIALS" }
+        message: { type: string, example: "Invalid email/phone or password." }
+        field:   { type: string, nullable: true, example: "email" }
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:        { type: integer, example: 1 }
+        page_size:   { type: integer, example: 20 }
+        total:       { type: integer, example: 150 }
+        total_pages: { type: integer, example: 8 }
+        has_next:    { type: boolean, example: true }
+        has_prev:    { type: boolean, example: false }
+
+    TokenPair:
+      type: object
+      properties:
+        access_token:  { type: string, example: "eyJhbGciOiJSUzI1NiJ9..." }
+        refresh_token: { type: string, example: "v2.local.AbCd..." }
+        token_type:    { type: string, example: "bearer" }
+        expires_in:    { type: integer, example: 900 }
+
+    RegisterRequest:
+      type: object
+      required: [email, phone, password, full_name, country_code]
+      properties:
+        email:        { type: string, format: email,  example: "ada@example.com" }
+        phone:        { type: string, pattern: '^\+[1-9]\d{6,14}$', example: "+2348012345678" }
+        password:     { type: string, minLength: 8,   example: "SecurePass1!" }
+        full_name:    { type: string, example: "Ada Okafor" }
+        country_code: { type: string, minLength: 2, maxLength: 2, example: "NG" }
+
+    LoginRequest:
+      type: object
+      required: [identifier, password, device_fingerprint]
+      properties:
+        identifier:          { type: string, example: "ada@example.com" }
+        password:            { type: string, example: "SecurePass1!" }
+        device_fingerprint:  { type: string, example: "web-chrome-abc123" }
+        user_agent:          { type: string, example: "Mozilla/5.0" }
+
+    Listing:
+      type: object
+      properties:
+        id:           { type: string, format: uuid, example: "3d8e4b5c-1234-4abc-89de-000000000001" }
+        title:        { type: string, example: "Toyota Camry 2019 — Lagos" }
+        description:  { type: string, example: "Well maintained, full options" }
+        price:        { type: number, example: 8500000 }
+        currency:     { type: string, example: "NGN" }
+        category:     { type: string, example: "vehicles" }
+        listing_type: { type: string, enum: [sale, rent, service, job], example: "sale" }
+        status:       { type: string, enum: [draft, pending_review, active, archived], example: "active" }
+        seller_id:    { type: string, format: uuid }
+        images:       { type: array, items: { type: string }, example: ["listings/uuid/images/img1.jpg"] }
+        created_at:   { type: string, format: date-time }
+
+    WalletBalance:
+      type: object
+      properties:
+        balance:           { type: string, example: "125000.00" }
+        held_balance:      { type: string, example: "50000.00" }
+        available_balance: { type: string, example: "75000.00" }
+        rewards_points:    { type: integer, example: 2500 }
+        currency:          { type: string, example: "NGN" }
+        user_id:           { type: string, format: uuid }
+
+tags:
+  - name: Authentication
+    description: Register, login, 2FA, token management
+  - name: Users
+    description: Profiles, KYC, businesses, branches
+  - name: Marketplace
+    description: Listings, bookings, reviews, stores
+  - name: Search
+    description: Keyword, autocomplete, voice, AI search
+  - name: Payments
+    description: Escrow payments and disputes
+  - name: Wallet
+    description: Wallet balance, transfers, rewards
+  - name: Inventory
+    description: SKU and stock management
+  - name: Analytics
+    description: Seller and branch analytics
+  - name: CRM
+    description: Customer relationship management
+  - name: Subscriptions
+    description: Subscription tiers and management
+  - name: Chat
+    description: Messaging threads and WebSocket
+
+paths:
+  # ── AUTH ────────────────────────────────────────────────────────────────────
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+              example:
+                success: true
+                message: "Registration successful. Please verify your phone number."
+                data: { user_id: "550e8400-e29b-41d4-a716-446655440000" }
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /auth/verify-phone:
+    post:
+      tags: [Authentication]
+      summary: Verify phone with OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id: { type: string, format: uuid, example: "550e8400-e29b-41d4-a716-446655440000" }
+                otp:     { type: string, example: "123456" }
+      responses:
+        '200':
+          description: Phone verified
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login with email/phone and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+              example:
+                success: true
+                message: "Login successful."
+                data:
+                  tokens:
+                    access_token: "eyJhbGciOiJSUzI1NiJ9..."
+                    refresh_token: "v2.local.AbCd..."
+                    token_type: "bearer"
+                    expires_in: 900
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /auth/login/oauth:
+    post:
+      tags: [Authentication]
+      summary: Login via Google or Apple OAuth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider, id_token, device_fingerprint]
+              properties:
+                provider:           { type: string, enum: [google, apple] }
+                id_token:           { type: string, example: "ya29.a0A..." }
+                device_fingerprint: { type: string, example: "mobile-flutter-xyz" }
+      responses:
+        '200': { description: OAuth login successful }
+
+  /auth/token/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token: { type: string, example: "v2.local.AbCd..." }
+      responses:
+        '200':
+          description: New access token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Revoke refresh token
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token: { type: string }
+      responses:
+        '200': { description: Logged out }
+
+  /auth/introspect:
+    get:
+      tags: [Authentication]
+      summary: Validate JWT and return claims
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Token valid
+          content:
+            application/json:
+              example:
+                data:
+                  user_id: "550e8400-e29b-41d4-a716-446655440000"
+                  roles: ["buyer", "seller"]
+                  subscription_tier: "professional"
+                  expires_at: 1720000900
+
+  /auth/2fa/enable:
+    post:
+      tags: [Authentication]
+      summary: Enable two-factor authentication
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                method: { type: string, enum: [totp, sms] }
+      responses:
+        '200': { description: 2FA enabled }
+
+  /auth/2fa/verify:
+    post:
+      tags: [Authentication]
+      summary: Complete 2FA challenge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                two_fa_session_id: { type: string }
+                otp:               { type: string, example: "123456" }
+      responses:
+        '200': { description: 2FA verified, tokens returned }
+
+  /auth/password/reset-request:
+    post:
+      tags: [Authentication]
+      summary: Request password reset email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email, example: "ada@example.com" }
+      responses:
+        '200': { description: Reset email sent (always returns 200 to prevent enumeration) }
+
+  /auth/password/reset:
+    post:
+      tags: [Authentication]
+      summary: Reset password using token from email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:        { type: string }
+                new_password: { type: string, minLength: 8 }
+      responses:
+        '200': { description: Password updated }
+
+  /auth/devices:
+    get:
+      tags: [Authentication]
+      summary: List registered devices
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200': { description: Device list }
+
+  /auth/devices/{device_id}:
+    delete:
+      tags: [Authentication]
+      summary: Revoke a device
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: device_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Device revoked }
+
+  # ── MARKETPLACE ──────────────────────────────────────────────────────────────
+  /listings:
+    get:
+      tags: [Marketplace]
+      summary: Browse active listings
+      parameters:
+        - { name: page,         in: query, schema: { type: integer, default: 1 } }
+        - { name: page_size,    in: query, schema: { type: integer, default: 20, maximum: 100 } }
+        - { name: category,     in: query, schema: { type: string }, example: "vehicles" }
+        - { name: listing_type, in: query, schema: { type: string, enum: [sale, rent, service, job] } }
+        - { name: seller_id,    in: query, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Listings retrieved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+              example:
+                success: true
+                message: "42 listing(s) found."
+                data:
+                  - id: "3d8e4b5c-1234-4abc-89de-000000000001"
+                    title: "Toyota Camry 2019"
+                    price: 8500000
+                    currency: "NGN"
+                    category: "vehicles"
+                    status: "active"
+                meta:
+                  page: 1
+                  page_size: 20
+                  total: 42
+                  has_next: true
+    post:
+      tags: [Marketplace]
+      summary: Create a new listing
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, category, listing_type]
+              properties:
+                title:        { type: string, example: "Toyota Camry 2019 — Full Options" }
+                description:  { type: string, example: "Single owner, full options, accident-free" }
+                price:        { type: number, example: 8500000 }
+                currency:     { type: string, example: "NGN" }
+                category:     { type: string, example: "vehicles" }
+                listing_type: { type: string, enum: [sale, rent, service, job] }
+                location:
+                  type: object
+                  properties:
+                    country: { type: string, example: "NG" }
+                    state:   { type: string, example: "Lagos" }
+                    city:    { type: string, example: "Lekki" }
+      responses:
+        '201':
+          description: Listing created
+          content:
+            application/json:
+              example:
+                success: true
+                message: "Listing created."
+                data: { id: "3d8e4b5c-1234-4abc-89de-000000000001", status: "draft" }
+
+  /listings/{listing_id}:
+    get:
+      tags: [Marketplace]
+      summary: Get listing detail
+      parameters:
+        - { name: listing_id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Listing detail }
+        '404': { description: Not found }
+    patch:
+      tags: [Marketplace]
+      summary: Update a listing
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: listing_id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:       { type: string }
+                description: { type: string }
+                price:       { type: number }
+                status:      { type: string }
+      responses:
+        '200': { description: Listing updated }
+    delete:
+      tags: [Marketplace]
+      summary: Archive a listing (soft delete)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: listing_id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Listing archived }
+
+  /listings/{listing_id}/images:
+    post:
+      tags: [Marketplace]
+      summary: Upload a listing image (max 20, max 10MB each)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: listing_id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Image uploaded
+          content:
+            application/json:
+              example:
+                data: { s3_key: "listings/uuid/images/img_001.jpg" }
+
+  /listings/{listing_id}/publish:
+    post:
+      tags: [Marketplace]
+      summary: Submit listing for moderation
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: listing_id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Listing submitted for review }
+
+  /listings/{listing_id}/reviews:
+    get:
+      tags: [Marketplace]
+      summary: List reviews for a listing
+      parameters:
+        - { name: listing_id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: page,       in: query, schema: { type: integer, default: 1 } }
+      responses:
+        '200': { description: Reviews list }
+    post:
+      tags: [Marketplace]
+      summary: Submit a review
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: listing_id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rating]
+              properties:
+                rating:  { type: integer, minimum: 1, maximum: 5, example: 5 }
+                comment: { type: string, example: "Excellent seller, smooth transaction" }
+      responses:
+        '201': { description: Review submitted }
+
+  /bookings:
+    post:
+      tags: [Marketplace]
+      summary: Book a service listing
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [listing_id, scheduled_date]
+              properties:
+                listing_id:     { type: string, format: uuid }
+                scheduled_date: { type: string, format: date-time, example: "2025-02-01T10:00:00Z" }
+                notes:          { type: string }
+      responses:
+        '201': { description: Booking created }
+
+  # ── SEARCH ───────────────────────────────────────────────────────────────────
+  /search:
+    get:
+      tags: [Search]
+      summary: Keyword + filter search
+      parameters:
+        - { name: q,          in: query, required: true, schema: { type: string }, example: "Toyota Camry Lagos" }
+        - { name: page,       in: query, schema: { type: integer, default: 1 } }
+        - { name: page_size,  in: query, schema: { type: integer, default: 20 } }
+        - { name: price_min,  in: query, schema: { type: number } }
+        - { name: price_max,  in: query, schema: { type: number }, example: 10000000 }
+        - { name: category,   in: query, schema: { type: string }, example: "vehicles" }
+        - { name: city,       in: query, schema: { type: string }, example: "Lagos" }
+        - { name: country,    in: query, schema: { type: string }, example: "NG" }
+        - { name: lat,        in: query, schema: { type: number }, example: 6.5244 }
+        - { name: lon,        in: query, schema: { type: number }, example: 3.3792 }
+        - { name: radius_km,  in: query, schema: { type: number }, example: 10 }
+        - { name: condition,  in: query, schema: { type: string, enum: [new, used, refurbished] } }
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              example:
+                data:
+                  hits: [{ id: "uuid", title: "Toyota Camry 2019", score: 0.95 }]
+                  total: 12
+                  page: 1
+
+  /search/autocomplete:
+    get:
+      tags: [Search]
+      summary: Autocomplete suggestions
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 2 }, example: "Toyo" }
+      responses:
+        '200':
+          description: Suggestions
+          content:
+            application/json:
+              example:
+                data: { suggestions: ["Toyota Camry", "Toyota Corolla", "Toyota Hilux"] }
+
+  /search/voice:
+    post:
+      tags: [Search]
+      summary: Voice search via audio upload
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                audio: { type: string, format: binary, description: "Audio file (wav, mp3, ogg, webm)" }
+      responses:
+        '200': { description: Transcribed and searched }
+
+  /search/ai:
+    post:
+      tags: [Search]
+      summary: AI natural-language search
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties:
+                query:     { type: string, example: "I need a 3-bedroom flat in Ikeja under 500k per year" }
+                page:      { type: integer, default: 1 }
+                page_size: { type: integer, default: 20 }
+      responses:
+        '200': { description: AI search results }
+
+  # ── WALLET ───────────────────────────────────────────────────────────────────
+  /wallet/balance:
+    get:
+      tags: [Wallet]
+      summary: Get wallet balance and rewards
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Wallet balance
+          content:
+            application/json:
+              example:
+                data:
+                  balance: "125000.00"
+                  held_balance: "50000.00"
+                  available_balance: "75000.00"
+                  rewards_points: 2500
+                  currency: "NGN"
+
+  /wallet/topup:
+    post:
+      tags: [Wallet]
+      summary: Credit wallet from external payment
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, payment_reference]
+              properties:
+                amount:            { type: number, example: 50000 }
+                currency:          { type: string, example: "NGN" }
+                payment_reference: { type: string, format: uuid, example: "pay-uuid-here" }
+      responses:
+        '201': { description: Wallet credited }
+
+  /wallet/withdraw:
+    post:
+      tags: [Wallet]
+      summary: Initiate a withdrawal
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, bank_code, bank_account_number]
+              properties:
+                amount:              { type: number, example: 25000 }
+                bank_code:           { type: string, example: "058" }
+                bank_account_number: { type: string, example: "0123456789" }
+                description:         { type: string }
+      responses:
+        '200': { description: Withdrawal initiated }
+
+  /wallet/transfer:
+    post:
+      tags: [Wallet]
+      summary: Transfer to another user's wallet
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recipient_user_id, amount]
+              properties:
+                recipient_user_id: { type: string, format: uuid }
+                amount:            { type: number, example: 10000 }
+                description:       { type: string }
+      responses:
+        '200': { description: Transfer completed }
+
+  /wallet/transactions:
+    get:
+      tags: [Wallet]
+      summary: Paginated transaction history
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: page,      in: query, schema: { type: integer, default: 1 } }
+        - { name: page_size, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        '200': { description: Transaction list }
+
+  /wallet/rewards/redeem:
+    post:
+      tags: [Wallet]
+      summary: Redeem rewards points for wallet credit
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [points]
+              properties:
+                points: { type: integer, minimum: 1, example: 500 }
+      responses:
+        '200': { description: Points redeemed }
+
+  # ── PAYMENTS ─────────────────────────────────────────────────────────────────
+  /payments/initiate:
+    post:
+      tags: [Payments]
+      summary: Initiate escrow payment
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [order_id, buyer_id, seller_id, amount, currency, buyer_email]
+              properties:
+                order_id:    { type: string, example: "ord-abc123" }
+                buyer_id:    { type: string, format: uuid }
+                seller_id:   { type: string, format: uuid }
+                amount:      { type: number, example: 8500000 }
+                currency:    { type: string, example: "NGN" }
+                buyer_email: { type: string, format: email }
+                gateway:     { type: string, enum: [paystack, flutterwave, mpesa, stripe] }
+                seller_tier: { type: string }
+      responses:
+        '201':
+          description: Payment initiated
+          content:
+            application/json:
+              example:
+                data:
+                  payment_id: "pay-uuid"
+                  checkout_url: "https://checkout.paystack.com/pay/..."
+                  status: "pending"
+
+  /payments/{payment_id}/confirm-delivery:
+    post:
+      tags: [Payments]
+      summary: Buyer confirms delivery — releases escrow
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: payment_id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Funds released to seller }
+
+  /payments/{payment_id}/dispute:
+    post:
+      tags: [Payments]
+      summary: Raise a dispute — freezes escrow
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: payment_id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, example: "Item not as described — missing accessories" }
+      responses:
+        '201': { description: Dispute raised }
+
+  /disputes/{dispute_id}/resolve:
+    patch:
+      tags: [Payments]
+      summary: Resolve a dispute (admin only)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: dispute_id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                in_favour_of: { type: string, enum: [buyer, seller] }
+      responses:
+        '200': { description: Dispute resolved }
+
+  # ── ANALYTICS ────────────────────────────────────────────────────────────────
+  /analytics/seller/{seller_id}/summary:
+    get:
+      tags: [Analytics]
+      summary: Seller analytics summary
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: seller_id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Analytics summary
+          content:
+            application/json:
+              example:
+                data:
+                  total_listings: 12
+                  total_views: 4500
+                  total_sales: 3
+                  revenue_ngn: "25500000.00"
+
+  # ── CRM ──────────────────────────────────────────────────────────────────────
+  /crm/customers:
+    get:
+      tags: [CRM]
+      summary: List customers
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200': { description: Customer list }
+
+  /crm/customers/{customer_id}/notes:
+    post:
+      tags: [CRM]
+      summary: Add a note to a customer
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: customer_id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note: { type: string, example: "Customer interested in premium listings" }
+      responses:
+        '201': { description: Note added }
+
+  # ── SUBSCRIPTIONS ─────────────────────────────────────────────────────────────
+  /subscriptions/tiers:
+    get:
+      tags: [Subscriptions]
+      summary: Get available subscription tiers (public)
+      responses:
+        '200':
+          description: Subscription tiers
+          content:
+            application/json:
+              example:
+                data:
+                  - tier: starter
+                    price_ngn: 0
+                    listing_quota: 3
+                    features: [basic_listings]
+                  - tier: professional
+                    price_ngn: 15000
+                    listing_quota: 50
+                    features: [ai_search, analytics, crm]
+
+  /subscriptions/me:
+    get:
+      tags: [Subscriptions]
+      summary: Get current subscription
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200': { description: Current subscription }
+
+  /subscriptions/upgrade:
+    post:
+      tags: [Subscriptions]
+      summary: Upgrade subscription
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tier: { type: string, enum: [basic, professional, enterprise] }
+      responses:
+        '200': { description: Subscription upgraded }
+
+  # ── CHAT ─────────────────────────────────────────────────────────────────────
+  /chat/threads:
+    get:
+      tags: [Chat]
+      summary: List conversation threads
+      parameters:
+        - { name: token, in: query, required: true, schema: { type: string }, description: "JWT access token" }
+      responses:
+        '200': { description: Thread list }
+
+  /chat/threads/{thread_id}/messages:
+    get:
+      tags: [Chat]
+      summary: Get message history (last 500)
+      parameters:
+        - { name: thread_id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: token,     in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Message history }

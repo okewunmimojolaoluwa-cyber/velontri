@@ -1,0 +1,77 @@
+##############################################################################
+# Velontri — Render.com Infrastructure Blueprint
+# Deploy: https://dashboard.render.com/select-repo
+# Docs:   https://render.com/docs/blueprint-spec
+##############################################################################
+
+services:
+  # ── Backend API Gateway ─────────────────────────────────────────────────────
+  - type: web
+    name: velontri-backend
+    runtime: python
+    region: oregon          # change to frankfurt for lower latency from Africa
+    plan: free              # upgrade to starter ($7/mo) for persistent disk
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: bash start.sh
+    healthCheckPath: /health
+
+    # Persistent disk — SQLite database survives deploys
+    # NOTE: Persistent disk requires at least the Starter plan ($7/mo)
+    # On the FREE plan, data resets on each deploy — suitable for testing only.
+    # Uncomment to enable on a paid plan:
+    # disk:
+    #   name: velontri-db
+    #   mountPath: /data
+    #   sizeGB: 1
+
+    envVars:
+      # ── App config ──────────────────────────────────────────────────────────
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: LOG_LEVEL
+        value: INFO
+
+      # ── CORS — set to your actual frontend URL ───────────────────────────
+      - key: ALLOWED_ORIGINS
+        value: "https://velontri.vercel.app,https://velontri.com,http://localhost:3000"
+
+      # ── JWT keys (generate once, store as Render secrets) ────────────────
+      # Generate with: python -c "from cryptography.hazmat.primitives.asymmetric import rsa; from cryptography.hazmat.primitives import serialization; k=rsa.generate_private_key(65537,2048); print(k.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.TraditionalOpenSSL,serialization.NoEncryption()).decode())"
+      - key: JWT_PRIVATE_KEY
+        sync: false          # set in Render dashboard → Environment tab
+      - key: JWT_PUBLIC_KEY
+        sync: false
+
+      # ── TOTP / 2FA encryption key ────────────────────────────────────────
+      # Generate: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+      - key: TOTP_ENCRYPTION_KEY
+        sync: false
+
+      # ── Gmail SMTP (for OTP emails) ──────────────────────────────────────
+      - key: GMAIL_USER
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+
+      # ── Paystack ─────────────────────────────────────────────────────────
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_WEBHOOK_URL
+        sync: false
+
+      # ── Google OAuth (optional) ──────────────────────────────────────────
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+
+      # ── Access token TTL ─────────────────────────────────────────────────
+      - key: ACCESS_TOKEN_TTL_SECONDS
+        value: "28800"    # 8 hours
+
+      # ── Python path ──────────────────────────────────────────────────────
+      - key: PYTHONPATH
+        value: "/opt/render/project/src/backend:/opt/render/project/src/backend/scripts"

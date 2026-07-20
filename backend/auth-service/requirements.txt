@@ -1,0 +1,11 @@
+# Auth Service dependencies
+# Pinned to exact versions for reproducible builds.
+# The shared/ library provides: fastapi, pydantic, sqlalchemy, asyncpg,
+# redis, aio-pika, aioboto3, PyJWT, bcrypt, pyotp, structlog, prometheus-client
+
+uvicorn[standard]==0.29.0
+uvloop==0.19.0
+httpx==0.27.0
+python-multipart==0.0.9
+google-auth==2.29.0
+authlib==1.3.0       # OAuth 2.0 / OIDC (Google & Apple)

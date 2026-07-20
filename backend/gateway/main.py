@@ -1,0 +1,456 @@
+"""
+Velontri API Gateway — single port 8000, all 14 services in one process.
+
+Strategy: each service directory is loaded as an isolated importlib module
+using a unique package name so their `app.*` imports never collide.
+
+Frontend: http://localhost:8000/api/v1/<resource>
+Docs:     http://localhost:8000/docs
+"""
+from __future__ import annotations
+
+import importlib.util
+import os
+import sys
+import types
+from contextlib import asynccontextmanager
+from pathlib import Path
+from typing import Any
+
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "scripts"))
+
+# Apply stubs before any service code runs
+from native_stubs import apply_patches  # noqa: E402
+apply_patches("gateway")
+
+from shared.errors import register_error_handlers          # noqa: E402
+from shared.logging import configure_logging, get_logger   # noqa: E402
+from shared.metrics import PrometheusMiddleware, metrics_endpoint  # noqa: E402
+from shared.middleware import configure_middleware          # noqa: E402
+
+logger = get_logger(__name__)
+
+
+# ── Isolated service loader ────────────────────────────────────────────────────
+
+def _load_service_router(svc_dir: str, router_file: str, attr: str = "router"):
+    """
+    Load a router from `<svc_dir>/app/routers/<router_file>.py`
+    without polluting sys.modules["app"] for other services.
+
+    Each service gets its own namespace: `_svc_<name>.routers.<file>`
+    All intra-service imports (from app.xxx import yyy) are redirected
+    to the service's own namespace.
+    """
+    svc_path   = ROOT / svc_dir
+    pkg_alias  = "_svc_" + svc_dir.replace("-", "_")      # e.g. _svc_auth_service
+    app_alias  = pkg_alias + ".app"                        # maps to <svc>/app
+
+    def _ensure_pkg(name: str, path: str) -> types.ModuleType:
+        if name not in sys.modules:
+            mod = types.ModuleType(name)
+            mod.__path__ = [path]
+            mod.__package__ = name
+            mod.__file__ = os.path.join(path, "__init__.py")
+            sys.modules[name] = mod
+        return sys.modules[name]
+
+    # Register namespace packages
+    _ensure_pkg(pkg_alias, str(svc_path))
+    _ensure_pkg(app_alias, str(svc_path / "app"))
+    _ensure_pkg(app_alias + ".routers", str(svc_path / "app" / "routers"))
+
+    # Make `from app.xxx import yyy` work inside the service by aliasing "app"
+    # We save and restore "app" around the import
+    saved_app = sys.modules.get("app")
+    sys.modules["app"] = sys.modules[app_alias]
+
+    # Add the service root so its relative imports resolve
+    if str(svc_path) not in sys.path:
+        sys.path.insert(0, str(svc_path))
+
+    try:
+        router_path = svc_path / "app" / "routers" / f"{router_file}.py"
+        mod_name    = f"{app_alias}.routers.{router_file}"
+
+        if mod_name not in sys.modules:
+            spec = importlib.util.spec_from_file_location(mod_name, str(router_path))
+            if spec is None or spec.loader is None:
+                raise ImportError(f"Cannot find {router_path}")
+            mod = importlib.util.module_from_spec(spec)
+            mod.__package__ = f"{app_alias}.routers"
+            sys.modules[mod_name] = mod
+            spec.loader.exec_module(mod)
+
+        return getattr(sys.modules[mod_name], attr)
+    finally:
+        # Restore "app" so the next service can use it
+        if saved_app is not None:
+            sys.modules["app"] = saved_app
+        elif "app" in sys.modules:
+            del sys.modules["app"]
+
+
+def _collect_routers():
+    collected = []
+
+    SERVICES = [
+        # (service_dir,          router_file,    attr,            tag)
+        ("auth-service",         "auth",          "router",        "🔐 Auth"),
+        ("user-service",         "users",         "router",        "👤 Users"),
+        ("marketplace-service",  "listings",      "router",        "🏪 Marketplace"),
+        ("search-service",       "search",        "router",        "🔍 Search"),
+        ("ai-service",           "ai",            "router",        "🤖 AI"),
+        ("chat-service",         "chat",          "router",        "💬 Chat"),
+        ("payment-service",      "payments",      "router",        "💳 Payments"),
+        ("wallet-service",       "wallet",        "router",        "👛 Wallet"),
+        ("inventory-service",    "inventory",     "router",        "📦 Inventory"),
+        ("logistics-service",    "logistics",     "router",        "🚚 Logistics"),
+        ("analytics-service",    "analytics",     "router",        "📊 Analytics"),
+        ("notification-service", "notifications", "router",        "🔔 Notifications"),
+        ("crm-service",          "crm",           "router",        "🤝 CRM"),
+        ("subscription-service", "subscriptions", "router",        "💎 Subscriptions"),
+    ]
+
+    for svc_dir, router_file, attr, tag in SERVICES:
+        try:
+            router = _load_service_router(svc_dir, router_file, attr)
+            collected.append((router, tag))
+            logger.info("router_ok", service=svc_dir)
+        except Exception as exc:
+            logger.warning("router_fail", service=svc_dir, error=str(exc))
+
+    # Also mount the user-service internal_router so auth can fetch roles
+    try:
+        internal_router = _load_service_router("user-service", "users", "internal_router")
+        collected.append((internal_router, "🔧 Internal"))
+        logger.info("router_ok", service="user-service-internal")
+    except Exception as exc:
+        logger.warning("router_fail", service="user-service-internal", error=str(exc))
+
+    return collected
+
+
+# ── Lifespan ───────────────────────────────────────────────────────────────────
+
+def _apply_sqlite_migrations(conn) -> None:  # type: ignore[type-arg]
+    """
+    Idempotent additive migrations for SQLite dev DB.
+    Each statement is wrapped in try/except so it's safe to run on every startup.
+    """
+    cursor = conn.connection.cursor()
+
+    # ── Additive column migrations ─────────────────────────────────────────────
+    additive = [
+        "ALTER TABLE listings ADD COLUMN image_url TEXT",
+        "ALTER TABLE users ADD COLUMN full_name TEXT",
+        "ALTER TABLE users ADD COLUMN phone TEXT",
+        "ALTER TABLE users ADD COLUMN country_code TEXT DEFAULT 'NG'",
+        "ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1",
+        "ALTER TABLE users ADD COLUMN is_phone_verified INTEGER DEFAULT 0",
+        # is_locked — required NOT NULL; default 0 (not locked)
+        "ALTER TABLE users ADD COLUMN is_locked INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN locked_until DATETIME",
+        # WhatsApp contact field on listings
+        "ALTER TABLE listings ADD COLUMN whatsapp_number TEXT",
+        "ALTER TABLE listings ADD COLUMN contact_phone TEXT",
+        # Saved listings table created separately below
+    ]
+    for sql in additive:
+        try:
+            cursor.execute(sql)
+        except Exception:
+            pass
+
+    # ── Create saved_listings table if it doesn't exist ───────────────────
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS saved_listings (
+                id          TEXT PRIMARY KEY,
+                user_id     TEXT NOT NULL,
+                listing_id  TEXT NOT NULL,
+                saved_at    TEXT NOT NULL DEFAULT (datetime('now')),
+                UNIQUE(user_id, listing_id)
+            )
+        """)
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS ix_saved_listings_user_id ON saved_listings(user_id)"
+        )
+    except Exception:
+        pass
+
+    # ── Fix user_roles CheckConstraint to allow 'moderator' role ──────────────
+    # SQLite doesn't support DROP CONSTRAINT, so we recreate the table without it.
+    # We check if the current table has the old restrictive constraint first.
+    try:
+        # Try inserting a test moderator role (will fail if constraint is too strict)
+        # Use a known-safe test approach: check the CREATE TABLE statement
+        cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='user_roles'")
+        row = cursor.fetchone()
+        if row and row[0] and "'moderator'" not in row[0]:
+            # Constraint is present without 'moderator' — recreate table
+            cursor.execute("PRAGMA foreign_keys=OFF")
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS user_roles_new (
+                    id         TEXT PRIMARY KEY,
+                    user_id    TEXT NOT NULL,
+                    role       TEXT NOT NULL,
+                    scope_id   TEXT,
+                    granted_at TEXT NOT NULL DEFAULT (datetime('now'))
+                )
+            """)
+            cursor.execute("""
+                INSERT OR IGNORE INTO user_roles_new (id, user_id, role, scope_id, granted_at)
+                SELECT id, user_id, role, scope_id,
+                       COALESCE(granted_at, created_at, datetime('now'))
+                FROM user_roles
+            """)
+            cursor.execute("DROP TABLE user_roles")
+            cursor.execute("ALTER TABLE user_roles_new RENAME TO user_roles")
+            cursor.execute("CREATE INDEX IF NOT EXISTS ix_user_roles_user_id ON user_roles(user_id)")
+            cursor.execute("PRAGMA foreign_keys=ON")
+    except Exception:
+        pass  # table may not exist yet — will be created by metadata.create_all
+
+    # ── Create sub_payments table for Paystack subscription revenue ───────
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS sub_payments (
+                id          TEXT PRIMARY KEY,
+                user_id     TEXT NOT NULL,
+                plan        TEXT NOT NULL,
+                reference   TEXT NOT NULL,
+                amount_ngn  INTEGER NOT NULL DEFAULT 0,
+                status      TEXT NOT NULL DEFAULT 'success',
+                paid_at     TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+        """)
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS ix_sub_pay_user ON sub_payments(user_id)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS ix_sub_pay_paid ON sub_payments(paid_at)"
+        )
+    except Exception:
+        pass
+
+    # ── Create notifications table for in-app user notifications ─────────
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS notifications (
+                id          TEXT PRIMARY KEY,
+                user_id     TEXT NOT NULL,
+                type        TEXT NOT NULL DEFAULT 'system',
+                title       TEXT NOT NULL,
+                message     TEXT NOT NULL,
+                is_read     INTEGER NOT NULL DEFAULT 0,
+                created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+        """)
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS ix_notifications_user ON notifications(user_id)"
+        )
+    except Exception:
+        pass
+
+    # ── Create platform_config table for maintenance mode / settings ──────
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS platform_config (
+                key         TEXT PRIMARY KEY,
+                value       TEXT NOT NULL,
+                updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+        """)
+    except Exception:
+        pass
+
+    # ── Create password_change_otps table for OTP-verified password changes ──
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS password_change_otps (
+                user_id     TEXT PRIMARY KEY,
+                otp         TEXT NOT NULL,
+                new_hash    TEXT NOT NULL,
+                expires_at  TEXT NOT NULL,
+                created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+        """)
+    except Exception:
+        pass
+
+    # ── Create audit_log table for admin audit trail ───────────────────────
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS audit_log (
+                id          TEXT PRIMARY KEY,
+                actor_id    TEXT,
+                actor_email TEXT,
+                actor_name  TEXT,
+                category    TEXT NOT NULL DEFAULT 'system',
+                action      TEXT NOT NULL,
+                resource    TEXT,
+                resource_id TEXT,
+                ip_address  TEXT,
+                status      TEXT NOT NULL DEFAULT 'success',
+                detail      TEXT,
+                created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+        """)
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS ix_audit_log_created ON audit_log(created_at)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS ix_audit_log_actor ON audit_log(actor_id)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS ix_audit_log_cat ON audit_log(category)"
+        )
+    except Exception:
+        pass
+
+    conn.connection.commit()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
+    configure_logging("velontri-gateway", "1.0.0", "development", "INFO")
+    logger.info("gateway_starting")
+
+    from shared.database import Base, create_engine, dispose_engine
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    import os as _os
+    _db_file = _os.environ.get("SQLITE_DB_PATH", "./dev_gateway.db")
+    engine = create_engine(f"sqlite+aiosqlite:///{_db_file}")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+        # Run additive migrations for columns added after the DB was first created
+        await conn.run_sync(_apply_sqlite_migrations)
+
+    app.state.engine = engine
+    app.state.session_factory = async_sessionmaker(
+        bind=engine, autocommit=False, autoflush=False, expire_on_commit=False
+    )
+
+    from shared.redis_client import close_redis_pool, create_redis_pool, get_redis_client
+    pool = create_redis_pool("redis://localhost:6379/0")
+    app.state.redis      = get_redis_client(pool)
+    app.state.redis_pool = pool
+
+    from shared.rabbitmq import connect_with_backoff, setup_infrastructure
+    mq = await connect_with_backoff("amqp://velontri:velontri@localhost:5672/")
+    ch = await mq.channel()
+    await setup_infrastructure(ch)
+    app.state.rabbitmq_connection = mq
+    app.state.rabbitmq_channel    = ch
+
+    # Search service requires Elasticsearch + HTTP client on app.state
+    import httpx
+    from elasticsearch import AsyncElasticsearch
+
+    es_client = AsyncElasticsearch(hosts=["http://localhost:9200"])
+    app.state.es_client = es_client
+    app.state.http_client = httpx.AsyncClient(timeout=30.0)
+
+    logger.info("gateway_ready")
+
+    # ── Start subscription expiry background task ──────────────────────────
+    import asyncio as _asyncio
+
+    async def _expiry_loop():
+        """Run subscription expiry check every 6 hours."""
+        import importlib
+        _run_expiry = None
+        while True:
+            try:
+                # Lazy import to avoid circular dependency
+                if _run_expiry is None:
+                    mod = importlib.import_module(
+                        "_svc_subscription_service.app.routers.subscriptions"
+                    )
+                    _run_expiry = getattr(mod, "_enforce_subscription_expiry", None)
+                if _run_expiry:
+                    await _run_expiry(app.state.session_factory)
+            except Exception as e:
+                logger.warning(f"expiry_check_error: {e}")
+            await _asyncio.sleep(6 * 3600)  # 6 hours
+
+    _expiry_task = _asyncio.create_task(_expiry_loop())
+
+    yield
+
+    _expiry_task.cancel()
+    try:
+        await _expiry_task
+    except _asyncio.CancelledError:
+        pass
+
+    await app.state.http_client.aclose()
+    await es_client.close()
+    await ch.close()
+    await mq.close()
+    from shared.redis_client import close_redis_pool as _cp
+    await _cp(pool)
+    await dispose_engine(engine)
+
+
+# ── App ────────────────────────────────────────────────────────────────────────
+
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title="Velontri Commerce Platform",
+        description=(
+            "**All 14 microservices — one port.**\n\n"
+            "Base URL: `http://localhost:8000/api/v1`\n\n"
+            "Auth: `Authorization: Bearer <token>` (get token from `POST /api/v1/auth/login`)"
+        ),
+        version="1.0.0",
+        docs_url="/docs",
+        redoc_url="/redoc",
+        openapi_url="/openapi.json",
+        lifespan=lifespan,
+    )
+
+    configure_middleware(app)
+    app.add_middleware(PrometheusMiddleware)
+    register_error_handlers(app)
+
+    for router, tag in _collect_routers():
+        app.include_router(router, prefix="/api/v1")
+
+    @app.get("/api/v1", tags=["Gateway"], summary="API base — single URL for all services")
+    async def api_root():
+        return {
+            "service": "velontri-gateway",
+            "version": "1.0.0",
+            "base_url": "/api/v1",
+            "docs": "/docs",
+            "websocket": "/api/v1/ws/chat",
+            "services": [
+                "auth", "users", "listings", "search", "ai", "chat",
+                "payments", "wallet", "inventory", "logistics",
+                "analytics", "notifications", "crm", "subscriptions",
+            ],
+        }
+
+    @app.get("/health", include_in_schema=False)
+    async def health():
+        return JSONResponse({
+            "service": "velontri-gateway",
+            "version": "1.0.0",
+            "status": "ok",
+            "base_url": "http://localhost:8000/api/v1",
+            "docs": "http://localhost:8000/docs",
+        })
+
+    app.add_route("/metrics", metrics_endpoint, methods=["GET"])
+    return app
+
+
+app = create_app()

@@ -1,0 +1,337 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --canvas:        248 250 252;   /* #F8F9FA */
+    --canvas-2:      241 244 247;
+    --canvas-3:      232 237 242;
+    --ink:           15  23  42;    /* slate-900 */
+    --ink-2:         51  65  85;    /* slate-700 */
+    --ink-3:         100 116 139;   /* slate-500 */
+    --ink-4:         148 163 184;   /* slate-400 */
+    --rule:          219 226 234;   /* border */
+    --gold:          180 142 62;    /* metallic gold */
+    --gold-lt:       245 236 210;
+    --accent:        79  70  229;   /* indigo-600 */
+    --accent-lt:     238 240 255;
+    --success:       22  163 74;
+    --destructive:   220 38  38;
+
+    /* shadcn bridge */
+    --background:    0 0% 98%;
+    --background-2:  214 18% 95%;
+    --foreground:    222 47% 11%;
+    --muted:         214 18% 95%;
+    --muted-foreground: 215 16% 47%;
+    --border:        214 18% 88%;
+    --primary:       243 72% 59%;
+    --primary-hover: 243 72% 50%;
+    --primary-foreground: 0 0% 100%;
+    --card:          0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover:       0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --secondary:     214 18% 95%;
+    --secondary-foreground: 222 47% 11%;
+    --accent-var:    214 18% 95%;
+    --accent-foreground: 222 47% 11%;
+    --input:         214 18% 88%;
+    --ring:          243 72% 59%;
+    --destructive-var: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background:    222 47% 5%;
+    --background-2:  222 40% 8%;
+    --foreground:    210 40% 98%;
+    --muted:         217 33% 15%;
+    --muted-foreground: 215 20% 65%;
+    --border:        217 33% 16%;
+    --primary:       243 72% 65%;
+    --primary-hover: 243 72% 57%;
+    --primary-foreground: 0 0% 100%;
+    --card:          222 40% 7%;
+    --card-foreground: 210 40% 98%;
+    --popover:       222 40% 7%;
+    --popover-foreground: 210 40% 98%;
+    --secondary:     217 33% 15%;
+    --secondary-foreground: 210 40% 98%;
+    --input:         217 33% 16%;
+    --ring:          243 72% 65%;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  * { border-color: hsl(var(--border)); margin: 0; }
+
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+  body {
+    background: #F8F9FA;
+    color: rgb(var(--ink));
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'cv11','ss01';
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* Dark mode body background */
+  .dark body {
+    background: hsl(222 47% 5%);
+    color: hsl(210 40% 92%);
+  }
+
+  ::selection { background: rgba(79,70,229,.12); }
+  :focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 2px; }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgb(var(--rule)); border-radius: 99px; }
+}
+
+@layer utilities {
+  .canvas   { background: #F8F9FA; }
+  .canvas-2 { background: #F1F4F7; }
+  .canvas-3 { background: #E8EDF2; }
+
+  .dark .canvas   { background: hsl(222 47% 5%); }
+  .dark .canvas-2 { background: hsl(222 40% 8%); }
+  .dark .canvas-3 { background: hsl(222 35% 11%); }
+
+  /* ── Velontri Card System ─────────────────────────────────────
+     card-base:    white card with border + shadow
+     card-hover:   subtle lift on hover
+     card-premium: dark sidebar card variant
+  ─────────────────────────────────────────────────────────────── */
+  .card-base {
+    background: #ffffff;
+    border: 1px solid hsl(var(--border));
+    border-radius: 1rem;
+    box-shadow: 0 1px 4px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  }
+  .dark .card-base {
+    background: hsl(222 40% 8%);
+    border-color: hsl(217 33% 16%);
+    box-shadow: 0 1px 4px 0 rgb(0 0 0 / 0.3);
+  }
+  .card-hover {
+    transition: transform 200ms ease, box-shadow 200ms ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px 0 rgb(0 0 0 / 0.09), 0 2px 8px -2px rgb(0 0 0 / 0.06);
+  }
+  .card-premium {
+    background: #ffffff;
+    border: 1px solid hsl(var(--border));
+    border-radius: 1rem;
+    box-shadow: 0 1px 4px 0 rgb(0 0 0 / 0.05);
+  }
+
+  /* ── Velontri Image Aspect Ratios ────────────────────────────
+     aspect-card:       4/3  — listing cards (desktop)
+     aspect-card-sq:    1/1  — listing cards (mobile / square layout)
+     aspect-hero:       16/9 — hero banners
+     aspect-store-cover:3/1  — store cover photo
+     All use object-fit:cover + object-position:center
+  ─────────────────────────────────────────────────────────────── */
+  .aspect-card        { aspect-ratio: 4 / 3; }
+  .aspect-card-sq     { aspect-ratio: 1 / 1; }
+  .aspect-hero        { aspect-ratio: 16 / 9; }
+  .aspect-store-cover { aspect-ratio: 3 / 1; }
+
+  /* Responsive: switch to square on mobile */
+  @media (max-width: 639px) {
+    .aspect-card { aspect-ratio: 1 / 1; }
+  }
+
+  /* ── Standardized image fill ─────────────────────────────────
+     Use on every <img> inside an aspect container.
+  ─────────────────────────────────────────────────────────────── */
+  .img-cover {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+  }
+
+  /* Dense grid dividers */
+  .grid-ruled > * { border-right: 1px solid rgb(var(--rule)); border-bottom: 1px solid rgb(var(--rule)); }
+  .grid-ruled { border-top: 1px solid rgb(var(--rule)); border-left: 1px solid rgb(var(--rule)); }
+
+  /* Hover group: dim siblings, sharpen active */
+  .listing-group:has(.listing-card:hover) .listing-card:not(:hover) {
+    opacity: 0.55;
+    filter: saturate(0.7);
+  }
+  .listing-card { transition: opacity 250ms ease, filter 250ms ease, transform 200ms ease; }
+  .listing-card:hover { transform: translateY(-2px); }
+
+  /* Scroll reveal — v-reveal and vr-out/vr-in variants */
+  .v-reveal, .vr-out {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.5s cubic-bezier(0.16,1,0.3,1);
+  }
+  .v-reveal.v-visible, .vr-out.vr-in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Gold accent */
+  .text-gold { color: rgb(var(--gold)); }
+  .bg-gold-lt { background: rgb(var(--gold-lt)); }
+
+  /* Section label */
+  .section-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgb(var(--ink-3));
+  }
+
+  /* Price chip */
+  .price-tag {
+    font-size: 1.0625rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: rgb(var(--ink));
+  }
+}
+
+/* Scroll-reveal animation via JS IntersectionObserver */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-100%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DARK MODE — structural overrides
+   These target the hardcoded bg/border/text values used throughout
+   the shells, cards, and layout components.
+══════════════════════════════════════════════════════════════ */
+
+/* Page canvas */
+.dark [class*="bg-\[#F8F9FA\]"],
+.dark .bg-slate-50 { background-color: hsl(222 47% 5%) !important; }
+.dark [class*="bg-\[#F1F4F7\]"],
+.dark .bg-slate-100 { background-color: hsl(222 40% 8%) !important; }
+
+/* White surfaces → dark card */
+.dark .bg-white {
+  background-color: hsl(222 40% 10%) !important;
+}
+
+/* Borders */
+.dark .border-slate-100 { border-color: hsl(217 33% 14%) !important; }
+.dark .border-slate-200 { border-color: hsl(217 33% 16%) !important; }
+.dark .border-slate-300 { border-color: hsl(217 33% 20%) !important; }
+
+/* Text */
+.dark .text-slate-900  { color: hsl(210 40% 95%) !important; }
+.dark .text-slate-800  { color: hsl(210 40% 90%) !important; }
+.dark .text-slate-700  { color: hsl(210 40% 82%) !important; }
+.dark .text-slate-600  { color: hsl(210 40% 72%) !important; }
+.dark .text-slate-500  { color: hsl(215 20% 55%) !important; }
+.dark .text-slate-400  { color: hsl(215 16% 47%) !important; }
+.dark .text-slate-300  { color: hsl(215 14% 38%) !important; }
+
+/* Hover states */
+.dark .hover\:bg-slate-50:hover  { background-color: hsl(222 40% 12%) !important; }
+.dark .hover\:bg-slate-100:hover { background-color: hsl(222 40% 14%) !important; }
+.dark .hover\:bg-slate-200:hover { background-color: hsl(222 40% 16%) !important; }
+
+/* Inputs & forms */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: hsl(222 40% 10%) !important;
+  border-color: hsl(217 33% 20%) !important;
+  color: hsl(210 40% 92%) !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder { color: hsl(215 16% 40%) !important; }
+.dark input:focus,
+.dark textarea:focus {
+  border-color: hsl(243 72% 59%) !important;
+  background-color: hsl(222 40% 12%) !important;
+}
+
+/* Dividers */
+.dark .divide-slate-100 > * + * { border-color: hsl(217 33% 14%) !important; }
+
+/* Bottom nav */
+.dark nav.fixed.bottom-0 {
+  background-color: hsl(222 40% 8% / 0.97) !important;
+  border-color: hsl(217 33% 16%) !important;
+}
+
+/* Skeleton / pulse */
+.dark .bg-slate-100.animate-pulse { background-color: hsl(222 40% 12%) !important; }
+
+/* Card shadows in dark */
+.dark .shadow-sm  { box-shadow: 0 1px 4px 0 rgb(0 0 0 / 0.4) !important; }
+.dark .shadow-md  { box-shadow: 0 4px 16px 0 rgb(0 0 0 / 0.5) !important; }
+.dark .shadow-lg  { box-shadow: 0 8px 32px 0 rgb(0 0 0 / 0.6) !important; }
+
+/* Indigo accent areas in dark */
+.dark .bg-indigo-50  { background-color: hsl(243 72% 10%) !important; }
+.dark .text-indigo-600 { color: hsl(243 72% 72%) !important; }
+.dark .border-indigo-200 { border-color: hsl(243 72% 25%) !important; }
+
+/* Emerald */
+.dark .bg-emerald-50  { background-color: hsl(152 76% 7%) !important; }
+.dark .text-emerald-700 { color: hsl(152 76% 60%) !important; }
+
+/* Amber */
+.dark .bg-amber-50  { background-color: hsl(43 96% 8%) !important; }
+.dark .text-amber-700 { color: hsl(43 96% 60%) !important; }
+
+/* Red */
+.dark .bg-red-50  { background-color: hsl(0 86% 7%) !important; }
+.dark .text-red-600 { color: hsl(0 86% 65%) !important; }
+
+/* Transition all backgrounds + text for smooth switch */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color;
+  transition-duration: 180ms;
+  transition-timing-function: ease;
+}
+/* Except transforms, opacity — don't slow down animations */
+.animate-pulse,
+.animate-spin,
+[data-reveal],
+.vr-out {
+  transition: none !important;
+}
+
+/* ── Infinite auto-scroll marquee ──────────────────────────────────────────
+   Used by AutoScrollRow on desktop. The track has double the content;
+   we scroll half the width (translateX -50%) then loop seamlessly.
+   Pause on hover is handled by .scroll-paused class toggled in JS,
+   or via CSS hover on the wrapper.
+─────────────────────────────────────────────────────────────────────────── */
+@keyframes marquee-ltr {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  animation: marquee-ltr var(--marquee-duration, 30s) linear infinite;
+  will-change: transform;
+}
+
+.marquee-wrapper:hover .marquee-track {
+  animation-play-state: paused;
+}
