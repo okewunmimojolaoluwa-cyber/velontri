@@ -329,7 +329,7 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
     _db_file = _os.environ.get("SQLITE_DB_PATH", "./dev_gateway.db")
     engine = create_engine(f"sqlite+aiosqlite:///{_db_file}")
 
-    async def _safe_create_all(conn: Any) -> None:
+    def _safe_create_all(conn: Any) -> None:
         """Create all tables, silently ignoring 'already exists' errors for indexes."""
         from sqlalchemy import text as _text
         # Create each table individually with checkfirst=True to skip existing tables
@@ -338,7 +338,7 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
                 table.create(conn, checkfirst=True)
             except Exception:
                 pass  # table/index already exists — safe to ignore
-        # Run raw PRAGMA to ensure indexes exist using IF NOT EXISTS
+        # Ensure indexes exist using IF NOT EXISTS
         for stmt in [
             "CREATE INDEX IF NOT EXISTS ix_users_email ON users (email)",
             "CREATE INDEX IF NOT EXISTS ix_users_phone ON users (phone)",
