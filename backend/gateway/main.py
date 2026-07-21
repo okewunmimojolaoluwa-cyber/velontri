@@ -402,7 +402,21 @@ async def _auto_seed_admin(db_file: str) -> None:
                 "SELECT id FROM users WHERE email = ?", [email]
             )
             if rows:
-                _log.info(f"auto_seed: admin already exists id={rows[0]['id']}")
+                uid = rows[0]["id"]
+                # Always refresh password hash + unlock — fixes stale hashes from old seeds
+                await db.execute(
+                    "UPDATE users SET password_hash=?, is_active=1, is_locked=0, "
+                    "failed_attempts=0, phone_verified=1 WHERE id=?",
+                    [pw_hash_str, uid],
+                )
+                role_id = str(_uuid.uuid4())
+                await db.execute(
+                    "INSERT OR IGNORE INTO user_roles (id, user_id, role, granted_at) "
+                    "VALUES (?,?,'enterprise_admin',datetime('now'))",
+                    [role_id, uid],
+                )
+                await db.commit()
+                _log.info(f"auto_seed: admin password refreshed id={uid} email={email}")
                 return
 
             uid     = str(_uuid.uuid4())
@@ -684,10 +698,23 @@ def create_app() -> FastAPI:
                 )
                 if rows:
                     uid = rows[0]["id"]
-                    _log.info(f"seed_admin: already exists id={uid}")
+                    # Force-refresh password hash — fixes any stale/corrupt hash
+                    await db.execute(
+                        "UPDATE users SET password_hash=?, is_active=1, is_locked=0, "
+                        "failed_attempts=0, phone_verified=1 WHERE id=?",
+                        [pw_hash_str, uid],
+                    )
+                    role_id = str(_uuid.uuid4())
+                    await db.execute(
+                        "INSERT OR IGNORE INTO user_roles (id, user_id, role, granted_at) "
+                        "VALUES (?,?,'enterprise_admin',datetime('now'))",
+                        [role_id, uid],
+                    )
+                    await db.commit()
+                    _log.info(f"seed_admin: password refreshed id={uid}")
                     return JSONResponse({
-                        "status": "already_exists",
-                        "message": f"Admin {email} already exists. You can log in.",
+                        "status": "refreshed",
+                        "message": f"✅ Admin password reset. You can now log in.",
                         "credentials": {"email": email, "password": password},
                     })
 
