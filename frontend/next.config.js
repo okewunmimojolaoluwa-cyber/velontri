@@ -2,10 +2,14 @@
 const nextConfig = {
   reactStrictMode: false,
 
-  // Skip static generation for all pages — pure client-side app
-  // This eliminates all SSR/client hydration mismatches
   typescript: {
     ignoreBuildErrors: false,
+  },
+
+  // Public API URL — set NEXT_PUBLIC_API_URL in your hosting env vars
+  // Falls back to production Render URL
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://velontri.onrender.com/api/v1',
   },
 
   images: {
@@ -30,7 +34,6 @@ const nextConfig = {
     serverComponentsExternalPackages: [],
   },
 
-  // Disable x-powered-by header
   poweredByHeader: false,
 };
 

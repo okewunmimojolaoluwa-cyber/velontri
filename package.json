@@ -20,11 +20,13 @@
 
     "dev:frontend": "npm --prefix frontend run dev",
 
-    "start": "npm --prefix backend run start",
+    "start": "npm --prefix frontend run start",
 
     "stop": "npm --prefix backend run stop",
 
-    "build": "npm --prefix backend run build",
+    "build": "npm --prefix frontend run build",
+
+    "install": "npm --prefix frontend install",
 
     "test": "npm --prefix backend run test",
 
@@ -51,38 +53,6 @@
   "devDependencies": {
 
     "concurrently": "^8.2.2"
-
-  },
-
-  "dependencies": {
-
-    "@next/swc-win32-x64-msvc": "^16.2.9",
-
-    "@radix-ui/react-avatar": "^1.2.0",
-
-    "@radix-ui/react-dialog": "^1.1.17",
-
-    "@radix-ui/react-dropdown-menu": "^2.1.18",
-
-    "@radix-ui/react-select": "^2.3.1",
-
-    "@radix-ui/react-tabs": "^1.1.15",
-
-    "@tanstack/react-query": "^5.101.1",
-
-    "class-variance-authority": "^0.7.1",
-
-    "cmdk": "^1.1.1",
-
-    "date-fns": "^4.4.0",
-
-    "lucide-react": "^1.21.0",
-
-    "react-hook-form": "^7.80.0",
-
-    "recharts": "^3.9.0",
-
-    "zustand": "^5.0.14"
 
   }
 
