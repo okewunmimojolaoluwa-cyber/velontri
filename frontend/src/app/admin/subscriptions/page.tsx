@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/empty-state';
 import { useAuth } from '@/features/auth/auth-provider';
@@ -149,6 +150,7 @@ export default function AdminSubscriptionsPage() {
           />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {tiers.map((tier: SubscriptionTier) => (
               <div
                 key={tier.id}
                 className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700"

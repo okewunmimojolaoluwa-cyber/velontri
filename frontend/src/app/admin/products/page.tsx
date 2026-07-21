@@ -17,10 +17,10 @@ export default function AdminProductsPage() {
 
   const listings = data?.data ?? [];
 
-  return <ListingsPage title="Products" icon={<Package className="h-6 w-6 text-indigo-600" />} listings={listings} isLoading={isLoading} search={search} setSearch={setSearch} onSearch={() => setCommitted(search)} />;
+  return <AdminListingsTable title="Products" icon={<Package className="h-6 w-6 text-indigo-600" />} listings={listings} isLoading={isLoading} search={search} setSearch={setSearch} onSearch={() => setCommitted(search)} />;
 }
 
-export function ListingsPage({ title, icon, listings, isLoading, search, setSearch, onSearch }: any) {
+export function AdminListingsTable({ title, icon, listings, isLoading, search, setSearch, onSearch }: any) {
   return (
     
       <div className="space-y-6">
@@ -89,3 +89,6 @@ export function ListingsPage({ title, icon, listings, isLoading, search, setSear
 }
 
 interface Listing { id: string; title: string; seller_name: string; price: number; currency: string; image_url?: string; status: string; created_at: string; }
+
+// Alias for backwards compatibility with pages that import ListingsPage
+export { AdminListingsTable as ListingsPage };

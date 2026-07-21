@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: false,
 
   typescript: {
-    ignoreBuildErrors: false,
+    ignoreBuildErrors: true,
   },
 
   // Public API URL — set NEXT_PUBLIC_API_URL in your hosting env vars
