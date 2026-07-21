@@ -338,6 +338,96 @@ def _apply_sqlite_migrations(conn) -> None:  # type: ignore[type-arg]
     conn.connection.commit()
 
 
+async def _auto_seed_admin(db_file: str) -> None:
+    """
+    Idempotently create the super-admin account on every startup.
+    Uses aiosqlite directly so it works even before the ORM session factory
+    is fully initialised.  Safe to call on every restart — skips if exists.
+    """
+    import asyncio
+    import functools
+    import logging
+    import uuid as _uuid
+
+    _log = logging.getLogger("velontri.seed")
+
+    try:
+        import bcrypt
+        import aiosqlite
+
+        email    = "owner@velontri.com"
+        phone    = "+2348000000000"
+        password = "Owner123!"
+        name     = "Velontri Owner"
+
+        loop = asyncio.get_event_loop()
+        salt = bcrypt.gensalt()
+        pw_hash = await loop.run_in_executor(
+            None, functools.partial(bcrypt.hashpw, password.encode(), salt)
+        )
+        pw_hash_str = pw_hash.decode()
+
+        async with aiosqlite.connect(db_file) as db:
+            db.row_factory = aiosqlite.Row
+
+            # Ensure tables exist
+            await db.executescript("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id TEXT PRIMARY KEY,
+                    email TEXT UNIQUE NOT NULL,
+                    phone TEXT,
+                    phone_verified INTEGER DEFAULT 1,
+                    password_hash TEXT,
+                    full_name TEXT,
+                    country_code TEXT DEFAULT 'NG',
+                    is_active INTEGER DEFAULT 1,
+                    is_locked INTEGER DEFAULT 0,
+                    failed_attempts INTEGER DEFAULT 0,
+                    created_at TEXT DEFAULT (datetime('now'))
+                );
+                CREATE TABLE IF NOT EXISTS user_roles (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    role TEXT NOT NULL,
+                    scope_id TEXT,
+                    granted_at TEXT DEFAULT (datetime('now'))
+                );
+                CREATE INDEX IF NOT EXISTS ix_user_roles_user_id ON user_roles(user_id);
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_user_roles_user_role ON user_roles(user_id, role);
+            """)
+            await db.commit()
+
+            # Check if admin already exists
+            rows = await db.execute_fetchall(
+                "SELECT id FROM users WHERE email = ?", [email]
+            )
+            if rows:
+                _log.info(f"auto_seed: admin already exists id={rows[0]['id']}")
+                return
+
+            uid     = str(_uuid.uuid4())
+            role_id = str(_uuid.uuid4())
+
+            await db.execute(
+                """INSERT INTO users
+                   (id, email, phone, phone_verified, password_hash, full_name,
+                    country_code, is_active, is_locked, failed_attempts, created_at)
+                   VALUES (?,?,?,1,?,?,'NG',1,0,0,datetime('now'))""",
+                [uid, email, phone, pw_hash_str, name],
+            )
+            await db.execute(
+                "INSERT OR IGNORE INTO user_roles (id, user_id, role, granted_at) "
+                "VALUES (?,?,'enterprise_admin',datetime('now'))",
+                [role_id, uid],
+            )
+            await db.commit()
+            _log.info(f"auto_seed: admin created id={uid} email={email}")
+
+    except Exception as exc:
+        import logging as _logging
+        _logging.getLogger("velontri.seed").warning(f"auto_seed_failed: {exc}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
     configure_logging("velontri-gateway", "1.0.0", "development", "INFO")
@@ -381,6 +471,9 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
     async with engine.begin() as conn:
         await conn.run_sync(_safe_create_all)
         await conn.run_sync(_apply_sqlite_migrations)
+
+    # Auto-seed admin account on every startup (idempotent — skips if exists)
+    await _auto_seed_admin(_db_file)
 
     app.state.engine = engine
     app.state.session_factory = async_sessionmaker(
