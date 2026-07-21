@@ -1,0 +1,6 @@
+{
+  "install": "cd frontend && npm install",
+  "build": "cd frontend && npm run build",
+  "start": "cd frontend && npm start",
+  "port": 3000
+}
