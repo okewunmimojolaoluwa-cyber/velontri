@@ -509,6 +509,22 @@ def create_app() -> FastAPI:
     for router, tag in _collect_routers():
         app.include_router(router, prefix="/api/v1")
 
+    @app.get("/", include_in_schema=False)
+    async def root():
+        """Friendly landing page for the Velontri API."""
+        return JSONResponse({
+            "service": "Velontri Commerce Platform API",
+            "status": "live 🚀",
+            "version": "1.0.0",
+            "endpoints": {
+                "api": "/api/v1",
+                "docs": "/docs",
+                "health": "/health",
+                "redoc": "/redoc",
+            },
+            "description": "Africa's marketplace — 14 microservices, one port.",
+        })
+
     @app.get("/api/v1", tags=["Gateway"], summary="API base — single URL for all services")
     async def api_root():
         return {
@@ -516,7 +532,6 @@ def create_app() -> FastAPI:
             "version": "1.0.0",
             "base_url": "/api/v1",
             "docs": "/docs",
-            "websocket": "/api/v1/ws/chat",
             "services": [
                 "auth", "users", "listings", "search", "ai", "chat",
                 "payments", "wallet", "inventory", "logistics",
@@ -530,8 +545,8 @@ def create_app() -> FastAPI:
             "service": "velontri-gateway",
             "version": "1.0.0",
             "status": "ok",
-            "base_url": "http://localhost:8000/api/v1",
-            "docs": "http://localhost:8000/docs",
+            "base_url": "/api/v1",
+            "docs": "/docs",
         })
 
     app.add_route("/metrics", metrics_endpoint, methods=["GET"])
