@@ -314,6 +314,27 @@ def _apply_sqlite_migrations(conn) -> None:  # type: ignore[type-arg]
     except Exception:
         pass
 
+    # ── Create subscriptions table for the subscription service ──────────
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS subscriptions (
+                id                  TEXT PRIMARY KEY,
+                user_id             TEXT NOT NULL UNIQUE,
+                tier                TEXT NOT NULL DEFAULT 'starter',
+                is_active           INTEGER NOT NULL DEFAULT 1,
+                pending_downgrade_tier TEXT,
+                current_period_start TEXT,
+                current_period_end   TEXT,
+                created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+        """)
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS ix_subscriptions_user ON subscriptions(user_id)"
+        )
+    except Exception:
+        pass
+
     conn.connection.commit()
 
 
@@ -419,10 +440,12 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
     import asyncio as _asyncio
 
     async def _expiry_loop():
-        import importlib
+        # Wait 30 seconds after startup to let all tables get created
+        await _asyncio.sleep(30)
         _run_expiry = None
         while True:
             try:
+                import importlib
                 if _run_expiry is None:
                     mod = importlib.import_module(
                         "_svc_subscription_service.app.routers.subscriptions"
