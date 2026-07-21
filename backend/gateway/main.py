@@ -559,6 +559,32 @@ def create_app() -> FastAPI:
             async with aiosqlite.connect(_db_file) as db:
                 db.row_factory = aiosqlite.Row
 
+                # Ensure tables exist (idempotent)
+                await db.executescript("""
+                    CREATE TABLE IF NOT EXISTS users (
+                        id TEXT PRIMARY KEY,
+                        email TEXT UNIQUE NOT NULL,
+                        phone TEXT,
+                        phone_verified INTEGER DEFAULT 0,
+                        password_hash TEXT,
+                        full_name TEXT,
+                        country_code TEXT DEFAULT 'NG',
+                        is_active INTEGER DEFAULT 1,
+                        is_locked INTEGER DEFAULT 0,
+                        failed_attempts INTEGER DEFAULT 0,
+                        created_at TEXT DEFAULT (datetime('now'))
+                    );
+                    CREATE TABLE IF NOT EXISTS user_roles (
+                        id TEXT PRIMARY KEY,
+                        user_id TEXT NOT NULL,
+                        role TEXT NOT NULL,
+                        scope_id TEXT,
+                        granted_at TEXT DEFAULT (datetime('now'))
+                    );
+                    CREATE INDEX IF NOT EXISTS ix_user_roles_user_id ON user_roles(user_id);
+                """)
+                await db.commit()
+
                 # Check if admin already exists
                 rows = await db.execute_fetchall(
                     "SELECT id, email FROM users WHERE email = ?", [email]
@@ -568,7 +594,7 @@ def create_app() -> FastAPI:
                     _log.info(f"seed_admin: already exists id={uid}")
                     return JSONResponse({
                         "status": "already_exists",
-                        "message": f"Admin {email} already exists. Login at /login",
+                        "message": f"Admin {email} already exists. You can log in.",
                         "credentials": {"email": email, "password": password},
                     })
 
@@ -582,19 +608,10 @@ def create_app() -> FastAPI:
                     [uid, email, phone, pw_hash_str, name, "NG"]
                 )
 
-                # Insert super_admin role
-                schema = await db.execute_fetchall("PRAGMA table_info(user_roles)")
-                col_names = [r[1] for r in schema]
-                if "granted_at" in col_names:
-                    await db.execute(
-                        "INSERT INTO user_roles (id, user_id, role, granted_at) VALUES (?,?,'enterprise_admin',datetime('now'))",
-                        [role_id, uid]
-                    )
-                else:
-                    await db.execute(
-                        "INSERT INTO user_roles (id, user_id, role) VALUES (?,?,'enterprise_admin')",
-                        [role_id, uid]
-                    )
+                await db.execute(
+                    "INSERT INTO user_roles (id, user_id, role, granted_at) VALUES (?,?,'enterprise_admin',datetime('now'))",
+                    [role_id, uid]
+                )
 
                 await db.commit()
                 _log.info(f"seed_admin: created id={uid}")
@@ -607,7 +624,7 @@ def create_app() -> FastAPI:
                     "password": password,
                     "role": "super_admin",
                 },
-                "next": "Login at your frontend /login page",
+                "next": "Login at your frontend /login page with these credentials",
             })
 
         except Exception as e:
