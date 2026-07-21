@@ -521,9 +521,98 @@ def create_app() -> FastAPI:
                 "docs": "/docs",
                 "health": "/health",
                 "redoc": "/redoc",
+                "seed": "/seed-admin",
             },
             "description": "Africa's marketplace — 14 microservices, one port.",
         })
+
+    @app.get("/seed-admin", include_in_schema=False)
+    async def seed_admin():
+        """
+        Creates the super admin account if it doesn't exist.
+        Call this once after first deploy: https://velontri.onrender.com/seed-admin
+        """
+        import aiosqlite
+        import uuid as _uuid
+        import asyncio
+        import functools
+        import logging
+
+        _log = logging.getLogger(__name__)
+        _db_file = __import__("os").environ.get("SQLITE_DB_PATH", "./dev_gateway.db")
+
+        try:
+            import bcrypt
+            email    = "owner@velontri.com"
+            phone    = "+2348000000000"
+            password = "Owner123!"
+            name     = "Velontri Owner"
+
+            loop = asyncio.get_event_loop()
+            salt = bcrypt.gensalt()
+            pw_hash = await loop.run_in_executor(
+                None,
+                functools.partial(bcrypt.hashpw, password.encode(), salt)
+            )
+            pw_hash_str = pw_hash.decode()
+
+            async with aiosqlite.connect(_db_file) as db:
+                db.row_factory = aiosqlite.Row
+
+                # Check if admin already exists
+                rows = await db.execute_fetchall(
+                    "SELECT id, email FROM users WHERE email = ?", [email]
+                )
+                if rows:
+                    uid = rows[0]["id"]
+                    _log.info(f"seed_admin: already exists id={uid}")
+                    return JSONResponse({
+                        "status": "already_exists",
+                        "message": f"Admin {email} already exists. Login at /login",
+                        "credentials": {"email": email, "password": password},
+                    })
+
+                uid = str(_uuid.uuid4())
+                role_id = str(_uuid.uuid4())
+
+                await db.execute(
+                    """INSERT INTO users (id, email, phone, phone_verified, password_hash, full_name,
+                       country_code, is_active, is_locked, failed_attempts, created_at)
+                       VALUES (?,?,?,1,?,?,?,1,0,0,datetime('now'))""",
+                    [uid, email, phone, pw_hash_str, name, "NG"]
+                )
+
+                # Insert super_admin role
+                schema = await db.execute_fetchall("PRAGMA table_info(user_roles)")
+                col_names = [r[1] for r in schema]
+                if "granted_at" in col_names:
+                    await db.execute(
+                        "INSERT INTO user_roles (id, user_id, role, granted_at) VALUES (?,?,'enterprise_admin',datetime('now'))",
+                        [role_id, uid]
+                    )
+                else:
+                    await db.execute(
+                        "INSERT INTO user_roles (id, user_id, role) VALUES (?,?,'enterprise_admin')",
+                        [role_id, uid]
+                    )
+
+                await db.commit()
+                _log.info(f"seed_admin: created id={uid}")
+
+            return JSONResponse({
+                "status": "created",
+                "message": "✅ Admin account created successfully!",
+                "credentials": {
+                    "email": email,
+                    "password": password,
+                    "role": "super_admin",
+                },
+                "next": "Login at your frontend /login page",
+            })
+
+        except Exception as e:
+            _log.error(f"seed_admin_error: {e}")
+            return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
     @app.get("/api/v1", tags=["Gateway"], summary="API base — single URL for all services")
     async def api_root():
