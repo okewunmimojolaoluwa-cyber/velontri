@@ -82,8 +82,9 @@ def configure_middleware(
         if env_origins:
             origins = [o.strip() for o in env_origins.split(",") if o.strip()]
         else:
-            # Development defaults — all common localhost ports
+            # Default origins — localhost for dev + all known production frontends
             origins = [
+                # Local development
                 "http://localhost",
                 "http://localhost:3000",
                 "http://localhost:3001",
@@ -94,6 +95,11 @@ def configure_middleware(
                 "http://127.0.0.1:3000",
                 "http://127.0.0.1:5173",
                 "http://127.0.0.1:8080",
+                # Production frontends — always allowed
+                "https://velontri.pxxl.run",
+                "https://www.velontri.pxxl.run",
+                "https://velontri.com",
+                "https://www.velontri.com",
             ]
 
     # Use allow_credentials=True with explicit origins (never with wildcard)
@@ -102,7 +108,7 @@ def configure_middleware(
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
-        allow_origin_regex=r"https?://.*\.velontri\.com",
+        allow_origin_regex=r"https?://.*\.(velontri\.com|pxxl\.run)",
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type", "X-Request-ID", "Accept", "Origin"],

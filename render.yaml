@@ -37,7 +37,7 @@ services:
 
       # ── CORS — set to your actual frontend URL ───────────────────────────
       - key: ALLOWED_ORIGINS
-        value: "https://velontri.vercel.app,https://velontri.com,http://localhost:3000"
+        value: "https://velontri.pxxl.run,https://velontri.com,https://www.velontri.com,http://localhost:3000,http://localhost:3001"
 
       # ── JWT keys (generate once, store as Render secrets) ────────────────
       # Generate with: python -c "from cryptography.hazmat.primitives.asymmetric import rsa; from cryptography.hazmat.primitives import serialization; k=rsa.generate_private_key(65537,2048); print(k.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.TraditionalOpenSSL,serialization.NoEncryption()).decode())"
@@ -47,25 +47,24 @@ services:
         sync: false
 
       # ── TOTP / 2FA encryption key ────────────────────────────────────────
-      # Generate: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
       - key: TOTP_ENCRYPTION_KEY
-        sync: false
+        value: "40T5Idu3oVZchRBW_X8fgLFOCKSgCGF-TTQUFGe_h5k="
 
       # ── Gmail SMTP (for OTP emails) ──────────────────────────────────────
       - key: GMAIL_USER
-        sync: false
+        value: "okewunmimojolaoluwa@gmail.com"
       - key: GMAIL_APP_PASSWORD
-        sync: false
+        value: "scivvkgnkqmgqedt"
 
       # ── Paystack ─────────────────────────────────────────────────────────
       - key: PAYSTACK_SECRET_KEY
-        sync: false
+        value: "sk_test_6e95414fb6f09d82cfb5278291fbf93916563113"
       - key: PAYSTACK_WEBHOOK_URL
         sync: false
 
-      # ── Google OAuth (optional) ──────────────────────────────────────────
+      # ── Google OAuth ─────────────────────────────────────────────────────
       - key: GOOGLE_CLIENT_ID
-        sync: false
+        value: "99339393476-c77uoti2pa2thldagm4fkrmslhg1ggnr.apps.googleusercontent.com"
       - key: GOOGLE_CLIENT_SECRET
         sync: false
 

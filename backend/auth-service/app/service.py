@@ -142,20 +142,18 @@ class AuthService:
         )
 
         # Send OTP via EMAIL (primary)
-        # If email sending fails, we still return the user_id so the frontend
-        # can redirect to the verify page and let the user request a resend.
+        # Email failure is NON-FATAL — user is still created and can request
+        # a resend from the verify-phone page.
         try:
             await self._send_email_otp(email=email, full_name=full_name, otp=otp)
-        except ExternalServiceError as exc:
-            logger.error(
+        except Exception as exc:
+            logger.warning(
                 "email_otp_send_failed_at_registration",
                 user_id=str(user.id),
                 email=email,
                 error=str(exc),
             )
-            # Re-raise so the API returns a clear 503 — user was NOT yet
-            # activated so they can retry registration or use resend-otp.
-            raise
+            # Don't re-raise — registration succeeds even if email is unavailable.
 
         # Publish event for User Service to create the profile record
         await publish_event(
