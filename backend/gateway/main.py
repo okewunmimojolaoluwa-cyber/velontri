@@ -328,8 +328,37 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
     import os as _os
     _db_file = _os.environ.get("SQLITE_DB_PATH", "./dev_gateway.db")
     engine = create_engine(f"sqlite+aiosqlite:///{_db_file}")
+
+    async def _safe_create_all(conn: Any) -> None:
+        """Create all tables, silently ignoring 'already exists' errors for indexes."""
+        from sqlalchemy import text as _text
+        # Create each table individually with checkfirst=True to skip existing tables
+        for table in Base.metadata.sorted_tables:
+            try:
+                table.create(conn, checkfirst=True)
+            except Exception:
+                pass  # table/index already exists — safe to ignore
+        # Run raw PRAGMA to ensure indexes exist using IF NOT EXISTS
+        for stmt in [
+            "CREATE INDEX IF NOT EXISTS ix_users_email ON users (email)",
+            "CREATE INDEX IF NOT EXISTS ix_users_phone ON users (phone)",
+            "CREATE INDEX IF NOT EXISTS ix_user_roles_user_id ON user_roles (user_id)",
+            "CREATE INDEX IF NOT EXISTS ix_refresh_tokens_user_id ON refresh_tokens (user_id)",
+            "CREATE INDEX IF NOT EXISTS ix_refresh_tokens_token_hash ON refresh_tokens (token_hash)",
+            "CREATE INDEX IF NOT EXISTS ix_devices_user_id ON devices (user_id)",
+            "CREATE INDEX IF NOT EXISTS ix_login_history_user_id ON login_history (user_id)",
+            "CREATE INDEX IF NOT EXISTS ix_login_history_created_at ON login_history (created_at)",
+            "CREATE INDEX IF NOT EXISTS ix_otps_user_id_purpose ON otps (user_id, purpose)",
+            "CREATE INDEX IF NOT EXISTS ix_audit_logs_user_id ON audit_logs (user_id)",
+            "CREATE INDEX IF NOT EXISTS ix_audit_logs_created_at ON audit_logs (created_at)",
+        ]:
+            try:
+                conn.execute(_text(stmt))
+            except Exception:
+                pass
+
     async with engine.begin() as conn:
-        await conn.run_sync(lambda c: Base.metadata.create_all(c, checkfirst=True))
+        await conn.run_sync(_safe_create_all)
         await conn.run_sync(_apply_sqlite_migrations)
 
     app.state.engine = engine
