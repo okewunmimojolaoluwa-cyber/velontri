@@ -350,7 +350,8 @@ def _apply_sqlite_migrations(conn) -> None:  # type: ignore[type-arg]
     conn.connection.commit()
 
 
-async def _auto_seed_admin(db_file: str) -> None:    """
+async def _auto_seed_admin(db_file: str) -> None:
+    """
     Idempotently create the super-admin account on every startup.
     Uses aiosqlite directly so it works even before the ORM session factory
     is fully initialised.  Safe to call on every restart — skips if exists.
