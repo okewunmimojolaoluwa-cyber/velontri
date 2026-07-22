@@ -465,6 +465,7 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
     import os as _os
     # Use the module-level canonical DB path — computed from __file__, not cwd
     _db_file = _CANONICAL_DB
+    logger.info(f"db_path_resolved: {_db_file}")
     engine = create_engine(f"sqlite+aiosqlite:///{_db_file}")
 
     def _safe_create_all(conn: Any) -> None:
