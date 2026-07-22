@@ -670,13 +670,19 @@ def create_app() -> FastAPI:
                 try:
                     from sqlalchemy import text as _text
                     sf = app.state.session_factory
+                    # Get the actual DB URL the engine is connected to
+                    engine_url = str(app.state.engine.url)
                     async with sf() as sess:
                         r = await sess.execute(
                             _text("SELECT id, email, password_hash, is_active FROM users WHERE lower(email)='owner@velontri.com'")
                         )
                         r2 = r.fetchone()
+                        # Also count total users in ORM DB
+                        cnt = (await sess.execute(_text("SELECT COUNT(*) FROM users"))).scalar()
                         orm_result = {
+                            "engine_url": engine_url,
                             "found": r2 is not None,
+                            "total_users_in_orm_db": cnt,
                             "is_active": bool(r2[3]) if r2 else None,
                             "hash_prefix": str(r2[2])[:7] if r2 else None,
                         }
