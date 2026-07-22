@@ -224,6 +224,31 @@ class AuthService:
         await repo.mark_otp_used(self.session, otp_record.id)
         await repo.activate_user(self.session, user_id)
 
+        # Auto-assign Free subscription on account activation
+        try:
+            from shared.db_path import get_db_path as _get_db_path
+            import aiosqlite as _aiosqlite
+            import uuid as _uuid_mod
+            _db = _get_db_path()
+            async with _aiosqlite.connect(str(_db)) as _db_conn:
+                await _db_conn.execute("""
+                    CREATE TABLE IF NOT EXISTS subscriptions (
+                        id TEXT PRIMARY KEY, user_id TEXT NOT NULL UNIQUE,
+                        tier TEXT NOT NULL DEFAULT 'starter', is_active INTEGER NOT NULL DEFAULT 1,
+                        pending_downgrade_tier TEXT, current_period_start TEXT,
+                        current_period_end TEXT,
+                        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    )
+                """)
+                await _db_conn.execute(
+                    "INSERT OR IGNORE INTO subscriptions (id, user_id, tier, is_active) VALUES (?,?,?,1)",
+                    [str(_uuid_mod.uuid4()), str(user_id), "starter"],
+                )
+                await _db_conn.commit()
+        except Exception as _sub_err:
+            logger.warning("auto_subscription_failed", user_id=str(user_id), error=str(_sub_err))
+
         # Publish phone verified event → User Service awards Bronze badge
         await publish_event(
             self.channel,

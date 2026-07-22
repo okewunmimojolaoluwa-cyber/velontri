@@ -357,9 +357,8 @@ async def paystack_verify(
     # Record payment in sub_payments table for admin reporting
     try:
         import aiosqlite as _aio
-        from pathlib import Path as _P2
         from datetime import datetime as _dt, timezone as _tz
-        _db = _P2(__file__).resolve().parents[3] / "dev_gateway.db"
+        _db = __import__("shared.db_path", fromlist=["get_db_path"]).get_db_path()
         _amount = PLAN_PRICES_KOBO.get(plan_id, 0) // 100  # convert kobo → NGN
         async with _aio.connect(str(_db)) as _db_conn:
             await _db_conn.execute("""
