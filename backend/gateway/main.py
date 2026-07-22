@@ -635,7 +635,7 @@ def create_app() -> FastAPI:
 
     @app.get("/debug-admin", include_in_schema=False)
     async def debug_admin():
-        """Temporary debug endpoint — shows admin row state."""
+        """Temporary debug endpoint — shows admin row state and tests login path."""
         import aiosqlite, os as _os, bcrypt as _bcrypt, asyncio, functools
         _db_file = _os.environ.get("SQLITE_DB_PATH", "./dev_gateway.db")
         try:
@@ -665,10 +665,29 @@ def create_app() -> FastAPI:
                     )
                     row["bcrypt_verify"] = match
 
+                # Test ORM path
+                orm_result = "untested"
+                try:
+                    from sqlalchemy import text as _text
+                    sf = app.state.session_factory
+                    async with sf() as sess:
+                        r = await sess.execute(
+                            _text("SELECT id, email, password_hash, is_active FROM users WHERE lower(email)='owner@velontri.com'")
+                        )
+                        r2 = r.fetchone()
+                        orm_result = {
+                            "found": r2 is not None,
+                            "is_active": bool(r2[3]) if r2 else None,
+                            "hash_prefix": str(r2[2])[:7] if r2 else None,
+                        }
+                except Exception as orm_e:
+                    orm_result = f"error: {orm_e}"
+
                 return JSONResponse({
                     "db_file": _db_file,
                     "admin_row": row,
                     "roles": [dict(r) for r in roles],
+                    "orm_direct_sql": orm_result,
                 })
         except Exception as e:
             return JSONResponse({"error": str(e), "db_file": _db_file})
