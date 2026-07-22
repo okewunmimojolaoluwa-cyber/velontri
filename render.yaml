@@ -75,3 +75,7 @@ services:
       # ── Python path ──────────────────────────────────────────────────────
       - key: PYTHONPATH
         value: "/opt/render/project/src/backend:/opt/render/project/src/backend/scripts"
+
+      # ── SQLite DB path — hardcoded so gateway engine and seed use same file
+      - key: SQLITE_DB_PATH
+        value: "/opt/render/project/src/backend/velontri.db"
