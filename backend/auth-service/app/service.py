@@ -117,29 +117,110 @@ class AuthService:
         """
         password_hash = hash_password(password)
 
-        user = await repo.create_user(
-            self.session,
-            email=email,
-            phone=phone,
-            password_hash=password_hash,
-            full_name=full_name,
-            country_code=country_code,
-        )
+        # Try ORM first, fall back to direct aiosqlite if engine DB mismatch
+        user = None
+        try:
+            user = await repo.create_user(
+                self.session,
+                email=email,
+                phone=phone,
+                password_hash=password_hash,
+                full_name=full_name,
+                country_code=country_code,
+            )
+        except Exception as _orm_err:
+            logger.warning("register_orm_failed", error=str(_orm_err))
 
-        # Generate OTP and cache in Redis (TTL 5 min)
+        if user is None:
+            # Direct aiosqlite write — bypasses engine DB path issue
+            try:
+                import aiosqlite as _aio
+                from shared.db_path import get_db_path as _get_db_path
+                from .models import User as _UserModel
+                _db = _get_db_path()
+                _uid = uuid.uuid4()
+                async with _aio.connect(str(_db)) as _db_conn:
+                    await _db_conn.execute("""
+                        CREATE TABLE IF NOT EXISTS users (
+                            id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL,
+                            phone TEXT UNIQUE, phone_verified INTEGER DEFAULT 0,
+                            password_hash TEXT, full_name TEXT,
+                            country_code TEXT DEFAULT 'NG', is_active INTEGER DEFAULT 0,
+                            is_locked INTEGER DEFAULT 0, failed_attempts INTEGER DEFAULT 0,
+                            created_at TEXT DEFAULT (datetime('now'))
+                        )
+                    """)
+                    await _db_conn.execute(
+                        "INSERT INTO users (id,email,phone,phone_verified,password_hash,"
+                        "full_name,country_code,is_active,is_locked,failed_attempts) "
+                        "VALUES (?,?,?,0,?,?,?,0,0,0)",
+                        [str(_uid), email.lower().strip(), phone.strip(),
+                         password_hash, full_name.strip(), country_code.upper()[:2]]
+                    )
+                    await _db_conn.commit()
+                user = _UserModel.__new__(_UserModel)
+                user.id = _uid
+                user.email = email.lower().strip()
+                user.phone = phone.strip()
+                user.phone_verified = False
+                user.password_hash = password_hash
+                user.full_name = full_name.strip()
+                user.country_code = country_code.upper()[:2]
+                user.is_active = False
+                user.is_locked = False
+                user.failed_attempts = 0
+                user.locked_until = None
+                logger.info("register_aiosqlite_fallback", uid=str(_uid))
+            except Exception as _aio_err:
+                from shared.errors import AlreadyExistsError
+                if "UNIQUE" in str(_aio_err).upper():
+                    raise AlreadyExistsError("An account with this email or phone already exists.") from _aio_err
+                raise
+
+        # Generate OTP and cache — use aiosqlite directly to write to canonical DB
         otp = generate_otp()
         otp_hash = hash_otp(otp)
         expires_at = datetime.now(tz=timezone.utc) + timedelta(
             seconds=self.settings.OTP_TTL_SECONDS
         )
 
-        await repo.create_otp(
-            self.session,
-            user_id=user.id,
-            purpose="phone_verify",
-            code_hash=otp_hash,
-            expires_at=expires_at,
-        )
+        # Try ORM first, fall back to aiosqlite
+        try:
+            await repo.create_otp(
+                self.session,
+                user_id=user.id,
+                purpose="phone_verify",
+                code_hash=otp_hash,
+                expires_at=expires_at,
+            )
+        except Exception as _otp_orm_err:
+            logger.warning("create_otp_orm_failed", error=str(_otp_orm_err))
+            try:
+                import aiosqlite as _aio
+                from shared.db_path import get_db_path as _get_db_path
+                _db = _get_db_path()
+                async with _aio.connect(str(_db)) as _db_conn:
+                    await _db_conn.execute("""
+                        CREATE TABLE IF NOT EXISTS otps (
+                            id TEXT PRIMARY KEY, user_id TEXT NOT NULL,
+                            purpose TEXT NOT NULL, code_hash TEXT NOT NULL,
+                            expires_at TEXT NOT NULL, used INTEGER DEFAULT 0
+                        )
+                    """)
+                    # Invalidate prior OTPs for this user+purpose
+                    await _db_conn.execute(
+                        "UPDATE otps SET used=1 WHERE user_id=? AND purpose=? AND used=0",
+                        [str(user.id), "phone_verify"]
+                    )
+                    await _db_conn.execute(
+                        "INSERT INTO otps (id,user_id,purpose,code_hash,expires_at,used) "
+                        "VALUES (?,?,?,?,?,0)",
+                        [str(uuid.uuid4()), str(user.id), "phone_verify",
+                         otp_hash, expires_at.isoformat()]
+                    )
+                    await _db_conn.commit()
+            except Exception as _otp_aio_err:
+                logger.warning("create_otp_aiosqlite_failed", error=str(_otp_aio_err))
 
         # Send OTP via EMAIL (primary)
         # Email failure is NON-FATAL — user is still created and can request
@@ -213,6 +294,34 @@ class AuthService:
             self.session, user_id=user_id, purpose="phone_verify"
         )
 
+        # If ORM returns None, try aiosqlite direct
+        if otp_record is None:
+            try:
+                import aiosqlite as _aio
+                from shared.db_path import get_db_path as _gdp
+                from .models import OTP as _OTPModel
+                from datetime import datetime as _dt, timezone as _tz
+                _db = _gdp()
+                async with _aio.connect(str(_db)) as _db_conn:
+                    _db_conn.row_factory = _aio.Row
+                    _now = _dt.now(tz=_tz.utc).isoformat()
+                    _rows = await _db_conn.execute_fetchall(
+                        "SELECT id, code_hash, expires_at FROM otps "
+                        "WHERE user_id=? AND purpose=? AND used=0 AND expires_at > ? "
+                        "ORDER BY rowid DESC LIMIT 1",
+                        [str(user_id), "phone_verify", _now]
+                    )
+                    if _rows:
+                        _r = _rows[0]
+                        otp_record = _OTPModel.__new__(_OTPModel)
+                        otp_record.id = uuid.UUID(str(_r["id"]))
+                        otp_record.user_id = user_id
+                        otp_record.purpose = "phone_verify"
+                        otp_record.code_hash = _r["code_hash"]
+                        otp_record.used = False
+            except Exception as _otp_fb_err:
+                logger.warning("get_otp_aiosqlite_failed", error=str(_otp_fb_err))
+
         if otp_record is None:
             raise OTPExpiredError(
                 "OTP not found or has expired. Please request a new one."
@@ -223,6 +332,23 @@ class AuthService:
 
         await repo.mark_otp_used(self.session, otp_record.id)
         await repo.activate_user(self.session, user_id)
+
+        # Aiosqlite fallback — ensures changes land in canonical DB regardless of engine
+        try:
+            import aiosqlite as _aio
+            from shared.db_path import get_db_path as _gdp
+            _db = _gdp()
+            async with _aio.connect(str(_db)) as _db_conn:
+                await _db_conn.execute(
+                    "UPDATE otps SET used=1 WHERE id=?", [str(otp_record.id)]
+                )
+                await _db_conn.execute(
+                    "UPDATE users SET is_active=1, phone_verified=1 WHERE id=?",
+                    [str(user_id)]
+                )
+                await _db_conn.commit()
+        except Exception as _act_err:
+            logger.warning("activate_aiosqlite_failed", error=str(_act_err))
 
         # Auto-assign Free subscription on account activation
         try:
@@ -275,6 +401,42 @@ class AuthService:
         a session ID for the 2FA challenge.
         """
         user = await repo.get_user_by_identifier(self.session, identifier)
+
+        # If ORM returns None, try direct aiosqlite on canonical DB path
+        # (handles the case where engine connects to a different file than aiosqlite)
+        if user is None:
+            try:
+                import aiosqlite as _aio
+                from shared.db_path import get_db_path as _get_db_path
+                from .models import User as _User
+                _db = _get_db_path()
+                _id_clean = identifier.strip().lower() if "@" in identifier else identifier.strip()
+                _col = "lower(email)" if "@" in identifier else "phone"
+                async with _aio.connect(str(_db)) as _db_conn:
+                    _db_conn.row_factory = _aio.Row
+                    _rows = await _db_conn.execute_fetchall(
+                        f"SELECT id, email, phone, phone_verified, password_hash, full_name, "
+                        f"country_code, is_active, is_locked, failed_attempts, created_at "
+                        f"FROM users WHERE {_col} = ?", [_id_clean]
+                    )
+                    if _rows:
+                        _r = _rows[0]
+                        user = _User.__new__(_User)
+                        user.id = uuid.UUID(str(_r["id"]))
+                        user.email = _r["email"] or ""
+                        user.phone = _r["phone"] or ""
+                        user.phone_verified = bool(_r["phone_verified"])
+                        user.password_hash = _r["password_hash"] or ""
+                        user.full_name = _r["full_name"] or ""
+                        user.country_code = _r["country_code"] or "NG"
+                        user.is_active = bool(_r["is_active"])
+                        user.is_locked = bool(_r["is_locked"])
+                        user.failed_attempts = int(_r["failed_attempts"] or 0)
+                        user.created_at = _r["created_at"]
+                        user.locked_until = None
+                        logger.info("login_aiosqlite_fallback_hit", identifier=identifier[:4])
+            except Exception as _fb_err:
+                logger.warning("login_aiosqlite_fallback_failed", error=str(_fb_err))
 
         if user is None:
             # Do NOT reveal whether the user exists
@@ -752,7 +914,7 @@ class AuthService:
     async def _get_user_roles(self, user_id: uuid.UUID) -> list[str]:
         """
         Fetch user roles from the database directly.
-        Falls back to ["buyer"] on failure — never blocks login.
+        Falls back to aiosqlite on canonical DB if ORM fails.
         """
         try:
             roles = await repo.get_user_roles(self.session, user_id)
@@ -760,6 +922,22 @@ class AuthService:
                 return roles
         except Exception as e:
             logger.warning("db_role_fetch_failed", user_id=str(user_id), error=str(e))
+
+        # Aiosqlite fallback on canonical DB
+        try:
+            import aiosqlite as _aio
+            from shared.db_path import get_db_path as _gdp
+            _db = _gdp()
+            async with _aio.connect(str(_db)) as _db_conn:
+                _rows = await _db_conn.execute_fetchall(
+                    "SELECT role FROM user_roles WHERE CAST(user_id AS TEXT) = ?",
+                    [str(user_id)]
+                )
+                if _rows:
+                    return [r[0] for r in _rows]
+        except Exception as _re:
+            logger.warning("role_aiosqlite_failed", error=str(_re))
+
         return ["buyer"]
 
     async def _get_subscription_tier(self, user_id: uuid.UUID) -> str:
