@@ -633,6 +633,46 @@ def create_app() -> FastAPI:
             "description": "Africa's marketplace — 14 microservices, one port.",
         })
 
+    @app.get("/debug-admin", include_in_schema=False)
+    async def debug_admin():
+        """Temporary debug endpoint — shows admin row state."""
+        import aiosqlite, os as _os, bcrypt as _bcrypt, asyncio, functools
+        _db_file = _os.environ.get("SQLITE_DB_PATH", "./dev_gateway.db")
+        try:
+            async with aiosqlite.connect(_db_file) as db:
+                db.row_factory = aiosqlite.Row
+                rows = await db.execute_fetchall(
+                    "SELECT id, email, is_active, is_locked, failed_attempts, "
+                    "length(password_hash) as hash_len, substr(password_hash,1,7) as hash_prefix "
+                    "FROM users WHERE email='owner@velontri.com'"
+                )
+                roles = await db.execute_fetchall(
+                    "SELECT role FROM user_roles WHERE user_id=("
+                    "SELECT id FROM users WHERE email='owner@velontri.com')"
+                )
+                row = dict(rows[0]) if rows else {}
+
+                # Test bcrypt verify
+                if rows:
+                    full_hash = (await db.execute_fetchall(
+                        "SELECT password_hash FROM users WHERE email='owner@velontri.com'"
+                    ))[0][0]
+                    loop = asyncio.get_event_loop()
+                    match = await loop.run_in_executor(
+                        None, functools.partial(
+                            _bcrypt.checkpw, b"Owner123!", full_hash.encode()
+                        )
+                    )
+                    row["bcrypt_verify"] = match
+
+                return JSONResponse({
+                    "db_file": _db_file,
+                    "admin_row": row,
+                    "roles": [dict(r) for r in roles],
+                })
+        except Exception as e:
+            return JSONResponse({"error": str(e), "db_file": _db_file})
+
     @app.get("/seed-admin", include_in_schema=False)
     async def seed_admin():
         """
