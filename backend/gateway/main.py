@@ -451,7 +451,16 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
     from sqlalchemy.ext.asyncio import async_sessionmaker
 
     import os as _os
-    _db_file = _os.environ.get("SQLITE_DB_PATH", "./dev_gateway.db")
+    # Resolve DB path: env var takes priority, then use absolute path relative
+    # to THIS file so it's the same regardless of working directory.
+    _env_db = _os.environ.get("SQLITE_DB_PATH", "").strip()
+    if _env_db:
+        _db_file = _env_db
+    else:
+        # Fallback: place DB next to the backend root (one level up from gateway/)
+        _db_file = str(ROOT / "velontri.db")
+    # Always export so all aiosqlite callers in the same process use the same path
+    _os.environ["SQLITE_DB_PATH"] = _db_file
     engine = create_engine(f"sqlite+aiosqlite:///{_db_file}")
 
     def _safe_create_all(conn: Any) -> None:
