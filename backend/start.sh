@@ -27,7 +27,7 @@ export PYTHONPATH="${PYTHONPATH:-}:${SRC_DIR}:${SRC_DIR}/scripts"
 echo "[startup] PYTHONPATH: $PYTHONPATH"
 echo "[startup] Starting Velontri API Gateway on port $PORT..."
 
-exec python -B -m uvicorn gateway.main:app \
+exec python -B -m uvicorn gateway.app:app \
     --host 0.0.0.0 \
     --port "$PORT" \
     --workers 1 \
