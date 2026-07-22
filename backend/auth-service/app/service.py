@@ -468,19 +468,25 @@ class AuthService:
                 max_attempts=self.settings.MAX_FAILED_ATTEMPTS,
                 lockout_ttl=self.settings.LOCKOUT_TTL_SECONDS,
             )
-            await repo.record_login_history(
-                self.session,
-                user_id=user.id,
-                device_fingerprint=device_fingerprint,
-                ip_address=ip_address,
-                success=False,
-            )
+            try:
+                await repo.record_login_history(
+                    self.session,
+                    user_id=user.id,
+                    device_fingerprint=device_fingerprint,
+                    ip_address=ip_address,
+                    success=False,
+                )
+            except Exception:
+                pass
 
             if count >= self.settings.MAX_FAILED_ATTEMPTS:
                 locked_until = datetime.now(tz=timezone.utc) + timedelta(
                     seconds=self.settings.LOCKOUT_TTL_SECONDS
                 )
-                await repo.lock_user(self.session, user.id, locked_until)
+                try:
+                    await repo.lock_user(self.session, user.id, locked_until)
+                except Exception:
+                    pass
                 # Notify user via email
                 await self._publish_lockout_notification(user)
 
@@ -489,29 +495,41 @@ class AuthService:
         # Successful credential check — clear failure counter
         await clear_failed_attempts(self.redis, str(user.id))
 
-        # Register/update device
-        device, is_new_device = await repo.get_or_create_device(
-            self.session,
-            user_id=user.id,
-            fingerprint=device_fingerprint,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
+        # Register/update device (non-fatal — don't block login if DB write fails)
+        device = None
+        is_new_device = False
+        try:
+            device, is_new_device = await repo.get_or_create_device(
+                self.session,
+                user_id=user.id,
+                fingerprint=device_fingerprint,
+                ip_address=ip_address,
+                user_agent=user_agent,
+            )
+        except Exception as _dev_err:
+            logger.warning("get_or_create_device_failed", error=str(_dev_err))
 
         if is_new_device:
             await self._publish_new_device_alert(user, ip_address)
 
-        # Record successful login
-        await repo.record_login_history(
-            self.session,
-            user_id=user.id,
-            device_fingerprint=device_fingerprint,
-            ip_address=ip_address,
-            success=True,
-        )
+        # Record successful login (non-fatal)
+        try:
+            await repo.record_login_history(
+                self.session,
+                user_id=user.id,
+                device_fingerprint=device_fingerprint,
+                ip_address=ip_address,
+                success=True,
+            )
+        except Exception as _hist_err:
+            logger.warning("record_login_history_failed", error=str(_hist_err))
 
-        # Check if 2FA is required
-        totp_record = await repo.get_totp_secret(self.session, user.id)
+        # Check if 2FA is required (non-fatal — skip 2FA if DB lookup fails)
+        totp_record = None
+        try:
+            totp_record = await repo.get_totp_secret(self.session, user.id)
+        except Exception:
+            pass
         if totp_record and totp_record.enabled:
             # Issue a short-lived 2FA session ID stored in Redis
             session_id = secrets.token_urlsafe(32)
@@ -897,13 +915,44 @@ class AuthService:
             seconds=REFRESH_TOKEN_TTL_SECONDS
         )
 
-        await repo.create_refresh_token(
-            self.session,
-            user_id=user.id,
-            token_hash=refresh_hash,
-            device_fingerprint=device_fingerprint,
-            expires_at=expires_at,
-        )
+        # Write refresh token — try ORM, fall back to aiosqlite
+        try:
+            await repo.create_refresh_token(
+                self.session,
+                user_id=user.id,
+                token_hash=refresh_hash,
+                device_fingerprint=device_fingerprint,
+                expires_at=expires_at,
+            )
+        except Exception as _rt_orm_err:
+            logger.warning("create_refresh_token_orm_failed", error=str(_rt_orm_err))
+            try:
+                import aiosqlite as _aio
+                from shared.db_path import get_db_path as _gdp
+                _db = _gdp()
+                async with _aio.connect(str(_db)) as _db_conn:
+                    await _db_conn.execute("""
+                        CREATE TABLE IF NOT EXISTS refresh_tokens (
+                            id TEXT PRIMARY KEY, user_id TEXT NOT NULL,
+                            token_hash TEXT UNIQUE NOT NULL,
+                            device_fingerprint TEXT, expires_at TEXT NOT NULL,
+                            revoked INTEGER DEFAULT 0,
+                            created_at TEXT DEFAULT (datetime('now'))
+                        )
+                    """)
+                    await _db_conn.execute(
+                        "CREATE INDEX IF NOT EXISTS ix_rt_hash ON refresh_tokens(token_hash)"
+                    )
+                    await _db_conn.execute(
+                        "INSERT OR IGNORE INTO refresh_tokens "
+                        "(id,user_id,token_hash,device_fingerprint,expires_at,revoked) "
+                        "VALUES (?,?,?,?,?,0)",
+                        [str(uuid.uuid4()), str(user.id), refresh_hash,
+                         device_fingerprint, expires_at.isoformat()]
+                    )
+                    await _db_conn.commit()
+            except Exception as _rt_aio_err:
+                logger.warning("create_refresh_token_aiosqlite_failed", error=str(_rt_aio_err))
 
         return TokenPair(
             access_token=access_token,
