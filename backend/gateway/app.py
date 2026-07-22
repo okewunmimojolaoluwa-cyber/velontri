@@ -653,11 +653,15 @@ def create_app() -> FastAPI:
             commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=str(ROOT)).decode().strip()[:8]
         except Exception:
             commit = "unknown"
+        engine_url = str(app.state.engine.url) if hasattr(app.state, "engine") else "not_set"
         return JSONResponse({
             "commit": commit,
+            "canonical_db": _CANONICAL_DB,
             "db_path_env": _os.environ.get("SQLITE_DB_PATH", "NOT_SET"),
+            "engine_url": engine_url,
             "root": str(ROOT),
             "cwd": _os.getcwd(),
+            "entry_file": __file__,
         })
 
     @app.get("/debug-admin", include_in_schema=False)
