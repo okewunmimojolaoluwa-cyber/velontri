@@ -24,6 +24,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
+# ── Fix DB path at import time — BEFORE any other module reads SQLITE_DB_PATH ──
+# This ensures the gateway engine and all aiosqlite callers use the same file.
+_env_db_now = os.environ.get("SQLITE_DB_PATH", "").strip()
+if not _env_db_now or _env_db_now == "./dev_gateway.db":
+    _canonical_db = str(ROOT / "velontri.db")
+    os.environ["SQLITE_DB_PATH"] = _canonical_db
+
 # Apply stubs before any service code runs
 from native_stubs import apply_patches  # noqa: E402
 apply_patches("gateway")
@@ -451,16 +458,11 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
     from sqlalchemy.ext.asyncio import async_sessionmaker
 
     import os as _os
-    # Resolve DB path: env var takes priority, then use absolute path relative
-    # to THIS file so it's the same regardless of working directory.
+    # SQLITE_DB_PATH is set at module import time (top of this file) to ROOT/velontri.db
+    # env var takes priority if explicitly set by the hosting platform
     _env_db = _os.environ.get("SQLITE_DB_PATH", "").strip()
-    if _env_db:
-        _db_file = _env_db
-    else:
-        # Fallback: place DB next to the backend root (one level up from gateway/)
-        _db_file = str(ROOT / "velontri.db")
-    # Always export so all aiosqlite callers in the same process use the same path
-    _os.environ["SQLITE_DB_PATH"] = _db_file
+    _db_file = _env_db if _env_db else str(ROOT / "velontri.db")
+    _os.environ["SQLITE_DB_PATH"] = _db_file  # ensure all aiosqlite callers use same path
     engine = create_engine(f"sqlite+aiosqlite:///{_db_file}")
 
     def _safe_create_all(conn: Any) -> None:
