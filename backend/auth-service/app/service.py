@@ -158,18 +158,20 @@ class AuthService:
                          password_hash, full_name.strip(), country_code.upper()[:2]]
                     )
                     await _db_conn.commit()
-                user = _UserModel.__new__(_UserModel)
-                user.id = _uid
-                user.email = email.lower().strip()
-                user.phone = phone.strip()
-                user.phone_verified = False
-                user.password_hash = password_hash
-                user.full_name = full_name.strip()
-                user.country_code = country_code.upper()[:2]
-                user.is_active = False
-                user.is_locked = False
-                user.failed_attempts = 0
-                user.locked_until = None
+                from types import SimpleNamespace as _NSR
+                user = _NSR(
+                    id=_uid,
+                    email=email.lower().strip(),
+                    phone=phone.strip(),
+                    phone_verified=False,
+                    password_hash=password_hash,
+                    full_name=full_name.strip(),
+                    country_code=country_code.upper()[:2],
+                    is_active=False,
+                    is_locked=False,
+                    failed_attempts=0,
+                    locked_until=None,
+                )
                 logger.info("register_aiosqlite_fallback", uid=str(_uid))
             except Exception as _aio_err:
                 from shared.errors import AlreadyExistsError
@@ -313,12 +315,14 @@ class AuthService:
                     )
                     if _rows:
                         _r = _rows[0]
-                        otp_record = _OTPModel.__new__(_OTPModel)
-                        otp_record.id = uuid.UUID(str(_r["id"]))
-                        otp_record.user_id = user_id
-                        otp_record.purpose = "phone_verify"
-                        otp_record.code_hash = _r["code_hash"]
-                        otp_record.used = False
+                        from types import SimpleNamespace as _NSOTP
+                        otp_record = _NSOTP(
+                            id=uuid.UUID(str(_r["id"])),
+                            user_id=user_id,
+                            purpose="phone_verify",
+                            code_hash=_r["code_hash"],
+                            used=False,
+                        )
             except Exception as _otp_fb_err:
                 logger.warning("get_otp_aiosqlite_failed", error=str(_otp_fb_err))
 
@@ -407,8 +411,8 @@ class AuthService:
         if user is None:
             try:
                 import aiosqlite as _aio
+                from types import SimpleNamespace as _NS
                 from shared.db_path import get_db_path as _get_db_path
-                from .models import User as _User
                 _db = _get_db_path()
                 _id_clean = identifier.strip().lower() if "@" in identifier else identifier.strip()
                 _col = "lower(email)" if "@" in identifier else "phone"
@@ -421,19 +425,21 @@ class AuthService:
                     )
                     if _rows:
                         _r = _rows[0]
-                        user = _User.__new__(_User)
-                        user.id = uuid.UUID(str(_r["id"]))
-                        user.email = _r["email"] or ""
-                        user.phone = _r["phone"] or ""
-                        user.phone_verified = bool(_r["phone_verified"])
-                        user.password_hash = _r["password_hash"] or ""
-                        user.full_name = _r["full_name"] or ""
-                        user.country_code = _r["country_code"] or "NG"
-                        user.is_active = bool(_r["is_active"])
-                        user.is_locked = bool(_r["is_locked"])
-                        user.failed_attempts = int(_r["failed_attempts"] or 0)
-                        user.created_at = _r["created_at"]
-                        user.locked_until = None
+                        # Use SimpleNamespace — no SQLAlchemy state needed for login checks
+                        user = _NS(
+                            id=uuid.UUID(str(_r["id"])),
+                            email=_r["email"] or "",
+                            phone=_r["phone"] or "",
+                            phone_verified=bool(_r["phone_verified"]),
+                            password_hash=_r["password_hash"] or "",
+                            full_name=_r["full_name"] or "",
+                            country_code=_r["country_code"] or "NG",
+                            is_active=bool(_r["is_active"]),
+                            is_locked=bool(_r["is_locked"]),
+                            failed_attempts=int(_r["failed_attempts"] or 0),
+                            created_at=_r["created_at"],
+                            locked_until=None,
+                        )
                         logger.info("login_aiosqlite_fallback_hit", identifier=identifier[:4])
             except Exception as _fb_err:
                 logger.warning("login_aiosqlite_fallback_failed", error=str(_fb_err))

@@ -554,6 +554,25 @@ async def _enforce_subscription_expiry(session_factory) -> None:
         async with aiosqlite.connect(str(db_path)) as db:
             db.row_factory = aiosqlite.Row
 
+            # Ensure subscriptions table exists — auto-migrate on first run
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS subscriptions (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL UNIQUE,
+                    tier TEXT NOT NULL DEFAULT 'starter',
+                    is_active INTEGER NOT NULL DEFAULT 1,
+                    pending_downgrade_tier TEXT,
+                    current_period_start TEXT,
+                    current_period_end TEXT,
+                    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+                )
+            """)
+            await db.execute(
+                "CREATE INDEX IF NOT EXISTS ix_subscriptions_user ON subscriptions(user_id)"
+            )
+            await db.commit()
+
             # Find subscriptions that have expired and are not already on 'starter'
             expired = await db.execute_fetchall(
                 """
