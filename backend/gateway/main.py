@@ -642,6 +642,20 @@ def create_app() -> FastAPI:
             "description": "Africa's marketplace — 14 microservices, one port.",
         })
 
+    @app.get("/version", include_in_schema=False)
+    async def version():
+        import subprocess, os as _os
+        try:
+            commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=str(ROOT)).decode().strip()[:8]
+        except Exception:
+            commit = "unknown"
+        return JSONResponse({
+            "commit": commit,
+            "db_path_env": _os.environ.get("SQLITE_DB_PATH", "NOT_SET"),
+            "root": str(ROOT),
+            "cwd": _os.getcwd(),
+        })
+
     @app.get("/debug-admin", include_in_schema=False)
     async def debug_admin():
         """Temporary debug endpoint — shows admin row state and tests login path."""
