@@ -67,25 +67,136 @@ async def create_user(
 
 
 async def get_user_by_id(session: AsyncSession, user_id: uuid.UUID) -> User | None:
-    # SQLite stores UUIDs as VARCHAR — compare as string for compatibility
-    result = await session.execute(
-        select(User).where(User.id == str(user_id))
-    )
-    return result.scalars().first()
+    """Look up user by ID. Falls back to raw SQL if ORM mapping fails."""
+    uid_str = str(user_id)
+    try:
+        result = await session.execute(
+            select(User).where(User.id == uid_str)
+        )
+        user = result.scalars().first()
+        if user is not None:
+            return user
+    except Exception as e:
+        logger.warning("get_user_by_id_orm_failed", error=str(e))
+
+    # Raw SQL fallback
+    try:
+        from sqlalchemy import text as _text
+        raw = await session.execute(
+            _text("SELECT id, email, phone, phone_verified, password_hash, full_name, "
+                  "country_code, is_active, is_locked, failed_attempts, created_at "
+                  "FROM users WHERE CAST(id AS TEXT) = :uid"),
+            {"uid": uid_str},
+        )
+        row = raw.fetchone()
+        if row is None:
+            return None
+        u = User.__new__(User)
+        u.id = uuid.UUID(str(row[0])) if row[0] else None
+        u.email = row[1] or ""
+        u.phone = row[2] or ""
+        u.phone_verified = bool(row[3])
+        u.password_hash = row[4] or ""
+        u.full_name = row[5] or ""
+        u.country_code = row[6] or "NG"
+        u.is_active = bool(row[7])
+        u.is_locked = bool(row[8])
+        u.failed_attempts = int(row[9] or 0)
+        u.created_at = row[10]
+        u.locked_until = None
+        return u
+    except Exception as e2:
+        logger.warning("get_user_by_id_raw_failed", error=str(e2))
+        return None
 
 
 async def get_user_by_email(session: AsyncSession, email: str) -> User | None:
-    result = await session.execute(
-        select(User).where(User.email == email.lower().strip())
-    )
-    return result.scalars().first()
+    """Look up user by email. Falls back to raw SQL if ORM mapping fails."""
+    email_clean = email.lower().strip()
+    try:
+        result = await session.execute(
+            select(User).where(User.email == email_clean)
+        )
+        user = result.scalars().first()
+        if user is not None:
+            return user
+    except Exception as e:
+        logger.warning("get_user_by_email_orm_failed", email=email_clean, error=str(e))
+
+    # Raw SQL fallback — bypasses ORM column mapping issues (SQLite schema drift)
+    try:
+        from sqlalchemy import text as _text
+        raw = await session.execute(
+            _text("SELECT id, email, phone, phone_verified, password_hash, full_name, "
+                  "country_code, is_active, is_locked, failed_attempts, created_at "
+                  "FROM users WHERE lower(email) = :email"),
+            {"email": email_clean},
+        )
+        row = raw.fetchone()
+        if row is None:
+            return None
+        # Construct User object manually from raw row
+        u = User.__new__(User)
+        u.id = uuid.UUID(str(row[0])) if row[0] else None
+        u.email = row[1] or ""
+        u.phone = row[2] or ""
+        u.phone_verified = bool(row[3])
+        u.password_hash = row[4] or ""
+        u.full_name = row[5] or ""
+        u.country_code = row[6] or "NG"
+        u.is_active = bool(row[7])
+        u.is_locked = bool(row[8])
+        u.failed_attempts = int(row[9] or 0)
+        u.created_at = row[10]
+        u.locked_until = None
+        return u
+    except Exception as e2:
+        logger.warning("get_user_by_email_raw_failed", email=email_clean, error=str(e2))
+        return None
 
 
 async def get_user_by_phone(session: AsyncSession, phone: str) -> User | None:
-    result = await session.execute(
-        select(User).where(User.phone == phone.strip())
-    )
-    return result.scalars().first()
+    """Look up user by phone. Falls back to raw SQL if ORM mapping fails."""
+    phone_clean = phone.strip()
+    try:
+        result = await session.execute(
+            select(User).where(User.phone == phone_clean)
+        )
+        user = result.scalars().first()
+        if user is not None:
+            return user
+    except Exception as e:
+        logger.warning("get_user_by_phone_orm_failed", error=str(e))
+
+    # Raw SQL fallback
+    try:
+        from sqlalchemy import text as _text
+        raw = await session.execute(
+            _text("SELECT id, email, phone, phone_verified, password_hash, full_name, "
+                  "country_code, is_active, is_locked, failed_attempts, created_at "
+                  "FROM users WHERE phone = :phone"),
+            {"phone": phone_clean},
+        )
+        row = raw.fetchone()
+        if row is None:
+            return None
+        u = User.__new__(User)
+        u.id = uuid.UUID(str(row[0])) if row[0] else None
+        u.email = row[1] or ""
+        u.phone = row[2] or ""
+        u.phone_verified = bool(row[3])
+        u.password_hash = row[4] or ""
+        u.full_name = row[5] or ""
+        u.country_code = row[6] or "NG"
+        u.is_active = bool(row[7])
+        u.is_locked = bool(row[8])
+        u.failed_attempts = int(row[9] or 0)
+        u.created_at = row[10]
+        u.locked_until = None
+        return u
+    except Exception as e2:
+        logger.warning("get_user_by_phone_raw_failed", error=str(e2))
+        return None
 
 
 async def get_user_by_identifier(session: AsyncSession, identifier: str) -> User | None:
