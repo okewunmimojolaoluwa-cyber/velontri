@@ -24,12 +24,16 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
-# ── Canonical DB path — computed from file location, not cwd or env ──────────
-# This is the single source of truth for ALL database access in this process.
-# We set the env var so aiosqlite callers (seed, services) use the same file.
-_CANONICAL_DB = os.environ.get("SQLITE_DB_PATH", "").strip()
-if not _CANONICAL_DB or "dev_gateway" in _CANONICAL_DB:
-    _CANONICAL_DB = str(ROOT / "velontri.db")
+# ── Canonical DB path — ALWAYS absolute, computed from __file__ ───────────────
+# Never use a relative path (./dev_gateway.db) which depends on cwd.
+# We honour SQLITE_DB_PATH only if it's an explicit absolute path set externally.
+_sqlite_db_env = os.environ.get("SQLITE_DB_PATH", "").strip()
+_CANONICAL_DB = (
+    _sqlite_db_env
+    if (_sqlite_db_env and os.path.isabs(_sqlite_db_env) and "dev_gateway" not in _sqlite_db_env)
+    else str(ROOT / "velontri.db")
+)
+# Export so every aiosqlite caller in this process uses the same file
 os.environ["SQLITE_DB_PATH"] = _CANONICAL_DB
 
 # Apply stubs before any service code runs
