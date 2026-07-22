@@ -24,12 +24,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
-# ── Fix DB path at import time — BEFORE any other module reads SQLITE_DB_PATH ──
-# This ensures the gateway engine and all aiosqlite callers use the same file.
-_env_db_now = os.environ.get("SQLITE_DB_PATH", "").strip()
-if not _env_db_now or _env_db_now == "./dev_gateway.db":
-    _canonical_db = str(ROOT / "velontri.db")
-    os.environ["SQLITE_DB_PATH"] = _canonical_db
+# ── Canonical DB path — computed from file location, not cwd or env ──────────
+# This is the single source of truth for ALL database access in this process.
+# We set the env var so aiosqlite callers (seed, services) use the same file.
+_CANONICAL_DB = os.environ.get("SQLITE_DB_PATH", "").strip()
+if not _CANONICAL_DB or "dev_gateway" in _CANONICAL_DB:
+    _CANONICAL_DB = str(ROOT / "velontri.db")
+os.environ["SQLITE_DB_PATH"] = _CANONICAL_DB
 
 # Apply stubs before any service code runs
 from native_stubs import apply_patches  # noqa: E402
@@ -345,8 +346,7 @@ def _apply_sqlite_migrations(conn) -> None:  # type: ignore[type-arg]
     conn.connection.commit()
 
 
-async def _auto_seed_admin(db_file: str) -> None:
-    """
+async def _auto_seed_admin(db_file: str) -> None:    """
     Idempotently create the super-admin account on every startup.
     Uses aiosqlite directly so it works even before the ORM session factory
     is fully initialised.  Safe to call on every restart — skips if exists.
@@ -458,11 +458,8 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
     from sqlalchemy.ext.asyncio import async_sessionmaker
 
     import os as _os
-    # SQLITE_DB_PATH is set at module import time (top of this file) to ROOT/velontri.db
-    # env var takes priority if explicitly set by the hosting platform
-    _env_db = _os.environ.get("SQLITE_DB_PATH", "").strip()
-    _db_file = _env_db if _env_db else str(ROOT / "velontri.db")
-    _os.environ["SQLITE_DB_PATH"] = _db_file  # ensure all aiosqlite callers use same path
+    # Use the module-level canonical DB path — computed from __file__, not cwd
+    _db_file = _CANONICAL_DB
     engine = create_engine(f"sqlite+aiosqlite:///{_db_file}")
 
     def _safe_create_all(conn: Any) -> None:
@@ -662,7 +659,7 @@ def create_app() -> FastAPI:
     async def debug_admin():
         """Temporary debug endpoint — shows admin row state and tests login path."""
         import aiosqlite, os as _os, bcrypt as _bcrypt, asyncio, functools
-        _db_file = _os.environ.get("SQLITE_DB_PATH", "./dev_gateway.db")
+        _db_file = _CANONICAL_DB
         try:
             async with aiosqlite.connect(_db_file) as db:
                 db.row_factory = aiosqlite.Row
@@ -736,8 +733,7 @@ def create_app() -> FastAPI:
         import logging
 
         _log = logging.getLogger(__name__)
-        _db_file = __import__("os").environ.get("SQLITE_DB_PATH", "./dev_gateway.db")
-
+        _db_file = _CANONICAL_DB  # use the module-level canonical path
         try:
             import bcrypt
             email    = "owner@velontri.com"
