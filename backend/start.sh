@@ -8,6 +8,18 @@ set -eo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# ── Handle JWT keys from Environment Variables ───────────────────────────────
+if [ -n "${JWT_PRIVATE_KEY:-}" ]; then
+    mkdir -p secrets
+    echo -e "${JWT_PRIVATE_KEY}" > secrets/jwt_private_key.pem
+    echo "[startup] Restored JWT_PRIVATE_KEY from environment"
+fi
+if [ -n "${JWT_PUBLIC_KEY:-}" ]; then
+    mkdir -p secrets
+    echo -e "${JWT_PUBLIC_KEY}" > secrets/jwt_public_key.pem
+    echo "[startup] Restored JWT_PUBLIC_KEY from environment"
+fi
+
 # ── Port ──────────────────────────────────────────────────────────────────────
 PORT="${PORT:-8000}"
 
