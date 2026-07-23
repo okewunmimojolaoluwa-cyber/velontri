@@ -12,11 +12,13 @@ cd "$SCRIPT_DIR"
 if [ -n "${JWT_PRIVATE_KEY:-}" ]; then
     mkdir -p secrets
     echo -e "${JWT_PRIVATE_KEY}" > secrets/jwt_private_key.pem
+    export JWT_PRIVATE_KEY_PATH="${SCRIPT_DIR}/secrets/jwt_private_key.pem"
     echo "[startup] Restored JWT_PRIVATE_KEY from environment"
 fi
 if [ -n "${JWT_PUBLIC_KEY:-}" ]; then
     mkdir -p secrets
     echo -e "${JWT_PUBLIC_KEY}" > secrets/jwt_public_key.pem
+    export JWT_PUBLIC_KEY_PATH="${SCRIPT_DIR}/secrets/jwt_public_key.pem"
     echo "[startup] Restored JWT_PUBLIC_KEY from environment"
 fi
 

@@ -24,9 +24,11 @@ def get_db_path() -> Path:
     if (
         env_path
         and os.path.isabs(env_path)
-        and "dev_gateway" not in env_path
-        and "dev_gateway" not in os.path.basename(env_path)
     ):
         return Path(env_path)
+    # Authoritative fallback:
+    # Use dev_gateway.db if running locally (it's the dev database), else use velontri.db
+    dev_db = _BACKEND_ROOT / "dev_gateway.db"
+    return dev_db if dev_db.exists() else _DEFAULT_DB
     # Authoritative fallback: always backend/velontri.db
     return _DEFAULT_DB
