@@ -9,17 +9,29 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 # ── Handle JWT keys from Environment Variables ───────────────────────────────
+mkdir -p secrets
+
 if [ -n "${JWT_PRIVATE_KEY:-}" ]; then
-    mkdir -p secrets
     echo -e "${JWT_PRIVATE_KEY}" > secrets/jwt_private_key.pem
     export JWT_PRIVATE_KEY_PATH="${SCRIPT_DIR}/secrets/jwt_private_key.pem"
     echo "[startup] Restored JWT_PRIVATE_KEY from environment"
+else
+    if [ ! -f "secrets/jwt_private_key.pem" ]; then
+        echo "[startup] JWT_PRIVATE_KEY not set. Generating fresh RSA keys..."
+        openssl genrsa -out secrets/jwt_private_key.pem 2048
+    fi
+    export JWT_PRIVATE_KEY_PATH="${SCRIPT_DIR}/secrets/jwt_private_key.pem"
 fi
+
 if [ -n "${JWT_PUBLIC_KEY:-}" ]; then
-    mkdir -p secrets
     echo -e "${JWT_PUBLIC_KEY}" > secrets/jwt_public_key.pem
     export JWT_PUBLIC_KEY_PATH="${SCRIPT_DIR}/secrets/jwt_public_key.pem"
     echo "[startup] Restored JWT_PUBLIC_KEY from environment"
+else
+    if [ ! -f "secrets/jwt_public_key.pem" ]; then
+        openssl rsa -in secrets/jwt_private_key.pem -pubout -out secrets/jwt_public_key.pem
+    fi
+    export JWT_PUBLIC_KEY_PATH="${SCRIPT_DIR}/secrets/jwt_public_key.pem"
 fi
 
 # ── Port ──────────────────────────────────────────────────────────────────────
