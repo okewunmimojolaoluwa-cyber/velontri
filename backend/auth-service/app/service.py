@@ -1125,12 +1125,13 @@ class AuthService:
                 ctx = ssl.create_default_context()
 
                 def _send_smtp():
-                    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ctx, timeout=5.0) as srv:
+                    with smtplib.SMTP("smtp.gmail.com", 587, timeout=10.0) as srv:
+                        srv.starttls(context=ctx)
                         srv.login(gmail_user, gmail_pass)
                         srv.sendmail(gmail_user, email, msg.as_string())
 
                 loop = asyncio.get_event_loop()
-                await asyncio.wait_for(loop.run_in_executor(None, _send_smtp), timeout=7.0)
+                await asyncio.wait_for(loop.run_in_executor(None, _send_smtp), timeout=15.0)
                 logger.info("email_otp_sent_gmail", email=email)
                 return
             except Exception as exc:
@@ -1163,10 +1164,9 @@ class AuthService:
                 raise ExternalServiceError(
                     f"Resend {resp.status_code}: {resp.text[:200]}"
                 )
-            except ExternalServiceError:
-                raise
             except Exception as exc:
-                raise ExternalServiceError(f"Resend failed: {exc}") from exc
+                logger.warning("email_otp_resend_failed", email=email, error=str(exc))
+                # Fall through to the next provider instead of raising
 
         # ------------------------------------------------------------------
         # 3. SendGrid last resort
@@ -1197,10 +1197,9 @@ class AuthService:
                 raise ExternalServiceError(
                     f"SendGrid {resp.status_code}: {resp.text[:200]}"
                 )
-            except ExternalServiceError:
-                raise
             except Exception as exc:
-                raise ExternalServiceError(f"SendGrid failed: {exc}") from exc
+                logger.warning("email_otp_sendgrid_failed", email=email, error=str(exc))
+                # Fall through to the next provider instead of raising
 
         # ------------------------------------------------------------------
         # 4. Dev fallback — nothing configured
