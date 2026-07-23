@@ -30,7 +30,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 _sqlite_db_env = os.environ.get("SQLITE_DB_PATH", "").strip()
 _CANONICAL_DB = (
     _sqlite_db_env
-    if (_sqlite_db_env and os.path.isabs(_sqlite_db_env) and "dev_gateway" not in _sqlite_db_env)
+    if (_sqlite_db_env and os.path.isabs(_sqlite_db_env))
     else str(ROOT / "velontri.db")
 )
 # Export so every aiosqlite caller in this process uses the same file
