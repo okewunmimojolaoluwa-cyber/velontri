@@ -1,4 +1,4 @@
-﻿"""Analytics Service router — uses Authorization: Bearer JWT."""
+"""Analytics Service router — uses Authorization: Bearer JWT."""
 from __future__ import annotations
 
 import random
@@ -686,18 +686,71 @@ async def admin_toggle_homepage_section(
     return SuccessResponse(message="Section updated.", data={"id": section_id})
 
 
+async def _ensure_subscription_tiers_table():
+    import aiosqlite
+    db_path = __import__("shared.db_path", fromlist=["get_db_path"]).get_db_path()
+    async with aiosqlite.connect(str(db_path)) as db:
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS subscription_tiers (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                price REAL NOT NULL,
+                duration_days INTEGER NOT NULL,
+                features TEXT NOT NULL,
+                is_popular INTEGER DEFAULT 0
+            )
+        """)
+        await db.commit()
+
 @router.get("/admin/subscriptions", response_model=SuccessResponse, summary="Admin: list subscription plans")
 async def admin_subscriptions(payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
-    return SuccessResponse(message="Subscription plans retrieved.", data=[])
+    await _ensure_subscription_tiers_table()
+    import aiosqlite
+    db_path = __import__("shared.db_path", fromlist=["get_db_path"]).get_db_path()
+    async with aiosqlite.connect(str(db_path)) as db:
+        db.row_factory = aiosqlite.Row
+        rows = await db.execute_fetchall("SELECT * FROM subscription_tiers")
+        tiers = [
+            {
+                "id": r["id"],
+                "name": r["name"],
+                "price": r["price"],
+                "duration_days": r["duration_days"],
+                "features": r["features"].split(",") if r["features"] else [],
+                "is_popular": bool(r["is_popular"])
+            }
+            for r in rows
+        ]
+    return SuccessResponse(message="Subscription plans retrieved.", data=tiers)
 
 
 @router.post("/admin/subscriptions", response_model=SuccessResponse, summary="Admin: create subscription plan")
-async def admin_create_subscription(payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
-    return SuccessResponse(message="Subscription plan created.", data={"id": str(uuid.uuid4())})
+async def admin_create_subscription(
+    request: Request,
+    payload: Annotated[dict, Depends(get_user_payload)] = None
+) -> SuccessResponse:
+    await _ensure_subscription_tiers_table()
+    body = await request.json()
+    new_id = str(uuid.uuid4())
+    import aiosqlite
+    db_path = __import__("shared.db_path", fromlist=["get_db_path"]).get_db_path()
+    async with aiosqlite.connect(str(db_path)) as db:
+        await db.execute(
+            "INSERT INTO subscription_tiers (id, name, price, duration_days, features, is_popular) VALUES (?, ?, ?, ?, ?, ?)",
+            (new_id, body.get("name", ""), float(body.get("price", 0)), int(body.get("duration_days", 30)), body.get("features", ""), 0)
+        )
+        await db.commit()
+    return SuccessResponse(message="Subscription plan created.", data={"id": new_id})
 
 
 @router.delete("/admin/subscriptions/{plan_id}", response_model=SuccessResponse, summary="Admin: delete subscription plan")
 async def admin_delete_subscription(plan_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    await _ensure_subscription_tiers_table()
+    import aiosqlite
+    db_path = __import__("shared.db_path", fromlist=["get_db_path"]).get_db_path()
+    async with aiosqlite.connect(str(db_path)) as db:
+        await db.execute("DELETE FROM subscription_tiers WHERE id = ?", (plan_id,))
+        await db.commit()
     return SuccessResponse(message="Subscription plan deleted.", data={"id": plan_id})
 
 

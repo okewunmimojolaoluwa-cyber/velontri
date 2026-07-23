@@ -1125,7 +1125,7 @@ class AuthService:
                 ctx = ssl.create_default_context()
 
                 def _send_smtp():
-                    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ctx) as srv:
+                    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ctx, timeout=5.0) as srv:
                         srv.login(gmail_user, gmail_pass)
                         srv.sendmail(gmail_user, email, msg.as_string())
 

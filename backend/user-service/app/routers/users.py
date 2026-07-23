@@ -1,4 +1,4 @@
-﻿"""
+"""
 User Service HTTP router.
 
 Endpoints:
@@ -810,7 +810,7 @@ async def admin_update_user(
     is_active = body.get("is_active")
     if is_active is not None:
         await session.execute(
-            text("UPDATE users SET is_active = :v WHERE id = :uid"),
+            text("UPDATE users SET is_active = :v WHERE CAST(id AS TEXT) = :uid"),
             {"v": 1 if is_active else 0, "uid": str(user_id)},
         )
         await session.commit()
