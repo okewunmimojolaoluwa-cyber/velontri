@@ -1130,15 +1130,12 @@ class AuthService:
                         srv.sendmail(gmail_user, email, msg.as_string())
 
                 loop = asyncio.get_event_loop()
-                await loop.run_in_executor(None, _send_smtp)
+                await asyncio.wait_for(loop.run_in_executor(None, _send_smtp), timeout=7.0)
                 logger.info("email_otp_sent_gmail", email=email)
                 return
             except Exception as exc:
                 logger.warning("email_otp_gmail_failed", email=email, error=str(exc))
-                raise ExternalServiceError(
-                    f"Gmail SMTP failed: {exc}. "
-                    "Check GMAIL_USER and GMAIL_APP_PASSWORD in backend/.env"
-                ) from exc
+                # Fall through to the next provider instead of raising
 
         # ------------------------------------------------------------------
         # 2. Resend fallback
