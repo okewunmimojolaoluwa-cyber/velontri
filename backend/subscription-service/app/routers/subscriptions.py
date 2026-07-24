@@ -1,4 +1,4 @@
-﻿"""Subscription Service router — uses Authorization: Bearer JWT."""
+"""Subscription Service router — uses Authorization: Bearer JWT."""
 from __future__ import annotations
 
 import uuid
@@ -198,23 +198,29 @@ async def paystack_initiate(
         raise InvalidInputError("callback_url is required")
 
     user_id = payload["sub"]
-    # JWT sub is the user ID; email may not be in the token so fetch from DB
+    # Email is embedded in the JWT since the last auth-service update.
+    # Fall back to a direct DB lookup for tokens issued before that change.
     user_email = (payload.get("email") or "").strip()
     if not user_email:
         try:
             import aiosqlite
-            from pathlib import Path
             db_path = __import__("shared.db_path", fromlist=["get_db_path"]).get_db_path()
             async with aiosqlite.connect(str(db_path)) as db:
+                db.row_factory = aiosqlite.Row
                 rows = await db.execute_fetchall(
                     "SELECT email FROM users WHERE id = ?", [user_id]
                 )
                 if rows:
-                    user_email = rows[0][0] or ""
+                    user_email = (rows[0]["email"] or "").strip()
         except Exception as e:
             log.warning(f"email_lookup_failed: {e}")
-    if not user_email:
-        user_email = f"{user_id}@velontri.user"
+
+    if not user_email or "@" not in user_email:
+        from shared.errors import InvalidInputError
+        raise InvalidInputError(
+            "Your account email could not be found. "
+            "Please log out, sign back in, and try again."
+        )
 
     amount_kobo = PLAN_PRICES_KOBO[plan_id]
     reference = f"vlt-sub-{plan_id}-{_secrets.token_hex(8)}"

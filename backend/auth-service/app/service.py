@@ -875,6 +875,7 @@ class AuthService:
             roles=roles,
             subscription_tier=subscription_tier,
             branch_ids=branch_ids,
+            email=getattr(user, "email", "") or "",
         )
 
         raw_refresh = generate_refresh_token()

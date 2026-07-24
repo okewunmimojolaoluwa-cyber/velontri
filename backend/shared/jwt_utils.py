@@ -45,6 +45,7 @@ def create_access_token(
     roles: list[str],
     subscription_tier: str,
     branch_ids: list[str] | None = None,
+    email: str | None = None,
     ttl: int = ACCESS_TOKEN_TTL_SECONDS,
 ) -> str:
     """
@@ -69,6 +70,7 @@ def create_access_token(
         "roles": roles,
         "subscription_tier": subscription_tier,
         "branch_ids": branch_ids or [],
+        "email": email or "",
     }
 
     token: str = jwt.encode(payload, private_key, algorithm=JWT_ALGORITHM)
