@@ -224,9 +224,8 @@ class AuthService:
             except Exception as _otp_aio_err:
                 logger.warning("create_otp_aiosqlite_failed", error=str(_otp_aio_err))
 
-        # Send OTP via EMAIL (primary)
-        # Email failure is NON-FATAL — user is still created and can request
-        # a resend from the verify-phone page.
+        # Send OTP via EMAIL & SMS
+        # Failures are NON-FATAL — user is still created.
         try:
             await self._send_email_otp(email=email, full_name=full_name, otp=otp)
         except Exception as exc:
@@ -236,7 +235,10 @@ class AuthService:
                 email=email,
                 error=str(exc),
             )
-            # Don't re-raise — registration succeeds even if email is unavailable.
+        try:
+            await self._send_sms_otp(phone=phone, otp=otp)
+        except Exception as exc:
+            logger.warning("sms_otp_send_failed_at_registration", error=str(exc))
 
         # Publish event for User Service to create the profile record
         await publish_event(
@@ -267,11 +269,11 @@ class AuthService:
             from shared.errors import NotFoundError
             raise NotFoundError("User not found.")
 
-        await self._resend_for_email(user_id, user.email, user.full_name)
-        logger.info("otp_resent_email", user_id=str(user_id))
+        await self._resend_for_email(user_id, user.email, user.full_name, user.phone)
+        logger.info("otp_resent", user_id=str(user_id))
 
-    async def _resend_for_email(self, user_id: uuid.UUID, email: str, full_name: str) -> None:
-        """Helper to generate and send OTP via email for resend."""
+    async def _resend_for_email(self, user_id: uuid.UUID, email: str, full_name: str, phone: str) -> None:
+        """Helper to generate and send OTP via email and SMS for resend."""
         otp = generate_otp()
         otp_hash = hash_otp(otp)
         expires_at = datetime.now(tz=timezone.utc) + timedelta(
@@ -285,6 +287,8 @@ class AuthService:
             expires_at=expires_at,
         )
         await self._send_email_otp(email=email, full_name=full_name, otp=otp)
+        if phone:
+            await self._send_sms_otp(phone=phone, otp=otp)
 
     async def verify_phone(
         self, user_id: uuid.UUID, otp_code: str
