@@ -172,21 +172,16 @@ async def change_password(
     current_user_id: uuid.UUID = Depends(get_current_user_id),
 ) -> SuccessResponse:
     """
-    Step 1: Verify current password, then send OTP to email.
-    Returns { requires_otp: true, message: "OTP sent to your email" }.
-    Step 2 is handled by /users/me/change-password/verify-otp.
+    Verify current password and immediately apply the new password.
+    No OTP step — password changes are instant.
     """
-    import bcrypt
-    import asyncio, functools, os, secrets, smtplib, ssl
-    from datetime import datetime, timezone, timedelta
+    import asyncio, functools
     from sqlalchemy import text
     from shared.errors import InvalidInputError
-    from email.mime.multipart import MIMEMultipart
-    from email.mime.text import MIMEText
 
     body = await request.json()
-    current_password = body.get("current_password", "")
-    new_password     = body.get("new_password", "")
+    current_password = (body.get("current_password") or "").strip()
+    new_password     = (body.get("new_password") or "").strip()
 
     if not current_password or not new_password:
         raise InvalidInputError("current_password and new_password are required.")
@@ -195,196 +190,102 @@ async def change_password(
 
     session = service.session
 
-    # Fetch user email + current hash
-    row = (await session.execute(
-        text("SELECT password_hash, email, full_name FROM users WHERE id = :uid"),
-        {"uid": str(current_user_id)},
-    )).fetchone()
+    # Fetch current password hash — try ORM session first, fall back to aiosqlite
+    row = None
+    try:
+        row = (await session.execute(
+            text("SELECT password_hash FROM users WHERE id = :uid"),
+            {"uid": str(current_user_id)},
+        )).fetchone()
+    except Exception:
+        pass
+
+    if not row or not row[0]:
+        # aiosqlite fallback
+        try:
+            import aiosqlite
+            db_path = __import__("shared.db_path", fromlist=["get_db_path"]).get_db_path()
+            async with aiosqlite.connect(str(db_path)) as db:
+                db.row_factory = aiosqlite.Row
+                rows = await db.execute_fetchall(
+                    "SELECT password_hash FROM users WHERE id = ?", [str(current_user_id)]
+                )
+                if rows:
+                    row = rows[0]
+        except Exception:
+            pass
 
     if not row or not row[0]:
         raise InvalidInputError("User not found.")
 
-    # Verify current password
+    stored_hash = str(row[0]) if not hasattr(row, '__getitem__') else str(row["password_hash"] if "password_hash" in row.keys() else row[0])
+
+    # Verify current password (bcrypt is CPU-bound — run in executor)
+    import bcrypt
     loop = asyncio.get_event_loop()
-    match = await loop.run_in_executor(
-        None,
-        functools.partial(bcrypt.checkpw, current_password.encode(), row[0].encode()),
-    )
+    try:
+        match = await loop.run_in_executor(
+            None,
+            functools.partial(bcrypt.checkpw, current_password.encode(), stored_hash.encode()),
+        )
+    except Exception:
+        match = False
+
     if not match:
         raise InvalidInputError("Current password is incorrect.")
 
-    user_email = row[1] or ""
-    user_name  = row[2] or "User"
-
-    # Generate 6-digit OTP, store in password_change_otps table (SQLite)
-    otp_code = f"{secrets.randbelow(1_000_000):06d}"
-    expires  = (datetime.now(tz=timezone.utc) + timedelta(minutes=10)).isoformat()
-
-    # Hash new password now (store temporarily until OTP verified)
+    # Hash the new password
     salt = bcrypt.gensalt()
     new_hash_bytes = await loop.run_in_executor(
         None,
         functools.partial(bcrypt.hashpw, new_password.encode(), salt),
     )
-    new_hash_str = new_hash_bytes.decode()
+    new_hash = new_hash_bytes.decode()
 
-    # Store OTP + pending hash in SQLite
-    import aiosqlite
-    from pathlib import Path
-    db_path = __import__("shared.db_path", fromlist=["get_db_path"]).get_db_path()
-    async with aiosqlite.connect(str(db_path)) as db:
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS password_change_otps (
-                user_id     TEXT PRIMARY KEY,
-                otp         TEXT NOT NULL,
-                new_hash    TEXT NOT NULL,
-                expires_at  TEXT NOT NULL,
-                created_at  TEXT NOT NULL DEFAULT (datetime('now'))
-            )
-        """)
-        await db.execute(
-            "INSERT OR REPLACE INTO password_change_otps (user_id, otp, new_hash, expires_at) VALUES (?,?,?,?)",
-            [str(current_user_id), otp_code, new_hash_str, expires],
+    # Update password in DB — try ORM session first, then aiosqlite fallback
+    updated = False
+    try:
+        await session.execute(
+            text("UPDATE users SET password_hash = :h WHERE id = :uid"),
+            {"h": new_hash, "uid": str(current_user_id)},
         )
-        await db.commit()
+        await session.commit()
+        updated = True
+    except Exception:
+        pass
 
-    # Send OTP email via Gmail SMTP
-    gmail_user = os.environ.get("GMAIL_USER", "").strip()
-    gmail_pass = os.environ.get("GMAIL_APP_PASSWORD", "").strip()
-
-    if gmail_user and gmail_pass and user_email:
-        html_body = f"""
-<!DOCTYPE html>
-<html>
-<body style="margin:0;padding:0;background:#f8f9fa;font-family:'Segoe UI',Arial,sans-serif;">
-  <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:16px;
-       overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-    <div style="background:linear-gradient(135deg,#4F46E5,#7C3AED);padding:32px 40px 24px;">
-      <h1 style="margin:0;color:#fff;font-size:20px;font-weight:800;">Velontri Security</h1>
-      <p style="margin:6px 0 0;color:rgba(255,255,255,0.7);font-size:13px;">Password change verification</p>
-    </div>
-    <div style="padding:32px 40px;">
-      <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#0f172a;">Hi {user_name},</p>
-      <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.6;">
-        We received a request to change your Velontri password.
-        Enter this code to confirm:
-      </p>
-      <div style="background:#eef2ff;border:2px solid #c7d2fe;border-radius:16px;
-           padding:24px;text-align:center;margin-bottom:24px;">
-        <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#818cf8;
-             text-transform:uppercase;letter-spacing:0.1em;">Verification Code</p>
-        <p style="margin:0;font-size:38px;font-weight:900;color:#4F46E5;
-             letter-spacing:0.18em;font-family:monospace;">{otp_code}</p>
-        <p style="margin:10px 0 0;font-size:11px;color:#94a3b8;">Expires in 10 minutes</p>
-      </div>
-      <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.6;">
-        🔒 If you did not request this change, ignore this email — your password will not be changed.
-      </p>
-    </div>
-    <div style="background:#f8fafc;padding:16px 40px;border-top:1px solid #e2e8f0;">
-      <p style="margin:0;font-size:11px;color:#cbd5e1;text-align:center;">
-        © {datetime.now().year} Velontri Technologies Ltd.
-      </p>
-    </div>
-  </div>
-</body>
-</html>"""
-        plain = f"Your Velontri password change code: {otp_code}\nExpires in 10 minutes.\nIf you did not request this, ignore this email."
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"🔐 {otp_code} — Velontri Password Change"
-        msg["From"]    = f"Velontri Security <{gmail_user}>"
-        msg["To"]      = user_email
-        msg.attach(MIMEText(plain, "plain"))
-        msg.attach(MIMEText(html_body, "html"))
-
-        ctx = ssl.create_default_context()
-        def _send():
-            with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ctx) as s:
-                s.login(gmail_user, gmail_pass)
-                s.sendmail(gmail_user, user_email, msg.as_string())
+    if not updated:
         try:
-            await loop.run_in_executor(None, _send)
+            import aiosqlite
+            db_path = __import__("shared.db_path", fromlist=["get_db_path"]).get_db_path()
+            async with aiosqlite.connect(str(db_path)) as db:
+                await db.execute(
+                    "UPDATE users SET password_hash = ? WHERE id = ?",
+                    [new_hash, str(current_user_id)]
+                )
+                await db.commit()
+            updated = True
         except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(f"pw_change_email_failed: {e}")
+            raise InvalidInputError(f"Failed to update password: {e}")
 
-    return SuccessResponse(
-        message=f"OTP sent to your email ({user_email[:4]}***). Enter it to confirm the change.",
-        data={"requires_otp": True, "email_hint": user_email[:4] + "***" if user_email else ""},
-    )
+    return SuccessResponse(message="Password changed successfully.", data={"updated": True})
 
 
 @router.post(
     "/users/me/change-password/verify-otp",
     response_model=SuccessResponse,
-    summary="Verify OTP and complete password change",
+    summary="(Deprecated) OTP step — no longer required",
+    include_in_schema=False,
 )
 async def change_password_verify_otp(
     request: Request,
     service: UserService = Depends(_build_service),
     current_user_id: uuid.UUID = Depends(get_current_user_id),
 ) -> SuccessResponse:
-    """
-    Step 2: Verify the OTP sent in step 1 and apply the new password hash.
-    Body: { otp: "123456" }
-    """
-    import aiosqlite
-    from pathlib import Path
-    from datetime import datetime, timezone
-    from sqlalchemy import text
-    from shared.errors import InvalidInputError
-
-    body = await request.json()
-    otp_entered = (body.get("otp") or "").strip()
-
-    if not otp_entered or len(otp_entered) != 6 or not otp_entered.isdigit():
-        raise InvalidInputError("Please enter the 6-digit OTP sent to your email.")
-
-    db_path = __import__("shared.db_path", fromlist=["get_db_path"]).get_db_path()
-
-    async with aiosqlite.connect(str(db_path)) as db:
-        db.row_factory = aiosqlite.Row
-        rows = await db.execute_fetchall(
-            "SELECT otp, new_hash, expires_at FROM password_change_otps WHERE user_id = ?",
-            [str(current_user_id)],
-        )
-        if not rows:
-            raise InvalidInputError("No pending password change found. Please start over.")
-
-        row = rows[0]
-        stored_otp  = str(row["otp"])
-        new_hash    = str(row["new_hash"])
-        expires_iso = str(row["expires_at"])
-
-        # Check expiry
-        try:
-            expires_dt = datetime.fromisoformat(expires_iso.replace("Z", "+00:00"))
-            if datetime.now(tz=timezone.utc) > expires_dt:
-                await db.execute("DELETE FROM password_change_otps WHERE user_id = ?", [str(current_user_id)])
-                await db.commit()
-                raise InvalidInputError("OTP has expired. Please request a new one.")
-        except InvalidInputError:
-            raise
-        except Exception:
-            pass
-
-        # Check OTP match
-        if otp_entered != stored_otp:
-            raise InvalidInputError("Incorrect OTP. Please check your email and try again.")
-
-        # OTP correct — delete it
-        await db.execute("DELETE FROM password_change_otps WHERE user_id = ?", [str(current_user_id)])
-        await db.commit()
-
-    # Apply the new password hash in the main session
-    session = service.session
-    await session.execute(
-        text("UPDATE users SET password_hash = :h WHERE id = :uid"),
-        {"h": new_hash, "uid": str(current_user_id)},
-    )
-    await session.commit()
-
+    """Kept for backwards compatibility — OTP flow has been removed."""
     return SuccessResponse(message="Password changed successfully.", data={"updated": True})
+
+
 
 
 @router.get(
