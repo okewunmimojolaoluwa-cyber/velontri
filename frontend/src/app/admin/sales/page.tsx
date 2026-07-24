@@ -52,18 +52,30 @@ export default function AdminSalesPage() {
     staleTime: 60_000,
   });
 
-  const stats     = salesData?.data;
-  const categories = catData?.data ?? [];
+  const stats      = salesData?.data;
+  const categories = Array.isArray(catData?.data) ? catData.data : [];
   const currency   = stats?.currency ?? 'NGN';
 
-  const KPI_CARDS = stats
+  // Safely coerce all numeric fields — guards against null/undefined from the API
+  const safeStats = stats
+    ? {
+        today_sales:  Number(stats.today_sales  ?? 0),
+        week_sales:   Number(stats.week_sales   ?? 0),
+        total_orders: Number(stats.total_orders ?? 0),
+        avg_order:    Number(stats.avg_order    ?? 0),
+        currency:     stats.currency ?? 'NGN',
+      }
+    : null;
+
+  const KPI_CARDS = safeStats
     ? [
-        { label: "Today's Sales", value: fmt(stats.today_sales, currency), icon: ShoppingCart, color: 'text-indigo-600',  bg: 'bg-indigo-50'  },
-        { label: 'Weekly Sales',  value: fmt(stats.week_sales, currency),  icon: TrendingUp,   color: 'text-emerald-600', bg: 'bg-emerald-50' },
-        { label: 'Total Orders',  value: stats.total_orders.toLocaleString(),                  icon: Package,      color: 'text-violet-600', bg: 'bg-violet-50' },
-        { label: 'Avg. Order',    value: fmt(stats.avg_order, currency),    icon: Users,        color: 'text-amber-600',  bg: 'bg-amber-50'   },
+        { label: "Today's Sales", value: fmt(safeStats.today_sales,  currency), icon: ShoppingCart, color: 'text-indigo-600',  bg: 'bg-indigo-50'  },
+        { label: 'Weekly Sales',  value: fmt(safeStats.week_sales,   currency), icon: TrendingUp,   color: 'text-emerald-600', bg: 'bg-emerald-50' },
+        { label: 'Total Orders',  value: safeStats.total_orders.toLocaleString(),                   icon: Package,      color: 'text-violet-600', bg: 'bg-violet-50' },
+        { label: 'Avg. Order',    value: fmt(safeStats.avg_order,    currency), icon: Users,        color: 'text-amber-600',  bg: 'bg-amber-50'   },
       ]
     : null;
+
 
   return (
     <div className="space-y-6">

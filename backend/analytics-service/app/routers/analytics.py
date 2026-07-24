@@ -961,18 +961,120 @@ async def activity_recent(
     return SuccessResponse(message="Activity feed retrieved.", data=events[:limit])
 
 
+@router.get("/analytics/sales", response_model=SuccessResponse, summary="Sales KPI summary")
+async def sales_kpis(
+    request: Request,
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    """Return today's sales, weekly sales, total orders, and average order value from the real DB."""
+    import aiosqlite
+    from datetime import date, timedelta
+
+    db_path = __import__("shared.db_path", fromlist=["get_db_path"]).get_db_path()
+    today     = date.today().isoformat()
+    week_ago  = (date.today() - timedelta(days=7)).isoformat()
+
+    today_sales   = 0
+    week_sales    = 0
+    total_orders  = 0
+    avg_order     = 0
+
+    try:
+        async with aiosqlite.connect(str(db_path)) as db:
+            db.row_factory = aiosqlite.Row
+
+            # Today's revenue from sub_payments
+            rows = await db.execute_fetchall(
+                "SELECT COALESCE(SUM(amount_ngn), 0) as total FROM sub_payments WHERE date(paid_at) = ?",
+                [today],
+            )
+            today_sales = int(rows[0]["total"]) if rows else 0
+
+            # Week's revenue
+            rows = await db.execute_fetchall(
+                "SELECT COALESCE(SUM(amount_ngn), 0) as total FROM sub_payments WHERE paid_at >= ?",
+                [week_ago],
+            )
+            week_sales = int(rows[0]["total"]) if rows else 0
+
+            # Total orders (all successful payments)
+            rows = await db.execute_fetchall(
+                "SELECT COUNT(*) as cnt FROM sub_payments WHERE status = 'success'",
+            )
+            total_orders = int(rows[0]["cnt"]) if rows else 0
+
+            # Average order value
+            if total_orders > 0:
+                all_rows = await db.execute_fetchall(
+                    "SELECT COALESCE(SUM(amount_ngn), 0) as total FROM sub_payments WHERE status = 'success'",
+                )
+                total_rev = int(all_rows[0]["total"]) if all_rows else 0
+                avg_order = total_rev // total_orders if total_orders else 0
+    except Exception:
+        pass
+
+    return SuccessResponse(
+        message="Sales KPIs retrieved.",
+        data={
+            "today_sales":  today_sales,
+            "week_sales":   week_sales,
+            "total_orders": total_orders,
+            "avg_order":    avg_order,
+            "currency":     "NGN",
+        },
+    )
+
+
 @router.get("/analytics/sales/by-category", response_model=SuccessResponse, summary="Sales by category")
 async def sales_by_category(
     request: Request,
     payload: Annotated[dict, Depends(get_user_payload)] = None,
 ) -> SuccessResponse:
-    return SuccessResponse(message="Sales by category retrieved.", data=[
-        {"category": "Vehicles",    "sales": round(85_600_000 * (1 + random.uniform(-0.05, 0.1))), "count": random.randint(40, 120)},
-        {"category": "Property",    "sales": round(62_400_000 * (1 + random.uniform(-0.05, 0.1))), "count": random.randint(20, 60)},
-        {"category": "Electronics", "sales": round(32_100_000 * (1 + random.uniform(-0.05, 0.1))), "count": random.randint(100, 300)},
-        {"category": "Fashion",     "sales": round(14_800_000 * (1 + random.uniform(-0.05, 0.1))), "count": random.randint(200, 500)},
-        {"category": "Services",    "sales": round(5_200_000  * (1 + random.uniform(-0.05, 0.1))), "count": random.randint(50, 150)},
-    ])
+    """Return sales broken down by subscription plan (used as category proxy until order data exists)."""
+    import aiosqlite
+
+    db_path = __import__("shared.db_path", fromlist=["get_db_path"]).get_db_path()
+
+    # Map plan names to display categories
+    PLAN_LABELS = {
+        "starter":    "Starter",
+        "business":   "Business",
+        "enterprise": "Enterprise",
+        "free":       "Free",
+    }
+
+    rows_data = []
+    try:
+        async with aiosqlite.connect(str(db_path)) as db:
+            db.row_factory = aiosqlite.Row
+            rows = await db.execute_fetchall(
+                """SELECT plan,
+                          COUNT(*) as order_count,
+                          COALESCE(SUM(amount_ngn), 0) as total_amount
+                   FROM sub_payments
+                   WHERE status = 'success'
+                   GROUP BY plan
+                   ORDER BY total_amount DESC"""
+            )
+            rows_data = list(rows)
+    except Exception:
+        pass
+
+    grand_total = sum(int(r["total_amount"]) for r in rows_data) or 1
+
+    categories = [
+        {
+            "category":     PLAN_LABELS.get(str(r["plan"]).lower(), str(r["plan"]).title()),
+            "total_amount": int(r["total_amount"]),
+            "order_count":  int(r["order_count"]),
+            "percentage":   round(int(r["total_amount"]) / grand_total * 100, 1),
+        }
+        for r in rows_data
+    ]
+
+    # If no real data yet, return empty list (frontend shows "No sales data yet")
+    return SuccessResponse(message="Sales by category retrieved.", data=categories)
+
 
 
 @router.get("/admin/analytics", response_model=SuccessResponse, summary="Admin analytics summary")
