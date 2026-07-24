@@ -47,7 +47,8 @@ async def create_user(
         password_hash=password_hash,
         full_name=full_name.strip(),
         country_code=country_code.upper(),
-        is_active=False,
+        is_active=True,
+        phone_verified=True,
         is_locked=False,
         failed_attempts=0,
     )

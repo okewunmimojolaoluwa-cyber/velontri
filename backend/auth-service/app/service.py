@@ -407,7 +407,24 @@ class AuthService:
                 # Lock has expired — clear it
                 await repo.clear_lockout(self.session, user.id)
 
-        if not user.is_active:
+        # Re-check is_active from canonical SQLite DB in case ORM points to different file
+        try:
+            import aiosqlite as _aio2
+            from shared.db_path import get_db_path as _gdp2
+            _db2 = _gdp2()
+            async with _aio2.connect(str(_db2)) as _db_conn2:
+                _db_conn2.row_factory = _aio2.Row
+                _canon = await _db_conn2.execute_fetchall(
+                    "SELECT is_active, phone_verified FROM users WHERE id=?", [str(user.id)]
+                )
+                if _canon:
+                    _is_active = bool(_canon[0]["is_active"])
+                else:
+                    _is_active = bool(user.is_active)
+        except Exception:
+            _is_active = bool(user.is_active)
+
+        if not _is_active:
             raise AccountInactiveError(
                 "Account is not active. Please verify your phone number."
             )
