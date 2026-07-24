@@ -43,6 +43,7 @@ class AuthSettings(BaseServiceSettings):
     # Gmail SMTP — simplest zero-cost option, no domain needed
     GMAIL_USER: str = Field(default="", description="Your Gmail address e.g. you@gmail.com")
     GMAIL_APP_PASSWORD: str = Field(default="", description="Gmail App Password (16 chars, from myaccount.google.com/apppasswords)")
+    GMAIL_REFRESH_TOKEN: str = Field(default="", description="Google OAuth Refresh Token for Gmail API (overcomes SMTP blocks)")
 
     # SMS provider (for OTP delivery)
     SMS_PROVIDER: str = "africastalking"  # africastalking | twilio
