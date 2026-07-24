@@ -77,35 +77,73 @@ async def get_my_profile(
     payload: dict = Depends(get_current_user_payload),
 ) -> SuccessResponse:
     """Returns the logged-in user's profile data merged with auth account info."""
+    import aiosqlite
     from sqlalchemy import text
-    # Fetch base user row
-    result = await service.session.execute(
-        text("SELECT id, email, phone, full_name, country_code, is_active, phone_verified, created_at FROM users WHERE id = :uid"),
-        {"uid": str(current_user_id)},
-    )
-    row = result.fetchone()
-    # Fetch profile if it exists
+
+    uid_str = str(current_user_id)
+    row = None
+
+    # Primary: aiosqlite directly against the canonical DB (always correct file)
+    try:
+        db_path = __import__("shared.db_path", fromlist=["get_db_path"]).get_db_path()
+        async with aiosqlite.connect(str(db_path)) as db:
+            db.row_factory = aiosqlite.Row
+            rows = await db.execute_fetchall(
+                "SELECT id, email, phone, full_name, country_code, is_active, phone_verified, created_at FROM users WHERE id = ?",
+                [uid_str],
+            )
+            if rows:
+                row = rows[0]
+    except Exception:
+        pass
+
+    # Fallback: ORM session
+    if row is None:
+        try:
+            result = await service.session.execute(
+                text("SELECT id, email, phone, full_name, country_code, is_active, phone_verified, created_at FROM users WHERE id = :uid"),
+                {"uid": uid_str},
+            )
+            row = result.fetchone()
+        except Exception:
+            pass
+
+    # Fetch extended profile (bio, avatar, etc.)
+    profile_data: dict = {}
     try:
         profile = await service.get_profile(current_user_id)
         profile_data = profile.model_dump()
     except Exception:
-        profile_data = {}
+        pass
+
+    def _get(r, key: str, idx: int, default=""):
+        try:
+            return r[key] if hasattr(r, "keys") else r[idx]
+        except Exception:
+            return default
+
+    # Sanitise garbled phone values
+    phone = _get(row, "phone", 2, "") or "" if row else ""
+    if phone and (phone.startswith("+0000") or (not phone.startswith("+") and len(phone) > 15)):
+        phone = ""
 
     data = {
-        "id": str(current_user_id),
-        "email": row[1] if row else payload.get("email", ""),
-        "phone": row[2] if row else "",        "full_name": (profile_data.get("full_name") or (row[3] if row else "")) or "",
-        "country_code": row[4] if row else "NG",
-        "is_active": bool(row[5]) if row else True,
-        "is_phone_verified": bool(row[6]) if row else False,
+        "id": uid_str,
+        "email": _get(row, "email", 1, payload.get("email", "")) if row else payload.get("email", ""),
+        "phone": phone,
+        "full_name": (profile_data.get("full_name") or (_get(row, "full_name", 3, "") if row else "")) or "",
+        "country_code": _get(row, "country_code", 4, "NG") if row else "NG",
+        "is_active": bool(_get(row, "is_active", 5, True)) if row else True,
+        "is_phone_verified": bool(_get(row, "phone_verified", 6, False)) if row else False,
         "is_email_verified": True,
-        "created_at": str(row[7]) if row else "",
+        "created_at": str(_get(row, "created_at", 7, "") if row else ""),
         "avatar_url": profile_data.get("profile_photo_url"),
         "bio": profile_data.get("bio"),
         "trust_badge": profile_data.get("trust_badge"),
         "subscription_tier": profile_data.get("subscription_tier", "starter"),
     }
     return SuccessResponse(message="Profile retrieved.", data=data)
+
 
 
 @router.patch(
@@ -139,13 +177,26 @@ async def update_me(
         user_table_fields["country_code"] = str(body["country_code"]).upper()[:2]
 
     if user_table_fields:
-        set_clause = ", ".join(f"{k} = :{k}" for k in user_table_fields)
-        user_table_fields["uid"] = str(current_user_id)
-        await service.session.execute(
-            text(f"UPDATE users SET {set_clause} WHERE id = :uid"),
-            user_table_fields,
-        )
-        await service.session.commit()
+        # Write via aiosqlite to the canonical DB (guaranteed correct file)
+        import aiosqlite as _aio
+        _db_path = __import__("shared.db_path", fromlist=["get_db_path"]).get_db_path()
+        set_parts = ", ".join(f"{k} = ?" for k in user_table_fields)
+        values = list(user_table_fields.values()) + [str(current_user_id)]
+        try:
+            async with _aio.connect(str(_db_path)) as _db:
+                await _db.execute(
+                    f"UPDATE users SET {set_parts} WHERE id = ?", values
+                )
+                await _db.commit()
+        except Exception:
+            # Fallback to ORM session
+            set_clause = ", ".join(f"{k} = :{k}" for k in user_table_fields)
+            user_table_fields["uid"] = str(current_user_id)
+            await service.session.execute(
+                text(f"UPDATE users SET {set_clause} WHERE id = :uid"),
+                user_table_fields,
+            )
+            await service.session.commit()
 
     # Also update profile table if profile fields are provided
     profile_body = {k: v for k, v in body.items()
@@ -161,6 +212,141 @@ async def update_me(
     return SuccessResponse(message="Profile updated.", data={"updated": True})
 
 
+
+# ── Admin endpoints ────────────────────────────────────────────────────────────
+
+@router.get(
+    "/users/admin/list",
+    response_model=SuccessResponse,
+    summary="Admin: list all users with search and pagination",
+)
+async def admin_list_users(
+    request: Request,
+    search: str = Query(default="", description="Search by name, email or phone"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    payload: dict = Depends(get_current_user_payload),
+) -> SuccessResponse:
+    """List all platform users. Requires enterprise_admin, moderator, or ops role."""
+    from shared.errors import ForbiddenError
+    roles = payload.get("roles", [])
+    allowed = {"enterprise_admin", "moderator", "ops", "super_admin"}
+    if not allowed.intersection(roles):
+        raise ForbiddenError("Admin access required.")
+
+    import aiosqlite
+    db_path = __import__("shared.db_path", fromlist=["get_db_path"]).get_db_path()
+
+    async with aiosqlite.connect(str(db_path)) as db:
+        db.row_factory = aiosqlite.Row
+
+        # Build WHERE clause for search
+        where = ""
+        params: list = []
+        if search and search.strip():
+            q = f"%{search.strip()}%"
+            where = "WHERE (u.full_name LIKE ? OR u.email LIKE ? OR u.phone LIKE ?)"
+            params = [q, q, q]
+
+        # Total count
+        count_rows = await db.execute_fetchall(
+            f"SELECT COUNT(*) as cnt FROM users u {where}", params
+        )
+        total = int(count_rows[0]["cnt"]) if count_rows else 0
+        total_pages = max(1, (total + page_size - 1) // page_size)
+        offset = (page - 1) * page_size
+
+        # Fetch users
+        rows = await db.execute_fetchall(
+            f"""SELECT u.id, u.email, u.phone, u.full_name, u.country_code,
+                       u.is_active, u.phone_verified, u.created_at
+                FROM users u {where}
+                ORDER BY u.created_at DESC
+                LIMIT ? OFFSET ?""",
+            params + [page_size, offset],
+        )
+
+        # Fetch roles for each user in one query
+        if rows:
+            uid_list = [str(r["id"]) for r in rows]
+            placeholders = ",".join(["?" for _ in uid_list])
+            role_rows = await db.execute_fetchall(
+                f"SELECT user_id, role FROM user_roles WHERE user_id IN ({placeholders})",
+                uid_list,
+            )
+            role_map: dict[str, list[str]] = {}
+            for rr in role_rows:
+                role_map.setdefault(str(rr["user_id"]), []).append(str(rr["role"]))
+        else:
+            role_map = {}
+
+        users = []
+        for r in rows:
+            uid = str(r["id"])
+            phone = str(r["phone"] or "")
+            # Sanitise garbled phone values (UUID fragments stored as phone numbers)
+            if phone and not phone.startswith("+") and len(phone) > 15:
+                phone = ""
+            elif phone and phone.startswith("+0000"):
+                phone = ""
+            users.append({
+                "id": uid,
+                "email": str(r["email"] or ""),
+                "phone": phone,
+                "full_name": str(r["full_name"] or ""),
+                "country_code": str(r["country_code"] or "NG"),
+                "is_active": bool(r["is_active"]),
+                "is_phone_verified": bool(r["phone_verified"]),
+                "created_at": str(r["created_at"] or ""),
+                "roles": role_map.get(uid, []),
+            })
+
+    return SuccessResponse(
+        message=f"{total} users found.",
+        data=users,
+        meta={
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": total_pages,
+            "has_prev": page > 1,
+            "has_next": page < total_pages,
+        },
+    )
+
+
+@router.patch(
+    "/users/admin/{user_id}",
+    response_model=SuccessResponse,
+    summary="Admin: update a user's status or roles",
+)
+async def admin_update_user(
+    user_id: uuid.UUID,
+    request: Request,
+    payload: dict = Depends(get_current_user_payload),
+) -> SuccessResponse:
+    """Toggle is_active or update roles. Requires enterprise_admin or moderator."""
+    from shared.errors import ForbiddenError, InvalidInputError
+    roles = payload.get("roles", [])
+    if not {"enterprise_admin", "moderator", "super_admin"}.intersection(roles):
+        raise ForbiddenError("Admin access required.")
+
+    body = await request.json()
+    import aiosqlite
+    db_path = __import__("shared.db_path", fromlist=["get_db_path"]).get_db_path()
+
+    async with aiosqlite.connect(str(db_path)) as db:
+        if "is_active" in body:
+            is_active = 1 if body["is_active"] else 0
+            await db.execute(
+                "UPDATE users SET is_active = ? WHERE id = ?",
+                [is_active, str(user_id)],
+            )
+            await db.commit()
+
+    return SuccessResponse(message="User updated.", data={"updated": True})
+
+
 @router.post(
     "/users/me/change-password",
     response_model=SuccessResponse,
@@ -171,6 +357,7 @@ async def change_password(
     service: UserService = Depends(_build_service),
     current_user_id: uuid.UUID = Depends(get_current_user_id),
 ) -> SuccessResponse:
+
     """
     Verify current password and immediately apply the new password.
     No OTP step — password changes are instant.

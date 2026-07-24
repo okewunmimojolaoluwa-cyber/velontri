@@ -463,12 +463,10 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
     from sqlalchemy.ext.asyncio import async_sessionmaker
 
     import os as _os
-    # Compute DB path directly from __file__ — immune to any module-level caching issues
-    # This is the definitive path: always <backend_root>/velontri.db
-    _db_root  = str(Path(__file__).resolve().parents[1])
-    _db_file  = _os.environ.get("SQLITE_DB_PATH", "").strip()
-    if not _db_file or not _os.path.isabs(_db_file) or "dev_gateway" in _db_file:
-        _db_file = f"{_db_root}/velontri.db"
+    # Use the shared canonical DB path — the single source of truth for all services.
+    # This ensures the ORM session and aiosqlite both point to the SAME file.
+    from shared.db_path import get_db_path as _get_db_path
+    _db_file = str(_get_db_path())
     _os.environ["SQLITE_DB_PATH"] = _db_file  # broadcast to all in-process callers
     logger.info(f"db_path_resolved: {_db_file}")
     engine = create_engine(f"sqlite+aiosqlite:///{_db_file}")
