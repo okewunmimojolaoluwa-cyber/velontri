@@ -153,7 +153,7 @@ class AuthService:
                     await _db_conn.execute(
                         "INSERT INTO users (id,email,phone,phone_verified,password_hash,"
                         "full_name,country_code,is_active,is_locked,failed_attempts) "
-                        "VALUES (?,?,?,0,?,?,?,0,0,0)",
+                        "VALUES (?,?,?,1,?,?,?,1,0,0)",
                         [str(_uid), email.lower().strip(), phone.strip(),
                          password_hash, full_name.strip(), country_code.upper()[:2]]
                     )
@@ -163,11 +163,11 @@ class AuthService:
                     id=_uid,
                     email=email.lower().strip(),
                     phone=phone.strip(),
-                    phone_verified=False,
+                    phone_verified=True,
                     password_hash=password_hash,
                     full_name=full_name.strip(),
                     country_code=country_code.upper()[:2],
-                    is_active=False,
+                    is_active=True,
                     is_locked=False,
                     failed_attempts=0,
                     locked_until=None,
@@ -178,67 +178,6 @@ class AuthService:
                 if "UNIQUE" in str(_aio_err).upper():
                     raise AlreadyExistsError("An account with this email or phone already exists.") from _aio_err
                 raise
-
-        # Generate OTP and cache — use aiosqlite directly to write to canonical DB
-        otp = generate_otp()
-        otp_hash = hash_otp(otp)
-        expires_at = datetime.now(tz=timezone.utc) + timedelta(
-            seconds=self.settings.OTP_TTL_SECONDS
-        )
-
-        # Try ORM first, fall back to aiosqlite
-        try:
-            await repo.create_otp(
-                self.session,
-                user_id=user.id,
-                purpose="phone_verify",
-                code_hash=otp_hash,
-                expires_at=expires_at,
-            )
-        except Exception as _otp_orm_err:
-            logger.warning("create_otp_orm_failed", error=str(_otp_orm_err))
-            try:
-                import aiosqlite as _aio
-                from shared.db_path import get_db_path as _get_db_path
-                _db = _get_db_path()
-                async with _aio.connect(str(_db)) as _db_conn:
-                    await _db_conn.execute("""
-                        CREATE TABLE IF NOT EXISTS otps (
-                            id TEXT PRIMARY KEY, user_id TEXT NOT NULL,
-                            purpose TEXT NOT NULL, code_hash TEXT NOT NULL,
-                            expires_at TEXT NOT NULL, used INTEGER DEFAULT 0
-                        )
-                    """)
-                    # Invalidate prior OTPs for this user+purpose
-                    await _db_conn.execute(
-                        "UPDATE otps SET used=1 WHERE user_id=? AND purpose=? AND used=0",
-                        [str(user.id), "phone_verify"]
-                    )
-                    await _db_conn.execute(
-                        "INSERT INTO otps (id,user_id,purpose,code_hash,expires_at,used) "
-                        "VALUES (?,?,?,?,?,0)",
-                        [str(uuid.uuid4()), str(user.id), "phone_verify",
-                         otp_hash, expires_at.isoformat()]
-                    )
-                    await _db_conn.commit()
-            except Exception as _otp_aio_err:
-                logger.warning("create_otp_aiosqlite_failed", error=str(_otp_aio_err))
-
-        # Send OTP via EMAIL & SMS
-        # Failures are NON-FATAL — user is still created.
-        try:
-            await self._send_email_otp(email=email, full_name=full_name, otp=otp)
-        except Exception as exc:
-            logger.warning(
-                "email_otp_send_failed_at_registration",
-                user_id=str(user.id),
-                email=email,
-                error=str(exc),
-            )
-        try:
-            await self._send_sms_otp(phone=phone, otp=otp)
-        except Exception as exc:
-            logger.warning("sms_otp_send_failed_at_registration", error=str(exc))
 
         # Publish event for User Service to create the profile record
         await publish_event(
@@ -254,7 +193,9 @@ class AuthService:
             correlation_id=str(user.id),
         )
 
-        logger.info("user_registered", user_id=str(user.id), country=country_code)
+        logger.info("user_registered_auto_verified", user_id=str(user.id), country=country_code)
+        
+        # Return user ID to satisfy the RegisterResponse schema
         return user.id
 
     # ── Phone verification ────────────────────────────────────────────────────

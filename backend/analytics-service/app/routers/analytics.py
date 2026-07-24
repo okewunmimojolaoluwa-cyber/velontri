@@ -361,48 +361,56 @@ async def admin_revenue(
     period: str = Query(default="30d"),
     payload: Annotated[dict, Depends(get_user_payload)] = None,
 ) -> SuccessResponse:
-    """Full revenue stats for the admin revenue page."""
     period_days = {"7d": 7, "30d": 30, "90d": 90, "1y": 365}
     days = period_days.get(period, 30)
 
-    # Daily data points for chart
-    data_points = []
-    base = 6_500_000
-    for i in range(days):
-        date = (datetime.now(tz=timezone.utc) - timedelta(days=days - i - 1)).date().isoformat()
-        data_points.append({"date": date, "revenue": round(base * (1 + random.uniform(-0.15, 0.20)))})
+    import aiosqlite
+    from shared.db_path import get_db_path
+    db_path = get_db_path()
 
-    total_revenue = sum(p["revenue"] for p in data_points)
-    platform_fees = round(total_revenue * 0.045)   # 4.5% take rate
-    prev_total    = round(total_revenue * (1 + random.uniform(-0.12, -0.02)))
-    revenue_change = round((total_revenue - prev_total) / prev_total * 100, 1)
+    data_points = []
+    total_revenue = 0
+    total_transactions = 0
+    active_subscriptions = 0
+    
+    try:
+        async with aiosqlite.connect(str(db_path)) as db:
+            db.row_factory = aiosqlite.Row
+            rows = await db.execute_fetchall(
+                f"SELECT DATE(created_at) as date, COALESCE(SUM(amount), 0) as revenue FROM payments WHERE created_at >= date('now', '-{days} days') GROUP BY DATE(created_at) ORDER BY date ASC"
+            )
+            data_points = [dict(row) for row in rows]
+            total_revenue = sum(p["revenue"] for p in data_points)
+            total_transactions = (await db.execute_fetchall(f"SELECT COUNT(*) as cnt FROM payments WHERE created_at >= date('now', '-{days} days')"))[0]["cnt"]
+            active_subscriptions = (await db.execute_fetchall("SELECT COUNT(*) as cnt FROM subscriptions WHERE status='active'"))[0]["cnt"]
+    except Exception as e:
+        print(f"Analytics error: {e}")
+
+    # Fill in missing dates with zero
+    from datetime import datetime, timedelta, timezone
+    date_map = {p['date']: p['revenue'] for p in data_points}
+    full_data = []
+    for i in range(days):
+        d = (datetime.now(tz=timezone.utc) - timedelta(days=days - i - 1)).date().isoformat()
+        full_data.append({"date": d, "revenue": date_map.get(d, 0)})
+
+    platform_fees = round(total_revenue * 0.045)
 
     return SuccessResponse(
         message="Revenue data retrieved.",
         data={
             "period":                period,
-            "data_points":           data_points,
+            "data_points":           full_data,
             "total_revenue":         total_revenue,
             "platform_fees":         platform_fees,
-            "total_transactions":    round(total_revenue / 45_200),
-            "active_subscriptions":  random.randint(280, 420),
-            "revenue_change":        revenue_change,
-            "fees_change":           round(revenue_change * random.uniform(0.8, 1.2), 1),
-            "transactions_change":   round(revenue_change * random.uniform(0.7, 1.1), 1),
+            "total_transactions":    total_transactions,
+            "active_subscriptions":  active_subscriptions,
+            "revenue_change":        0.0,
+            "fees_change":           0.0,
+            "transactions_change":   0.0,
             "currency":              "NGN",
-            "breakdown": [
-                {"source": "Transaction fees",    "amount": round(platform_fees * 0.55)},
-                {"source": "Subscription plans",  "amount": round(platform_fees * 0.28)},
-                {"source": "Promoted listings",   "amount": round(platform_fees * 0.12)},
-                {"source": "Escrow release fees", "amount": round(platform_fees * 0.05)},
-            ],
-            "top_sources": [
-                {"name": "Vehicles",    "percentage": 38},
-                {"name": "Property",    "percentage": 27},
-                {"name": "Electronics", "percentage": 18},
-                {"name": "Fashion",     "percentage": 10},
-                {"name": "Other",       "percentage":  7},
-            ],
+            "breakdown": [],
+            "top_sources": [],
         },
     )
 
@@ -416,34 +424,10 @@ async def category_gmv(
     request: Request,
     payload: Annotated[dict, Depends(get_user_payload)] = None,
 ) -> SuccessResponse:
-    """Return GMV aggregated by category with percentage breakdown."""
-    raw = [
-        {"category": "Vehicles",     "gmv": 85_600_000, "color": "#4F46E5"},
-        {"category": "Property",     "gmv": 62_400_000, "color": "#0369A1"},
-        {"category": "Electronics",  "gmv": 32_100_000, "color": "#7C3AED"},
-        {"category": "Fashion",      "gmv": 14_800_000, "color": "#EC4899"},
-        {"category": "Furniture",    "gmv":  8_500_000, "color": "#D97706"},
-        {"category": "Services",     "gmv":  5_200_000, "color": "#059669"},
-        {"category": "Other",        "gmv":  2_400_000, "color": "#64748B"},
-    ]
-    total_gmv = sum(r["gmv"] for r in raw)
-    categories = [
-        {
-            "category":   item["category"],
-            "gmv":        round(item["gmv"] * (1 + random.uniform(-0.05, 0.1))),
-            "percentage": round(item["gmv"] / total_gmv * 100, 1),
-            "color":      item["color"],
-            "count":      random.randint(500, 5000),
-        }
-        for item in raw
-    ]
     return SuccessResponse(
         message="Category GMV retrieved.",
-        data=categories,
-    )
-
-
-@router.get(
+        data=[],
+    )@router.get(
     "/analytics/countries/top",
     response_model=SuccessResponse,
     summary="Top countries by GMV and listing count for admin",
@@ -452,36 +436,10 @@ async def top_countries(
     request: Request,
     payload: Annotated[dict, Depends(get_user_payload)] = None,
 ) -> SuccessResponse:
-    """Return top countries with the fields the frontend expects."""
-    countries_raw = [
-        {"country": "Nigeria",      "flag": "🇳🇬", "code": "NG", "users": 9_800_000},
-        {"country": "Ghana",        "flag": "🇬🇭", "code": "GH", "users": 1_920_000},
-        {"country": "Kenya",        "flag": "🇰🇪", "code": "KE", "users": 1_240_000},
-        {"country": "South Africa", "flag": "🇿🇦", "code": "ZA", "users":   980_000},
-        {"country": "Tanzania",     "flag": "🇹🇿", "code": "TZ", "users":   480_000},
-        {"country": "Uganda",       "flag": "🇺🇬", "code": "UG", "users":   380_000},
-    ]
-    total_users = sum(c["users"] for c in countries_raw)
-    countries = [
-        {
-            "country":    c["country"],
-            "flag":       c["flag"],
-            "code":       c["code"],
-            "user_count": round(c["users"] * (1 + random.uniform(-0.03, 0.05))),
-            "share_pct":  round(c["users"] / total_users * 100, 1),
-            "gmv":        round(c["users"] * random.uniform(12, 18)),
-            "listings":   round(c["users"] * random.uniform(0.004, 0.008)),
-        }
-        for c in countries_raw
-    ]
     return SuccessResponse(
         message="Top countries retrieved.",
-        data=countries,
-    )
-
-
-
-# ── Admin content/config stubs (no DB tables yet — return empty lists) ─────────
+        data=[],
+    )# ── Admin content/config stubs (no DB tables yet — return empty lists) ─────────
 
 @router.get("/admin/reviews", response_model=SuccessResponse, summary="Admin: list reviews")
 async def admin_reviews(

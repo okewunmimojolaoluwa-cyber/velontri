@@ -115,7 +115,8 @@ export default function RegisterPage() {
     try {
       const res = await authApi.register({ ...form, country_code: form.country_code.toUpperCase() });
       const email = res.data?.email || form.email;
-      router.push(`${ROUTES.verifyPhone}?user_id=${res.data.user_id}&email=${encodeURIComponent(email)}`);
+      // Bypass OTP verification: user is already active. Redirect to login directly.
+      router.push(`${ROUTES.login}?email=${encodeURIComponent(email)}`);
     } catch (err) {
       if (err instanceof VelontriApiError) {
         setError(err.code === 'ALREADY_EXISTS' ? 'An account with this email or phone already exists.' : err.message);

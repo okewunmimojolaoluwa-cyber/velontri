@@ -33,33 +33,37 @@ async def admin_stats(
     payload: Annotated[dict, Depends(get_user_payload)] = None,
 ) -> SuccessResponse:
     async with request.app.state.session_factory() as session:
-        from sqlalchemy import text, func, select
+        from sqlalchemy import text
         try:
-            users_row   = await session.execute(text("SELECT COUNT(*) FROM users"))
-            total_users = users_row.scalar() or 0
+            total_users = (await session.execute(text("SELECT COUNT(*) FROM users"))).scalar() or 0
+            total_listings = (await session.execute(text("SELECT COUNT(*) FROM listings WHERE status='active'"))).scalar() or 0
+            total_transactions = (await session.execute(text("SELECT COUNT(*) FROM payments"))).scalar() or 0
+            pending_disputes = (await session.execute(text("SELECT COUNT(*) FROM disputes WHERE status='open'"))).scalar() or 0
+            pending_moderation = (await session.execute(text("SELECT COUNT(*) FROM listings WHERE status='pending_review'"))).scalar() or 0
+            gmv_today = (await session.execute(text("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE DATE(created_at) = DATE('now')"))).scalar() or 0
+            gmv_week = (await session.execute(text("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE created_at >= DATE('now', '-7 days')"))).scalar() or 0
+            gmv_month = (await session.execute(text("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE created_at >= DATE('now', '-30 days')"))).scalar() or 0
+            today_sales_count = (await session.execute(text("SELECT COUNT(*) FROM payments WHERE DATE(created_at) = DATE('now')"))).scalar() or 0
+            new_users_today = (await session.execute(text("SELECT COUNT(*) FROM users WHERE DATE(created_at) = DATE('now')"))).scalar() or 0
         except Exception:
-            total_users = 0
-        try:
-            listings_row = await session.execute(text("SELECT COUNT(*) FROM listings WHERE status='active'"))
-            total_listings = listings_row.scalar() or 0
-        except Exception:
-            total_listings = 0
+            total_users = total_listings = total_transactions = pending_disputes = pending_moderation = 0
+            gmv_today = gmv_week = gmv_month = today_sales_count = new_users_today = 0
 
     return SuccessResponse(
         message="Admin stats retrieved.",
         data={
             "total_users":         total_users,
             "total_listings":      total_listings,
-            "total_transactions":  _mock_trend(12480),
-            "pending_disputes":    random.randint(2, 12),
-            "pending_moderation":  random.randint(5, 30),
-            "gmv_today":           _mock_trend(4_820_000),
-            "gmv_week":            _mock_trend(32_500_000),
-            "gmv_month":           _mock_trend(145_000_000),
-            "today_sales_count":   random.randint(300, 800),
+            "total_transactions":  total_transactions,
+            "pending_disputes":    pending_disputes,
+            "pending_moderation":  pending_moderation,
+            "gmv_today":           gmv_today,
+            "gmv_week":            gmv_week,
+            "gmv_month":           gmv_month,
+            "today_sales_count":   today_sales_count,
             "currency":            "NGN",
-            "new_users_today":     random.randint(120, 400),
-            "active_sessions":     random.randint(800, 2400),
+            "new_users_today":     new_users_today,
+            "active_sessions":     0,
         },
     )
 
@@ -78,22 +82,25 @@ async def business_overview(
     async with request.app.state.session_factory() as session:
         from sqlalchemy import text
         try:
-            users_row = await session.execute(text("SELECT COUNT(*) FROM users"))
-            active_users = users_row.scalar() or 0
+            active_users = (await session.execute(text("SELECT COUNT(*) FROM users"))).scalar() or 0
+            total_revenue = (await session.execute(text("SELECT COALESCE(SUM(fee_amount), 0) FROM payments"))).scalar() or 0
+            total_orders = (await session.execute(text("SELECT COUNT(*) FROM payments"))).scalar() or 0
+            active_listings = (await session.execute(text("SELECT COUNT(*) FROM listings WHERE status='active'"))).scalar() or 0
+            active_stores = (await session.execute(text("SELECT COUNT(*) FROM stores WHERE status='active'"))).scalar() or 0
         except Exception:
-            active_users = 15247
+            active_users = total_revenue = total_orders = active_listings = active_stores = 0
 
     return SuccessResponse(
         message="Business overview retrieved.",
         data={
-            "total_revenue":  _mock_trend(201_800_000),
+            "total_revenue":  total_revenue,
             "active_users":   active_users,
-            "total_orders":   _mock_trend(12480),
-            "active_listings": _mock_trend(85000),
-            "avg_rating":     round(random.uniform(4.5, 4.9), 1),
-            "active_stores":  _mock_trend(3200),
-            "countries":      12,
-            "mom_growth":     round(random.uniform(8.0, 24.0), 1),
+            "total_orders":   total_orders,
+            "active_listings": active_listings,
+            "avg_rating":     0.0,
+            "active_stores":  active_stores,
+            "countries":      1,
+            "mom_growth":     0.0,
         },
     )
 
@@ -109,20 +116,26 @@ async def sales_analytics(
     request: Request,
     payload: Annotated[dict, Depends(get_user_payload)] = None,
 ) -> SuccessResponse:
+    async with request.app.state.session_factory() as session:
+        from sqlalchemy import text
+        try:
+            today_sales = (await session.execute(text("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE DATE(created_at) = DATE('now')"))).scalar() or 0
+            week_sales = (await session.execute(text("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE created_at >= DATE('now', '-7 days')"))).scalar() or 0
+            total_orders = (await session.execute(text("SELECT COUNT(*) FROM payments"))).scalar() or 0
+            avg_order = (await session.execute(text("SELECT COALESCE(AVG(amount), 0) FROM payments"))).scalar() or 0
+            categories = []
+        except Exception:
+            today_sales = week_sales = total_orders = avg_order = 0
+            categories = []
+
     return SuccessResponse(
         message="Sales analytics retrieved.",
         data={
-            "today_sales":  _mock_trend(4_100_000),
-            "week_sales":   _mock_trend(28_600_000),
-            "total_orders": _mock_trend(12480),
-            "avg_order":    _mock_trend(45_200),
-            "by_category": [
-                {"category": "Vehicles",    "amount": _mock_trend(480_000_000), "orders": 1240, "pct": 38},
-                {"category": "Property",    "amount": _mock_trend(365_000_000), "orders": 890,  "pct": 29},
-                {"category": "Electronics","amount": _mock_trend(214_000_000), "orders": 4200, "pct": 17},
-                {"category": "Fashion",     "amount": _mock_trend(126_000_000), "orders": 8900, "pct": 10},
-                {"category": "Services",    "amount": _mock_trend(75_000_000),  "orders": 2100, "pct": 6},
-            ],
+            "today_sales":  today_sales,
+            "week_sales":   week_sales,
+            "total_orders": total_orders,
+            "avg_order":    round(avg_order, 2),
+            "by_category":  categories,
         },
     )
 
