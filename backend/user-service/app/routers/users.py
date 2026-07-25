@@ -326,10 +326,15 @@ async def admin_update_user(
     payload: dict = Depends(get_current_user_payload),
 ) -> SuccessResponse:
     """Toggle is_active or update roles. Requires enterprise_admin or moderator."""
-    from shared.errors import ForbiddenError, InvalidInputError
+    from shared.errors import ForbiddenError
     roles = payload.get("roles", [])
     if not {"enterprise_admin", "moderator", "super_admin"}.intersection(roles):
         raise ForbiddenError("Admin access required.")
+
+    # Prevent any admin from suspending their own account via the API
+    caller_id = payload.get("sub", "")
+    if str(user_id) == caller_id:
+        raise ForbiddenError("You cannot modify your own account status.")
 
     body = await request.json()
     import aiosqlite
@@ -345,6 +350,7 @@ async def admin_update_user(
             await db.commit()
 
     return SuccessResponse(message="User updated.", data={"updated": True})
+
 
 
 @router.post(

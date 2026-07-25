@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, Users, BadgeCheck, ShieldOff, UserX } from 'lucide-react';
 import { RoleGate } from '@/components/rbac/role-gate';
+import { useAuth } from '@/features/auth/auth-provider';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -22,6 +23,8 @@ const ROLE_CHIP: Record<string, string> = {
 };
 
 export default function AdminUsersPage() {
+  const { session } = useAuth();
+  const currentUserId = session?.userId;
   const [search, setSearch] = useState('');
   const [committed, setCommitted] = useState('');
   const [page, setPage] = useState(1);
@@ -161,17 +164,23 @@ export default function AdminUsersPage() {
                         {user.is_active ? 'Active' : 'Suspended'}
                       </span>
 
-                      {/* Action */}
-                      <button
-                        onClick={() => toggle({ id: user.id, active: !user.is_active })}
-                        className={`h-8 rounded-lg border px-3 text-[12px] font-semibold transition-all ${
-                          user.is_active
-                            ? 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100'
-                            : 'border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                        }`}
-                      >
-                        {user.is_active ? 'Suspend' : 'Restore'}
-                      </button>
+                      {/* Action — hide for the currently signed-in user */}
+                      {user.id === currentUserId ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-[11px] font-semibold text-indigo-600">
+                          You
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => toggle({ id: user.id, active: !user.is_active })}
+                          className={`h-8 rounded-lg border px-3 text-[12px] font-semibold transition-all ${
+                            user.is_active
+                              ? 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100'
+                              : 'border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                          }`}
+                        >
+                          {user.is_active ? 'Suspend' : 'Restore'}
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
