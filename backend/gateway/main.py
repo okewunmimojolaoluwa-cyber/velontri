@@ -603,11 +603,28 @@ async def _apply_pg_migrations(engine) -> None:
             pending_downgrade_tier  TEXT,
             current_period_start    TIMESTAMPTZ,
             current_period_end      TIMESTAMPTZ,
+            retry_count             INTEGER NOT NULL DEFAULT 0,
             created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
         """,
         "CREATE INDEX IF NOT EXISTS ix_subscriptions_user ON subscriptions(user_id)",
+        # Add retry_count if missing on older deployments
+        "ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS retry_count INTEGER NOT NULL DEFAULT 0",
+        """
+        CREATE TABLE IF NOT EXISTS invoices (
+            id           TEXT PRIMARY KEY,
+            user_id      TEXT NOT NULL,
+            tier         TEXT NOT NULL,
+            amount       NUMERIC(18,2) NOT NULL,
+            currency     VARCHAR(3) NOT NULL,
+            fx_rate      NUMERIC(18,6),
+            status       TEXT NOT NULL DEFAULT 'pending',
+            payment_ref  TEXT,
+            invoice_date TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_invoices_user_id ON invoices(user_id)",
     ]
     async with engine.begin() as conn:
         for stmt in stmts:
