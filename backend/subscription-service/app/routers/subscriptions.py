@@ -258,30 +258,26 @@ async def _enforce_subscription_expiry(session_factory) -> None:
     2. Archive all listings beyond the free plan limit (3).
     When they renew, their listings are restored.
     """
-    from pathlib import Path
     from datetime import datetime, timezone
-    now_iso = datetime.now(tz=timezone.utc).isoformat()
     import logging
     log = logging.getLogger(__name__)
     try:
         async with session_factory() as db:
             from sqlalchemy import text as _text
-            await db.execute(_text("\n                CREATE TABLE IF NOT EXISTS subscriptions (\n                    id TEXT PRIMARY KEY,\n                    user_id TEXT NOT NULL UNIQUE,\n                    tier TEXT NOT NULL DEFAULT 'starter',\n                    is_active INTEGER NOT NULL DEFAULT 1,\n                    pending_downgrade_tier TEXT,\n                    current_period_start TEXT,\n                    current_period_end TEXT,\n                    created_at TEXT NOT NULL DEFAULT NOW(),\n                    updated_at TEXT NOT NULL DEFAULT NOW()\n                )\n            "))
-            await db.execute(_text('CREATE INDEX IF NOT EXISTS ix_subscriptions_user ON subscriptions(user_id)'))
-            await db.commit()
+            # Use PostgreSQL NOW() for comparison — avoids TEXT vs TIMESTAMPTZ mismatch
             expired = (await db.execute(_text("""
                 SELECT id, user_id, tier, current_period_end
                 FROM subscriptions
                 WHERE is_active = TRUE
                   AND tier != 'starter'
                   AND current_period_end IS NOT NULL
-                  AND current_period_end < :p0
-                """), {'p0': now_iso})).mappings().all()
+                  AND current_period_end < NOW()
+                """))).mappings().all()
             for row in expired:
                 user_id_str = str(row['user_id'])
                 old_tier = row['tier']
                 log.info(f'subscription_expired: user={user_id_str} tier={old_tier}')
-                await db.execute(_text("UPDATE subscriptions SET tier='starter', is_active=TRUE WHERE id=:p0"), {'p0': str(row['id'])})
+                await db.execute(_text("UPDATE subscriptions SET tier='starter', is_active=TRUE, updated_at=NOW() WHERE id=:p0"), {'p0': str(row['id'])})
                 active = (await db.execute(_text("SELECT id FROM listings WHERE CAST(seller_id AS TEXT)=:p0 AND status='active' ORDER BY created_at DESC"), {'p0': user_id_str})).mappings().all()
                 archived_count = 0
                 if len(active) > FREE_PLAN_LIMIT:
@@ -294,8 +290,7 @@ async def _enforce_subscription_expiry(session_factory) -> None:
                     import uuid as _u
                     _plan_label = old_tier.capitalize()
                     _msg = f'Your {_plan_label} subscription has expired. You are now on the Free plan ({FREE_PLAN_LIMIT} listings). ' + (f'{archived_count} listing(s) have been archived. Renew your plan to restore them.' if archived_count > 0 else '')
-                    await db.execute(_text("\n                        CREATE TABLE IF NOT EXISTS notifications (\n                            id TEXT PRIMARY KEY,\n                            user_id TEXT NOT NULL,\n                            type TEXT NOT NULL DEFAULT 'system',\n                            title TEXT NOT NULL,\n                            message TEXT NOT NULL,\n                            is_read INTEGER NOT NULL DEFAULT 0,\n                            created_at TEXT NOT NULL DEFAULT NOW()\n                        )\n                    "))
-                    await db.execute(_text('INSERT INTO notifications (id, user_id, type, title, message, is_read) VALUES (:p0,:p1,:p2,:p3,:p4,0)'), {'p0': str(_u.uuid4()), 'p1': user_id_str, 'p2': 'payment', 'p3': '⚠️ Subscription Expired', 'p4': _msg})
+                    await db.execute(_text('INSERT INTO notifications (id, user_id, type, title, message, is_read) VALUES (:p0,:p1,:p2,:p3,:p4,FALSE)'), {'p0': str(_u.uuid4()), 'p1': user_id_str, 'p2': 'payment', 'p3': 'Subscription Expired', 'p4': _msg})
                 except Exception:
                     pass
             await db.commit()

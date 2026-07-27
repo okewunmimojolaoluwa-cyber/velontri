@@ -351,8 +351,7 @@ class AuthService:
         """
         try:
             async with httpx.AsyncClient(timeout=2.0) as client:
-                user_svc_url = self.settings.NOTIFICATION_SERVICE_URL.replace('notification', 'user')
-                url = f'{user_svc_url}/internal/users/{user_id}/subscription-tier'
+                url = f'{self.settings.USER_SERVICE_URL}/internal/users/{user_id}/subscription-tier'
                 resp = await client.get(url)
                 if resp.status_code == 200:
                     return resp.json().get('tier', 'starter')

@@ -54,6 +54,9 @@ class AuthSettings(BaseServiceSettings):
     # Notification service URL (for emailing lockout alerts)
     NOTIFICATION_SERVICE_URL: str = "http://notification-service:8000"
 
+    # User service URL (for fetching subscription tier at login)
+    USER_SERVICE_URL: str = "http://user-service:8000"
+
     # TOTP encryption key (for encrypting stored TOTP secrets)
     TOTP_ENCRYPTION_KEY: str = Field(
         description="32-byte Fernet key for TOTP secret encryption at rest"
