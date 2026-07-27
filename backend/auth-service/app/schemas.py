@@ -14,7 +14,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 
 # ── Validators ────────────────────────────────────────────────────────────────
 
-_PHONE_RE = re.compile(r"^\+[1-9]\d{6,14}$")  # E.164 format
+_PHONE_RE = re.compile(r"^(\+)?[0-9]{10,15}$")  # Relaxed format
 _PASSWORD_RE = re.compile(
     r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>/?]).{8,128}$"
 )
@@ -24,7 +24,7 @@ _COUNTRY_CODE_RE = re.compile(r"^[A-Z]{2}$")
 def _validate_phone(v: str) -> str:
     if not _PHONE_RE.match(v):
         raise ValueError(
-            "Phone must be in E.164 format, e.g. +2348012345678"
+            "Phone must be a valid 10-15 digit number (e.g. 08012345678 or +2348012345678)"
         )
     return v
 
