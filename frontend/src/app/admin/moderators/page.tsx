@@ -131,9 +131,9 @@ export default function ModeratorsPage() {
     setCreateError('');
 
     // Frontend validation — catches common errors before the network call
-    const phoneRe = /^\+[1-9]\d{6,14}$/;
+    const phoneRe = /^(\+)?[0-9]{10,15}$/;
     if (!phoneRe.test(newMod.phone)) {
-      setCreateError('Phone must be in E.164 format, e.g. +2348012345678');
+      setCreateError('Phone must be a valid 10-15 digit number (e.g. 08012345678)');
       return;
     }
 
@@ -208,7 +208,7 @@ export default function ModeratorsPage() {
                     onChange={e => setNewMod(p => ({ ...p, phone: e.target.value }))}
                     required className={`${inputCls} pl-10`} />
                 </div>
-                <p className="text-[11px] text-slate-400">E.164 format: +countrycode + number (e.g. +2348012345678)</p>
+                <p className="text-[11px] text-slate-400">Enter a valid 10-15 digit phone number</p>
               </div>
               <div className="space-y-1.5">
                 <label className="text-[13px] font-semibold text-slate-700">Password <span className="text-red-500">*</span></label>

@@ -211,9 +211,9 @@ export default function CreateListingPage() {
     if (step === 2) {
       if (!form.state) { setError('Select your state.'); return; }
       if (!form.whatsapp_number.trim()) { setError('WhatsApp number is required.'); return; }
-      // Basic E.164 validation: starts with + and has 7–15 digits
-      if (!/^\+[1-9]\d{6,14}$/.test(form.whatsapp_number.trim())) {
-        setError('Enter a valid WhatsApp number in international format (e.g. +2348012345678).');
+      // Basic validation: 10-15 digits with optional plus
+      if (!/^(\+)?[0-9]{10,15}$/.test(form.whatsapp_number.trim())) {
+        setError('Enter a valid 10-15 digit WhatsApp number (e.g. 08012345678).');
         return;
       }
     }

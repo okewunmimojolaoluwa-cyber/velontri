@@ -107,8 +107,8 @@ export default function RegisterPage() {
     setError('');
     const pwE = validatePassword(form.password);
     if (pwE) { setPwErr(pwE); return; }
-    if (!/^\+[1-9]\d{6,14}$/.test(form.phone)) {
-      setError('Phone must be E.164 format — e.g. +2348012345678');
+    if (!/^(\+)?[0-9]{10,15}$/.test(form.phone)) {
+      setError('Phone must be a valid 10-15 digit number (e.g. 08012345678)');
       return;
     }
     setLoading(true);
@@ -205,7 +205,7 @@ export default function RegisterPage() {
               onChange={set('phone')} required autoComplete="tel"
               className={`${inputCls} pl-10`} />
           </div>
-          <p className="text-[11px] text-slate-400">E.164 format — e.g. +234 for Nigeria, +233 for Ghana</p>
+          <p className="text-[11px] text-slate-400">Enter a valid 10-15 digit phone number</p>
         </div>
 
         {/* Password */}
