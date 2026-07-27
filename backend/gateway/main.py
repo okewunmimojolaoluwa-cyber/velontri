@@ -174,6 +174,74 @@ async def _apply_pg_migrations(engine) -> None:
         """,
         "CREATE INDEX IF NOT EXISTS ix_user_roles_user_id ON user_roles(user_id)",
         "CREATE UNIQUE INDEX IF NOT EXISTS uq_user_roles_user_role ON user_roles(user_id, role)",
+        # ── Auth & Security ───────────────────────────────────────────────────
+        """
+        CREATE TABLE IF NOT EXISTS devices (
+            id              TEXT PRIMARY KEY,
+            user_id         TEXT NOT NULL,
+            fingerprint     TEXT NOT NULL,
+            ip_address      TEXT,
+            user_agent      TEXT,
+            last_seen       TIMESTAMPTZ,
+            is_trusted      BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE(user_id, fingerprint)
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_devices_user_id ON devices(user_id)",
+        """
+        CREATE TABLE IF NOT EXISTS login_history (
+            id                 TEXT PRIMARY KEY,
+            user_id            TEXT NOT NULL,
+            device_fingerprint TEXT,
+            ip_address         TEXT,
+            success            BOOLEAN,
+            created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_login_history_user_id ON login_history(user_id)",
+        "CREATE INDEX IF NOT EXISTS ix_login_history_created_at ON login_history(created_at)",
+        """
+        CREATE TABLE IF NOT EXISTS refresh_tokens (
+            id                 TEXT PRIMARY KEY,
+            user_id            TEXT NOT NULL,
+            token_hash         TEXT UNIQUE NOT NULL,
+            device_fingerprint TEXT,
+            expires_at         TIMESTAMPTZ NOT NULL,
+            revoked            BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_refresh_tokens_user_id ON refresh_tokens(user_id)",
+        """
+        CREATE TABLE IF NOT EXISTS otps (
+            id         TEXT PRIMARY KEY,
+            user_id    TEXT NOT NULL,
+            purpose    TEXT NOT NULL,
+            code_hash  TEXT NOT NULL,
+            expires_at TIMESTAMPTZ NOT NULL,
+            used       BOOLEAN NOT NULL DEFAULT FALSE
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_otps_user_id_purpose ON otps(user_id, purpose)",
+        """
+        CREATE TABLE IF NOT EXISTS totp_secrets (
+            user_id          TEXT PRIMARY KEY,
+            secret_encrypted TEXT NOT NULL,
+            enabled          BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS audit_logs (
+            id          TEXT PRIMARY KEY,
+            user_id     TEXT NOT NULL,
+            action      TEXT NOT NULL,
+            ip_address  TEXT,
+            created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_audit_logs_user_id ON audit_logs(user_id)",
         # ── Marketplace / Listings ────────────────────────────────────────────
         """
         CREATE TABLE IF NOT EXISTS listings (
