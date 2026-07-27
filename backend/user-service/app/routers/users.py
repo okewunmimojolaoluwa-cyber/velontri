@@ -167,7 +167,7 @@ async def admin_update_user(user_id: uuid.UUID, request: Request, payload: dict=
     async with request.app.state.session_factory() as db:
         from sqlalchemy import text as _text
         if 'is_active' in body:
-            is_active = 1 if body['is_active'] else 0
+            is_active = True if body['is_active'] else False
             await db.execute(_text('UPDATE users SET is_active = :p0 WHERE id = :p1'), {'p0': is_active, 'p1': str(user_id)})
             await db.commit()
     return SuccessResponse(message='User updated.', data={'updated': True})
@@ -359,20 +359,44 @@ async def get_subscription_tier_internal(user_id: uuid.UUID, service: UserServic
     return SuccessResponse(data=result.model_dump())
 
 @router.get('/users/admin/list', response_model=SuccessResponse, summary='Admin: list all users with search and filter')
-async def admin_list_users(service: UserService=Depends(_build_service), payload: dict=Depends(get_current_user_payload), search: str | None=Query(default=None), kyc_verified: bool | None=Query(default=None), page: int=Query(default=1, ge=1), page_size: int=Query(default=20, ge=1, le=100)) -> SuccessResponse:
-    from pathlib import Path
+async def admin_list_users(request: Request, service: UserService=Depends(_build_service), payload: dict=Depends(get_current_user_payload), search: str | None=Query(default=None), kyc_verified: bool | None=Query(default=None), page: int=Query(default=1, ge=1), page_size: int=Query(default=20, ge=1, le=100)) -> SuccessResponse:
     from shared.errors import paginated_meta
     offset = (page - 1) * page_size
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            exclude_admin = "\n                AND u.id NOT IN (\n                    SELECT CAST(user_id AS TEXT) FROM user_roles\n                    WHERE role IN ('enterprise_admin', 'super_admin')\n                )\n            "
+            exclude_admin = """
+                AND CAST(u.id AS TEXT) NOT IN (
+                    SELECT CAST(user_id AS TEXT) FROM user_roles
+                    WHERE role IN ('enterprise_admin', 'super_admin')
+                )
+            """
             if search:
                 s = f'%{search}%'
-                rows = (await db.execute(_text(f"\n                    SELECT u.id, u.email, u.phone, u.full_name, u.country_code,\n                           u.is_active, u.phone_verified, u.created_at,\n                           GROUP_CONCAT(r.role, ',') as roles\n                    FROM users u\n                    LEFT JOIN user_roles r ON CAST(r.user_id AS TEXT) = CAST(u.id AS TEXT)\n                    WHERE (u.full_name LIKE ? OR u.email LIKE ? OR u.phone LIKE ?)\n                    {exclude_admin}\n                    GROUP BY u.id ORDER BY u.created_at DESC LIMIT ? OFFSET ?\n                    "), {'p0': s, 'p1': s, 'p2': s, 'p3': page_size, 'p4': offset})).mappings().all()
-                count_rows = (await db.execute(_text(f'SELECT COUNT(*) AS cnt FROM users u WHERE (u.full_name LIKE ? OR u.email LIKE ? OR u.phone LIKE ?) {exclude_admin}'), {'p0': s, 'p1': s, 'p2': s})).mappings().all()
+                rows = (await db.execute(_text(f"""
+                    SELECT u.id, u.email, u.phone, u.full_name, u.country_code,
+                           u.is_active, u.phone_verified, u.created_at,
+                           STRING_AGG(r.role, ',') AS roles
+                    FROM users u
+                    LEFT JOIN user_roles r ON CAST(r.user_id AS TEXT) = CAST(u.id AS TEXT)
+                    WHERE (u.full_name ILIKE :s0 OR u.email ILIKE :s0 OR u.phone ILIKE :s0)
+                    {exclude_admin}
+                    GROUP BY u.id ORDER BY u.created_at DESC LIMIT :lim OFFSET :off
+                    """), {'s0': s, 'lim': page_size, 'off': offset})).mappings().all()
+                count_rows = (await db.execute(_text(f"""
+                    SELECT COUNT(*) AS cnt FROM users u
+                    WHERE (u.full_name ILIKE :s0 OR u.email ILIKE :s0 OR u.phone ILIKE :s0)
+                    {exclude_admin}"""), {'s0': s})).mappings().all()
             else:
-                rows = (await db.execute(_text(f"\n                    SELECT u.id, u.email, u.phone, u.full_name, u.country_code,\n                           u.is_active, u.phone_verified, u.created_at,\n                           GROUP_CONCAT(r.role, ',') as roles\n                    FROM users u\n                    LEFT JOIN user_roles r ON CAST(r.user_id AS TEXT) = CAST(u.id AS TEXT)\n                    WHERE 1=1 {exclude_admin}\n                    GROUP BY u.id ORDER BY u.created_at DESC LIMIT ? OFFSET ?\n                    "), {'p0': page_size, 'p1': offset})).mappings().all()
+                rows = (await db.execute(_text(f"""
+                    SELECT u.id, u.email, u.phone, u.full_name, u.country_code,
+                           u.is_active, u.phone_verified, u.created_at,
+                           STRING_AGG(r.role, ',') AS roles
+                    FROM users u
+                    LEFT JOIN user_roles r ON CAST(r.user_id AS TEXT) = CAST(u.id AS TEXT)
+                    WHERE 1=1 {exclude_admin}
+                    GROUP BY u.id ORDER BY u.created_at DESC LIMIT :lim OFFSET :off
+                    """), {'lim': page_size, 'off': offset})).mappings().all()
                 count_rows = (await db.execute(_text(f'SELECT COUNT(*) AS cnt FROM users u WHERE 1=1 {exclude_admin}'))).mappings().all()
             total = count_rows[0]['cnt'] if count_rows else 0
             data = [{'id': str(r['id']), 'email': r['email'], 'phone': r['phone'], 'full_name': r['full_name'], 'country_code': r['country_code'], 'is_active': bool(r['is_active']), 'is_phone_verified': bool(r['phone_verified']), 'created_at': str(r['created_at']), 'roles': r['roles'].split(',') if r['roles'] else []} for r in rows]
@@ -400,7 +424,7 @@ async def admin_update_user(user_id: uuid.UUID, request: Request, service: UserS
     session = service.session
     is_active = body.get('is_active')
     if is_active is not None:
-        await session.execute(text('UPDATE users SET is_active = :v WHERE CAST(id AS TEXT) = :uid'), {'v': 1 if is_active else 0, 'uid': str(user_id)})
+        await session.execute(text('UPDATE users SET is_active = :v WHERE CAST(id AS TEXT) = :uid'), {'v': bool(is_active), 'uid': str(user_id)})
         await session.commit()
     return SuccessResponse(data={'updated': True})
 

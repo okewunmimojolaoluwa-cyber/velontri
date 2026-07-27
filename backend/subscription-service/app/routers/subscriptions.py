@@ -269,12 +269,19 @@ async def _enforce_subscription_expiry(session_factory) -> None:
             await db.execute(_text("\n                CREATE TABLE IF NOT EXISTS subscriptions (\n                    id TEXT PRIMARY KEY,\n                    user_id TEXT NOT NULL UNIQUE,\n                    tier TEXT NOT NULL DEFAULT 'starter',\n                    is_active INTEGER NOT NULL DEFAULT 1,\n                    pending_downgrade_tier TEXT,\n                    current_period_start TEXT,\n                    current_period_end TEXT,\n                    created_at TEXT NOT NULL DEFAULT NOW(),\n                    updated_at TEXT NOT NULL DEFAULT NOW()\n                )\n            "))
             await db.execute(_text('CREATE INDEX IF NOT EXISTS ix_subscriptions_user ON subscriptions(user_id)'))
             await db.commit()
-            expired = (await db.execute(_text("\n                SELECT id, user_id, tier, current_period_end\n                FROM subscriptions\n                WHERE is_active = 1\n                  AND tier != 'starter'\n                  AND current_period_end IS NOT NULL\n                  AND current_period_end < :p0\n                "), {'p0': now_iso})).mappings().all()
+            expired = (await db.execute(_text("""
+                SELECT id, user_id, tier, current_period_end
+                FROM subscriptions
+                WHERE is_active = TRUE
+                  AND tier != 'starter'
+                  AND current_period_end IS NOT NULL
+                  AND current_period_end < :p0
+                """), {'p0': now_iso})).mappings().all()
             for row in expired:
                 user_id_str = str(row['user_id'])
                 old_tier = row['tier']
                 log.info(f'subscription_expired: user={user_id_str} tier={old_tier}')
-                await db.execute(_text("UPDATE subscriptions SET tier='starter', is_active=1 WHERE id=:p0"), {'p0': str(row['id'])})
+                await db.execute(_text("UPDATE subscriptions SET tier='starter', is_active=TRUE WHERE id=:p0"), {'p0': str(row['id'])})
                 active = (await db.execute(_text("SELECT id FROM listings WHERE CAST(seller_id AS TEXT)=:p0 AND status='active' ORDER BY created_at DESC"), {'p0': user_id_str})).mappings().all()
                 archived_count = 0
                 if len(active) > FREE_PLAN_LIMIT:
