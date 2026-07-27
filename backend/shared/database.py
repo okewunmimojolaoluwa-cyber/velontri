@@ -67,16 +67,16 @@ def create_engine(
         "pool_size": pool_size,
         "max_overflow": max_overflow,
         "pool_timeout": pool_timeout,
+        "connect_args": {
+            "server_settings": {
+                "search_path": "public"
+            },
+            "statement_cache_size": 0,
+            "prepared_statement_cache_size": 0,
+        }
     }
 
     engine = create_async_engine(database_url, **engine_kwargs)
-
-    @event.listens_for(engine.sync_engine, "connect")
-    def set_search_path(dbapi_conn: Any, _conn_record: Any) -> None:  # noqa: ANN401
-        # Ensure every connection uses the public schema by default.
-        # This prevents accidental cross-schema data access.
-        dbapi_conn.execute("SET search_path TO public")
-
     return engine
 
 
