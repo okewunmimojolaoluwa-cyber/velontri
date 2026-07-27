@@ -175,7 +175,7 @@ async def paystack_verify(request: Request, payload: Annotated[dict, Depends(get
     try:
         from pathlib import Path as _Path
         _new_limit = TIER_LISTING_LIMITS.get(tier, 0)
-        await _restore_listings_on_renewal(str(user_id), _new_limit, _db_path)
+        await _restore_listings_on_renewal(str(user_id), _new_limit, request.app.state.session_factory)
     except Exception as _e:
         import logging as _log
         _log.getLogger(__name__).warning(f'restore_listings_skipped: {_e}')
@@ -264,7 +264,7 @@ async def _enforce_subscription_expiry(session_factory) -> None:
     import logging
     log = logging.getLogger(__name__)
     try:
-        async with request.app.state.session_factory() as db:
+        async with session_factory() as db:
             from sqlalchemy import text as _text
             await db.execute(_text("\n                CREATE TABLE IF NOT EXISTS subscriptions (\n                    id TEXT PRIMARY KEY,\n                    user_id TEXT NOT NULL UNIQUE,\n                    tier TEXT NOT NULL DEFAULT 'starter',\n                    is_active INTEGER NOT NULL DEFAULT 1,\n                    pending_downgrade_tier TEXT,\n                    current_period_start TEXT,\n                    current_period_end TEXT,\n                    created_at TEXT NOT NULL DEFAULT (datetime('now')),\n                    updated_at TEXT NOT NULL DEFAULT (datetime('now'))\n                )\n            "))
             await db.execute(_text('CREATE INDEX IF NOT EXISTS ix_subscriptions_user ON subscriptions(user_id)'))
@@ -297,12 +297,12 @@ async def _enforce_subscription_expiry(session_factory) -> None:
     except Exception as e:
         log.error(f'subscription_expiry_error: {e}')
 
-async def _restore_listings_on_renewal(user_id_str: str, new_limit: int, db_path) -> None:
+async def _restore_listings_on_renewal(user_id_str: str, new_limit: int, session_factory) -> None:
     """Restore archived listings when a user renews their subscription."""
     import logging
     log = logging.getLogger(__name__)
     try:
-        async with request.app.state.session_factory() as db:
+        async with session_factory() as db:
             from sqlalchemy import text as _text
             active = (await db.execute(_text("SELECT COUNT(*) as cnt FROM listings WHERE CAST(seller_id AS TEXT)=:p0 AND status='active'"), {'p0': user_id_str})).mappings().all()
             current_active = active[0]['cnt'] if active else 0
