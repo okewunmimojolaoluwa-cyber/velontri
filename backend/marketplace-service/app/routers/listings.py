@@ -19,6 +19,8 @@ def _build_service(session=Depends(get_db_session), redis=Depends(get_redis), ch
 
 @router.post('/listings', response_model=SuccessResponse, status_code=status.HTTP_201_CREATED, summary='Create a new listing')
 async def create_listing(body: CreateListingRequest, service: MarketplaceService=Depends(_build_service), current_user_id: uuid.UUID=Depends(get_current_user_id), tier: str=Depends(get_subscription_tier)) -> SuccessResponse:
+    if not getattr(body, 'contact_phone', None) and getattr(body, 'whatsapp_number', None):
+        body.contact_phone = body.whatsapp_number
     result = await service.create_listing(current_user_id, tier, body)
     return SuccessResponse(message='Listing created.', data=result.model_dump())
 
@@ -279,7 +281,7 @@ async def admin_reject_listing(listing_id: uuid.UUID, service: MarketplaceServic
     return SuccessResponse(message='Listing rejected.', data={'listing_id': str(listing_id)})
 
 @router.get('/saved', response_model=SuccessResponse, summary="Get the authenticated user's saved listings")
-async def get_saved_listings(current_user_id: uuid.UUID=Depends(get_current_user_id), service: MarketplaceService=Depends(_build_service)) -> SuccessResponse:
+async def get_saved_listings(request: Request, current_user_id: uuid.UUID=Depends(get_current_user_id), service: MarketplaceService=Depends(_build_service)) -> SuccessResponse:
     from pathlib import Path
     uid_str = str(current_user_id)
     try:
@@ -294,7 +296,7 @@ async def get_saved_listings(current_user_id: uuid.UUID=Depends(get_current_user
     return SuccessResponse(message=f'{len(data)} saved listing(s).', data=data)
 
 @router.post('/saved/{listing_id}', response_model=SuccessResponse, status_code=status.HTTP_201_CREATED, summary="Save a listing to the user's saved list")
-async def save_listing(listing_id: uuid.UUID, current_user_id: uuid.UUID=Depends(get_current_user_id), service: MarketplaceService=Depends(_build_service)) -> SuccessResponse:
+async def save_listing(listing_id: uuid.UUID, request: Request, current_user_id: uuid.UUID=Depends(get_current_user_id), service: MarketplaceService=Depends(_build_service)) -> SuccessResponse:
     from pathlib import Path
     uid_str = str(current_user_id)
     lid_str = str(listing_id)
@@ -313,7 +315,7 @@ async def save_listing(listing_id: uuid.UUID, current_user_id: uuid.UUID=Depends
     return SuccessResponse(message='Listing saved.', data={'id': save_id, 'saved': True})
 
 @router.delete('/saved/{listing_id}', response_model=SuccessResponse, summary='Remove a listing from saved')
-async def unsave_listing(listing_id: uuid.UUID, current_user_id: uuid.UUID=Depends(get_current_user_id), service: MarketplaceService=Depends(_build_service)) -> SuccessResponse:
+async def unsave_listing(listing_id: uuid.UUID, request: Request, current_user_id: uuid.UUID=Depends(get_current_user_id), service: MarketplaceService=Depends(_build_service)) -> SuccessResponse:
     from pathlib import Path
     uid_str = str(current_user_id)
     lid_str = str(listing_id)
@@ -328,7 +330,7 @@ async def unsave_listing(listing_id: uuid.UUID, current_user_id: uuid.UUID=Depen
     return SuccessResponse(message='Listing removed from saved.', data={'saved': False})
 
 @router.get('/saved/{listing_id}/check', response_model=SuccessResponse, summary='Check if a listing is saved by the current user')
-async def check_saved(listing_id: uuid.UUID, current_user_id: uuid.UUID=Depends(get_current_user_id), service: MarketplaceService=Depends(_build_service)) -> SuccessResponse:
+async def check_saved(listing_id: uuid.UUID, request: Request, current_user_id: uuid.UUID=Depends(get_current_user_id), service: MarketplaceService=Depends(_build_service)) -> SuccessResponse:
     from pathlib import Path
     try:
         async with request.app.state.session_factory() as db:
