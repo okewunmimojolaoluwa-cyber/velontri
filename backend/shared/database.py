@@ -59,7 +59,8 @@ def create_engine(
             "DATABASE_URL must use the asyncpg driver (postgresql+asyncpg://...)"
         )
 
-    # Build engine kwargs based on database type
+    # Build engine kwargs for PostgreSQL + asyncpg
+    # Using session pooler (port 5432) which supports prepared statements natively.
     engine_kwargs = {
         "pool_pre_ping": True,
         "echo": echo,
@@ -70,9 +71,7 @@ def create_engine(
         "connect_args": {
             "server_settings": {
                 "search_path": "public"
-            },
-            "statement_cache_size": 0,
-            "prepared_statement_cache_size": 0,
+            }
         }
     }
 
