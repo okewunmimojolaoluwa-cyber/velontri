@@ -39,32 +39,72 @@ async def admin_stats(request: Request, payload: Annotated[dict, Depends(get_use
     async with request.app.state.session_factory() as session:
         from sqlalchemy import text
         try:
-            total_users = (await session.execute(text("SELECT COUNT(*) FROM users WHERE id NOT IN (SELECT user_id FROM user_roles WHERE role IN ('enterprise_admin','super_admin'))"))).scalar() or 0
-        except Exception:
-            total_users = 0
-        try:
+            total_users = (await session.execute(text("SELECT COUNT(*) FROM users"))).scalar() or 0
+            new_users_today = (await session.execute(text("SELECT COUNT(*) FROM users WHERE created_at >= CURRENT_DATE"))).scalar() or 0
             total_listings = (await session.execute(text("SELECT COUNT(*) FROM listings WHERE status='active'"))).scalar() or 0
-        except Exception:
-            total_listings = 0
-    return SuccessResponse(message='Admin stats retrieved.', data={'total_users': total_users, 'total_listings': total_listings, 'total_transactions': 0, 'pending_disputes': 0, 'pending_moderation': 0, 'gmv_today': 0, 'currency': 'NGN', 'new_users_today': 0, 'active_sessions': 0})
+            pending_moderation = (await session.execute(text("SELECT COUNT(*) FROM listings WHERE status='pending_review'"))).scalar() or 0
+            gmv_today = (await session.execute(text("SELECT SUM(amount_ngn) FROM sub_payments WHERE status='success' AND paid_at >= CURRENT_DATE"))).scalar() or 0
+        except Exception as e:
+            print(f"Error fetching admin stats: {e}")
+            total_users = new_users_today = total_listings = pending_moderation = gmv_today = 0
+
+    return SuccessResponse(message='Admin stats retrieved.', data={
+        'total_users': total_users,
+        'total_listings': total_listings,
+        'total_transactions': 0,
+        'pending_disputes': 0,
+        'pending_moderation': pending_moderation,
+        'gmv_today': float(gmv_today),
+        'currency': 'NGN',
+        'new_users_today': new_users_today,
+        'active_sessions': 0
+    })
 
 @router.get('/analytics/business', response_model=SuccessResponse, summary='Business overview KPIs for admin')
 async def business_overview(request: Request, payload: Annotated[dict, Depends(get_user_payload)]=None) -> SuccessResponse:
     async with request.app.state.session_factory() as session:
         from sqlalchemy import text
         try:
-            active_users = (await session.execute(text("SELECT COUNT(*) FROM users WHERE id NOT IN (SELECT user_id FROM user_roles WHERE role IN ('enterprise_admin','super_admin'))"))).scalar() or 0
-        except Exception:
-            active_users = 0
-        try:
+            active_users = (await session.execute(text("SELECT COUNT(*) FROM users"))).scalar() or 0
             active_listings = (await session.execute(text("SELECT COUNT(*) FROM listings WHERE status='active'"))).scalar() or 0
-        except Exception:
-            active_listings = 0
-    return SuccessResponse(message='Business overview retrieved.', data={'total_revenue': 0, 'active_users': active_users, 'total_orders': 0, 'active_listings': active_listings, 'avg_rating': 0, 'active_stores': 0, 'countries': 12, 'mom_growth': 0})
+            total_revenue = (await session.execute(text("SELECT SUM(amount_ngn) FROM sub_payments WHERE status='success'"))).scalar() or 0
+            total_orders = (await session.execute(text("SELECT COUNT(*) FROM bookings"))).scalar() or 0
+            avg_rating = (await session.execute(text("SELECT AVG(avg_rating) FROM listings WHERE status='active' AND avg_rating > 0"))).scalar() or 0
+            active_stores = (await session.execute(text("SELECT COUNT(*) FROM stores"))).scalar() or 0
+        except Exception as e:
+            print(f"Error fetching business overview: {e}")
+            active_users = active_listings = total_revenue = total_orders = avg_rating = active_stores = 0
+
+    return SuccessResponse(message='Business overview retrieved.', data={
+        'total_revenue': float(total_revenue),
+        'active_users': active_users,
+        'total_orders': total_orders,
+        'active_listings': active_listings,
+        'avg_rating': round(float(avg_rating), 1),
+        'active_stores': active_stores,
+        'countries': 1,
+        'mom_growth': 0
+    })
 
 @router.get('/analytics/sales', response_model=SuccessResponse, summary='Sales analytics for admin')
 async def sales_analytics(request: Request, payload: Annotated[dict, Depends(get_user_payload)]=None) -> SuccessResponse:
-    return SuccessResponse(message='Sales analytics retrieved.', data={'today_sales': 0, 'week_sales': 0, 'total_orders': 0, 'avg_order': 0})
+    async with request.app.state.session_factory() as session:
+        from sqlalchemy import text
+        try:
+            today_sales = (await session.execute(text("SELECT SUM(amount_ngn) FROM sub_payments WHERE status='success' AND paid_at >= CURRENT_DATE"))).scalar() or 0
+            week_sales = (await session.execute(text("SELECT SUM(amount_ngn) FROM sub_payments WHERE status='success' AND paid_at >= NOW() - INTERVAL '7 days'"))).scalar() or 0
+            total_orders = (await session.execute(text("SELECT COUNT(*) FROM bookings"))).scalar() or 0
+            avg_order = float(today_sales) / total_orders if total_orders > 0 else 0
+        except Exception as e:
+            print(f"Error fetching sales analytics: {e}")
+            today_sales = week_sales = total_orders = avg_order = 0
+
+    return SuccessResponse(message='Sales analytics retrieved.', data={
+        'today_sales': float(today_sales),
+        'week_sales': float(week_sales),
+        'total_orders': total_orders,
+        'avg_order': float(avg_order)
+    })
 
 @router.get('/analytics/chat-threads', response_model=SuccessResponse, summary="Get user's message threads (raw SQL, works with SQLite UUID strings)")
 async def get_chat_threads(request: Request, payload: Annotated[dict, Depends(get_user_payload)]=None) -> SuccessResponse:
