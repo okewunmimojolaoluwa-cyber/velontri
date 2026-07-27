@@ -305,7 +305,7 @@ async def save_listing(listing_id: uuid.UUID, current_user_id: uuid.UUID=Depends
             existing = (await db.execute(_text('SELECT id FROM saved_listings WHERE CAST(user_id AS TEXT)=:p0 AND CAST(listing_id AS TEXT)=:p1'), {'p0': uid_str, 'p1': lid_str})).mappings().all()
             if existing:
                 return SuccessResponse(message='Already saved.', data={'id': existing[0][0], 'saved': True})
-            await db.execute(_text("INSERT INTO saved_listings (id, user_id, listing_id, saved_at) VALUES (:p0,:p1,:p2,datetime('now'))"), {'p0': save_id, 'p1': uid_str, 'p2': lid_str})
+            await db.execute(_text("INSERT INTO saved_listings (id, user_id, listing_id, saved_at) VALUES (:p0,:p1,:p2,NOW())"), {'p0': save_id, 'p1': uid_str, 'p2': lid_str})
             await db.commit()
     except Exception as exc:
         from shared.errors import ExternalServiceError

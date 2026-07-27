@@ -643,7 +643,7 @@ async def get_notifications(request: Request, page: int=1, page_size: int=50, un
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            await db.execute(_text("\n                CREATE TABLE IF NOT EXISTS notifications (\n                    id TEXT PRIMARY KEY,\n                    user_id TEXT NOT NULL,\n                    type TEXT NOT NULL DEFAULT 'system',\n                    title TEXT NOT NULL,\n                    message TEXT NOT NULL,\n                    is_read INTEGER NOT NULL DEFAULT 0,\n                    created_at TEXT NOT NULL DEFAULT (datetime('now'))\n                )\n            "))
+            await db.execute(_text("\n                CREATE TABLE IF NOT EXISTS notifications (\n                    id TEXT PRIMARY KEY,\n                    user_id TEXT NOT NULL,\n                    type TEXT NOT NULL DEFAULT 'system',\n                    title TEXT NOT NULL,\n                    message TEXT NOT NULL,\n                    is_read INTEGER NOT NULL DEFAULT 0,\n                    created_at TEXT NOT NULL DEFAULT NOW()\n                )\n            "))
             await db.execute(_text('CREATE INDEX IF NOT EXISTS ix_notifs_user ON notifications(user_id)'))
             await db.commit()
             where = 'WHERE CAST(user_id AS TEXT) = ?'
@@ -696,7 +696,7 @@ async def get_maintenance(request: Request, payload: Annotated[dict, Depends(get
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            await db.execute(_text("\n                CREATE TABLE IF NOT EXISTS platform_config (\n                    key TEXT PRIMARY KEY,\n                    value TEXT NOT NULL,\n                    updated_at TEXT NOT NULL DEFAULT (datetime('now'))\n                )\n            "))
+            await db.execute(_text("\n                CREATE TABLE IF NOT EXISTS platform_config (\n                    key TEXT PRIMARY KEY,\n                    value TEXT NOT NULL,\n                    updated_at TEXT NOT NULL DEFAULT NOW()\n                )\n            "))
             await db.commit()
             row = (await db.execute(_text("SELECT value FROM platform_config WHERE key='maintenance_enabled'"))).mappings().all()
             if row:
@@ -717,9 +717,9 @@ async def set_maintenance(request: Request, payload: Annotated[dict, Depends(get
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            await db.execute(_text("\n                CREATE TABLE IF NOT EXISTS platform_config (\n                    key TEXT PRIMARY KEY,\n                    value TEXT NOT NULL,\n                    updated_at TEXT NOT NULL DEFAULT (datetime('now'))\n                )\n            "))
-            await db.execute(_text("INSERT OR REPLACE INTO platform_config (key, value, updated_at) VALUES ('maintenance_enabled', :p0, datetime('now'))"), {'p0': '1' if enabled else '0'})
-            await db.execute(_text("INSERT OR REPLACE INTO platform_config (key, value, updated_at) VALUES ('maintenance_message', :p0, datetime('now'))"), {'p0': message})
+            await db.execute(_text("\n                CREATE TABLE IF NOT EXISTS platform_config (\n                    key TEXT PRIMARY KEY,\n                    value TEXT NOT NULL,\n                    updated_at TEXT NOT NULL DEFAULT NOW()\n                )\n            "))
+            await db.execute(_text("INSERT INTO platform_config (key, value, updated_at) VALUES ('maintenance_enabled', :p0, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()"), {'p0': '1' if enabled else '0'})
+            await db.execute(_text("INSERT INTO platform_config (key, value, updated_at) VALUES ('maintenance_message', :p0, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()"), {'p0': message})
             await db.commit()
     except Exception as exc:
         import logging
@@ -751,7 +751,7 @@ async def _write_audit_log(db_path, actor_id: str='', actor_email: str='', actor
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            await db.execute(_text("\n                CREATE TABLE IF NOT EXISTS audit_log (\n                    id          TEXT PRIMARY KEY,\n                    actor_id    TEXT,\n                    actor_email TEXT,\n                    actor_name  TEXT,\n                    category    TEXT NOT NULL DEFAULT 'system',\n                    action      TEXT NOT NULL,\n                    resource    TEXT,\n                    resource_id TEXT,\n                    ip_address  TEXT,\n                    status      TEXT NOT NULL DEFAULT 'success',\n                    detail      TEXT,\n                    created_at  TEXT NOT NULL DEFAULT (datetime('now'))\n                )\n            "))
+            await db.execute(_text("\n                CREATE TABLE IF NOT EXISTS audit_log (\n                    id          TEXT PRIMARY KEY,\n                    actor_id    TEXT,\n                    actor_email TEXT,\n                    actor_name  TEXT,\n                    category    TEXT NOT NULL DEFAULT 'system',\n                    action      TEXT NOT NULL,\n                    resource    TEXT,\n                    resource_id TEXT,\n                    ip_address  TEXT,\n                    status      TEXT NOT NULL DEFAULT 'success',\n                    detail      TEXT,\n                    created_at  TEXT NOT NULL DEFAULT NOW()\n                )\n            "))
             await db.execute(_text('INSERT INTO audit_log\n                   (id, actor_id, actor_email, actor_name, category, action,\n                    resource, resource_id, ip_address, status, detail)\n                   VALUES (:p0,:p1,:p2,:p3,:p4,:p5,:p6,:p7,:p8,:p9,:p10)'), {'p0': str(_uuid.uuid4()), 'p1': actor_id, 'p2': actor_email, 'p3': actor_name, 'p4': category, 'p5': action, 'p6': resource, 'p7': resource_id, 'p8': ip_address, 'p9': status, 'p10': detail})
             await db.commit()
     except Exception:
@@ -770,7 +770,7 @@ async def admin_audit_logs(request: Request, type: str='all', page: int=1, page_
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            await db.execute(_text("\n                CREATE TABLE IF NOT EXISTS audit_log (\n                    id TEXT PRIMARY KEY,\n                    actor_id TEXT,\n                    actor_email TEXT,\n                    actor_name TEXT,\n                    category TEXT NOT NULL DEFAULT 'system',\n                    action TEXT NOT NULL,\n                    resource TEXT,\n                    resource_id TEXT,\n                    ip_address TEXT,\n                    status TEXT NOT NULL DEFAULT 'success',\n                    detail TEXT,\n                    created_at TEXT NOT NULL DEFAULT (datetime('now'))\n                )\n            "))
+            await db.execute(_text("\n                CREATE TABLE IF NOT EXISTS audit_log (\n                    id TEXT PRIMARY KEY,\n                    actor_id TEXT,\n                    actor_email TEXT,\n                    actor_name TEXT,\n                    category TEXT NOT NULL DEFAULT 'system',\n                    action TEXT NOT NULL,\n                    resource TEXT,\n                    resource_id TEXT,\n                    ip_address TEXT,\n                    status TEXT NOT NULL DEFAULT 'success',\n                    detail TEXT,\n                    created_at TEXT NOT NULL DEFAULT NOW()\n                )\n            "))
             await db.commit()
             where_parts = []
             args: list = []

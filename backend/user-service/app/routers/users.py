@@ -465,16 +465,16 @@ async def admin_create_moderator(request: Request, service: UserService=Depends(
             rows = (await db.execute(_text('SELECT id FROM users WHERE email = :p0'), {'p0': email})).mappings().all()
             if rows:
                 return SuccessResponse(data={'error': f'Email {email} is already registered.'})
-            await db.execute(_text("\n                INSERT INTO users (id, email, phone, phone_verified, password_hash, full_name,\n                                   country_code, is_active, is_locked, failed_attempts, created_at)\n                VALUES (:p0, :p1, :p2, 1, :p3, :p4, :p5, 1, 0, 0, datetime('now'))\n                "), {'p0': new_user_id, 'p1': email, 'p2': phone, 'p3': pw_hash_str, 'p4': full_name, 'p5': country_code})
+            await db.execute(_text("\n                INSERT INTO users (id, email, phone, phone_verified, password_hash, full_name,\n                                   country_code, is_active, is_locked, failed_attempts, created_at)\n                VALUES (:p0, :p1, :p2, 1, :p3, :p4, :p5, 1, 0, 0, NOW())\n                "), {'p0': new_user_id, 'p1': email, 'p2': phone, 'p3': pw_hash_str, 'p4': full_name, 'p5': country_code})
             schema = (await db.execute(_text('PRAGMA table_info(user_roles)'))).mappings().all()
             col_names = [r[1] for r in schema]
             role_id = str(uuid.uuid4())
             if 'id' in col_names and 'granted_at' in col_names:
-                await db.execute(_text("INSERT INTO user_roles (id, user_id, role, granted_at) VALUES (:p0, :p1, 'moderator', datetime('now'))"), {'p0': role_id, 'p1': new_user_id})
+                await db.execute(_text("INSERT INTO user_roles (id, user_id, role, granted_at) VALUES (:p0, :p1, 'moderator', NOW())"), {'p0': role_id, 'p1': new_user_id})
             elif 'id' in col_names:
                 await db.execute(_text("INSERT INTO user_roles (id, user_id, role) VALUES (:p0, :p1, 'moderator')"), {'p0': role_id, 'p1': new_user_id})
             elif 'granted_at' in col_names:
-                await db.execute(_text("INSERT INTO user_roles (user_id, role, granted_at) VALUES (:p0, 'moderator', datetime('now'))"), {'p0': new_user_id})
+                await db.execute(_text("INSERT INTO user_roles (user_id, role, granted_at) VALUES (:p0, 'moderator', NOW())"), {'p0': new_user_id})
             else:
                 await db.execute(_text("INSERT INTO user_roles (user_id, role) VALUES (:p0, 'moderator')"), {'p0': new_user_id})
             await db.commit()

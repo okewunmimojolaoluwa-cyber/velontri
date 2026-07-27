@@ -145,18 +145,317 @@ async def _apply_pg_migrations(engine) -> None:
     """
     from sqlalchemy import text as _text
     stmts = [
-        # Additive columns
-        "ALTER TABLE listings ADD COLUMN IF NOT EXISTS image_url TEXT",
+        # ── Core User Tables ──────────────────────────────────────────────────
+        """
+        CREATE TABLE IF NOT EXISTS users (
+            id              TEXT PRIMARY KEY,
+            email           TEXT UNIQUE NOT NULL,
+            phone           TEXT,
+            phone_verified  BOOLEAN DEFAULT TRUE,
+            password_hash   TEXT,
+            full_name       TEXT,
+            country_code    TEXT DEFAULT 'NG',
+            is_active       BOOLEAN DEFAULT TRUE,
+            is_locked       BOOLEAN DEFAULT FALSE,
+            failed_attempts INTEGER DEFAULT 0,
+            locked_until    TIMESTAMPTZ,
+            created_at      TIMESTAMPTZ DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_users_email ON users(email)",
+        """
+        CREATE TABLE IF NOT EXISTS user_roles (
+            id         TEXT PRIMARY KEY,
+            user_id    TEXT NOT NULL,
+            role       TEXT NOT NULL,
+            scope_id   TEXT,
+            granted_at TIMESTAMPTZ DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_user_roles_user_id ON user_roles(user_id)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_user_roles_user_role ON user_roles(user_id, role)",
+        # ── Marketplace / Listings ────────────────────────────────────────────
+        """
+        CREATE TABLE IF NOT EXISTS listings (
+            id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            seller_id       UUID NOT NULL,
+            listing_type    TEXT NOT NULL,
+            title           TEXT NOT NULL,
+            description     TEXT,
+            price           NUMERIC(18,2),
+            currency        TEXT NOT NULL DEFAULT 'NGN',
+            country         TEXT,
+            state           TEXT,
+            city            TEXT,
+            latitude        NUMERIC(9,6),
+            longitude       NUMERIC(9,6),
+            category        TEXT,
+            subcategory     TEXT,
+            condition       TEXT,
+            brand           TEXT,
+            status          TEXT NOT NULL DEFAULT 'draft',
+            avg_rating      NUMERIC(3,2) NOT NULL DEFAULT 0,
+            review_count    INTEGER NOT NULL DEFAULT 0,
+            image_url       TEXT,
+            whatsapp_number TEXT,
+            contact_phone   TEXT,
+            created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_listings_seller_id  ON listings(seller_id)",
+        "CREATE INDEX IF NOT EXISTS ix_listings_status     ON listings(status)",
+        "CREATE INDEX IF NOT EXISTS ix_listings_category   ON listings(category)",
+        "CREATE INDEX IF NOT EXISTS ix_listings_created_at ON listings(created_at)",
+        """
+        CREATE TABLE IF NOT EXISTS listing_media (
+            id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            listing_id  UUID NOT NULL,
+            media_type  TEXT NOT NULL,
+            s3_key      TEXT NOT NULL,
+            sort_order  SMALLINT NOT NULL DEFAULT 0,
+            uploaded_at TIMESTAMPTZ DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_listing_media_listing_id ON listing_media(listing_id)",
+        """
+        CREATE TABLE IF NOT EXISTS listing_specs (
+            listing_id UUID NOT NULL,
+            spec_key   TEXT NOT NULL,
+            spec_value TEXT NOT NULL,
+            PRIMARY KEY (listing_id, spec_key)
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS listing_variants (
+            id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            listing_id     UUID NOT NULL,
+            sku            TEXT NOT NULL UNIQUE,
+            attributes     JSONB NOT NULL DEFAULT '{}',
+            price          NUMERIC(18,2),
+            stock_quantity INTEGER NOT NULL DEFAULT 0
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_listing_variants_listing_id ON listing_variants(listing_id)",
+        """
+        CREATE TABLE IF NOT EXISTS property_details (
+            listing_id        UUID PRIMARY KEY,
+            property_type     TEXT NOT NULL,
+            bedrooms          SMALLINT,
+            bathrooms         SMALLINT,
+            area_sqm          NUMERIC(10,2),
+            furnishing_status TEXT,
+            amenities         TEXT[],
+            tour_asset_url    TEXT,
+            price_per_night   NUMERIC(18,2)
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS vehicle_details (
+            listing_id               UUID PRIMARY KEY,
+            make                     TEXT,
+            model                    TEXT,
+            year                     SMALLINT,
+            mileage_km               INTEGER,
+            fuel_type                TEXT,
+            transmission             TEXT,
+            colour                   TEXT,
+            engine_size_cc           INTEGER,
+            vin                      TEXT,
+            vin_history_status       TEXT NOT NULL DEFAULT 'pending',
+            vin_history_data         JSONB,
+            vin_error_reason         TEXT,
+            inspection_report_s3_key TEXT
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS job_details (
+            listing_id           UUID PRIMARY KEY,
+            employer_id          UUID NOT NULL,
+            job_type             TEXT NOT NULL,
+            salary_min           NUMERIC(18,2),
+            salary_max           NUMERIC(18,2),
+            salary_currency      TEXT,
+            required_skills      TEXT[],
+            application_deadline DATE
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS job_applications (
+            id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            listing_id        UUID NOT NULL,
+            applicant_id      UUID NOT NULL,
+            cv_s3_key         TEXT NOT NULL,
+            ai_score          SMALLINT,
+            ai_missing_skills TEXT[],
+            status            TEXT NOT NULL DEFAULT 'pending',
+            reviewed_by       UUID,
+            reviewed_at       TIMESTAMPTZ,
+            created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_job_apps_listing_id   ON job_applications(listing_id)",
+        "CREATE INDEX IF NOT EXISTS ix_job_apps_applicant_id ON job_applications(applicant_id)",
+        """
+        CREATE TABLE IF NOT EXISTS shortlet_availability (
+            listing_id   UUID NOT NULL,
+            blocked_date DATE NOT NULL,
+            PRIMARY KEY (listing_id, blocked_date)
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS stores (
+            id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            seller_id       UUID NOT NULL UNIQUE,
+            store_name      TEXT NOT NULL,
+            logo_url        TEXT,
+            banner_url      TEXT,
+            theme           TEXT,
+            custom_domain   TEXT,
+            domain_verified BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at      TIMESTAMPTZ DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_stores_seller_id     ON stores(seller_id)",
+        "CREATE INDEX IF NOT EXISTS ix_stores_custom_domain ON stores(custom_domain)",
+        """
+        CREATE TABLE IF NOT EXISTS reviews (
+            id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            listing_id      UUID NOT NULL,
+            reviewer_id     UUID NOT NULL,
+            rating          SMALLINT NOT NULL,
+            comment         TEXT,
+            status          TEXT NOT NULL DEFAULT 'published',
+            seller_response TEXT,
+            created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (listing_id, reviewer_id)
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_reviews_listing_id ON reviews(listing_id)",
+        """
+        CREATE TABLE IF NOT EXISTS review_media (
+            id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            review_id  UUID NOT NULL,
+            media_type TEXT NOT NULL,
+            s3_key     TEXT NOT NULL
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_review_media_review_id ON review_media(review_id)",
+        """
+        CREATE TABLE IF NOT EXISTS bookings (
+            id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            listing_id       UUID NOT NULL,
+            buyer_id         UUID NOT NULL,
+            seller_id        UUID NOT NULL,
+            scheduled_at     TIMESTAMPTZ NOT NULL,
+            duration_minutes INTEGER,
+            status           TEXT NOT NULL DEFAULT 'pending',
+            payment_ref      UUID,
+            created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_bookings_listing_id ON bookings(listing_id)",
+        "CREATE INDEX IF NOT EXISTS ix_bookings_buyer_id   ON bookings(buyer_id)",
+        """
+        CREATE TABLE IF NOT EXISTS review_eligibility (
+            listing_id UUID NOT NULL,
+            buyer_id   UUID NOT NULL,
+            order_id   UUID NOT NULL,
+            granted_at TIMESTAMPTZ DEFAULT NOW(),
+            PRIMARY KEY (listing_id, buyer_id)
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS saved_listings (
+            id         TEXT PRIMARY KEY,
+            user_id    TEXT NOT NULL,
+            listing_id TEXT NOT NULL,
+            saved_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE(user_id, listing_id)
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_saved_listings_user_id ON saved_listings(user_id)",
+        # ── Subscriptions & Payments ─────────────────────────────────────────
+        """
+        CREATE TABLE IF NOT EXISTS subscriptions (
+            id                     TEXT PRIMARY KEY,
+            user_id                TEXT NOT NULL UNIQUE,
+            tier                   TEXT NOT NULL DEFAULT 'starter',
+            is_active              BOOLEAN NOT NULL DEFAULT TRUE,
+            pending_downgrade_tier TEXT,
+            current_period_start   TIMESTAMPTZ,
+            current_period_end     TIMESTAMPTZ,
+            created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_subscriptions_user ON subscriptions(user_id)",
+        """
+        CREATE TABLE IF NOT EXISTS sub_payments (
+            id         TEXT PRIMARY KEY,
+            user_id    TEXT NOT NULL,
+            plan       TEXT NOT NULL,
+            reference  TEXT NOT NULL,
+            amount_ngn INTEGER NOT NULL DEFAULT 0,
+            status     TEXT NOT NULL DEFAULT 'success',
+            paid_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_sub_pay_user ON sub_payments(user_id)",
+        "CREATE INDEX IF NOT EXISTS ix_sub_pay_paid ON sub_payments(paid_at)",
+        # ── Notifications & System ───────────────────────────────────────────
+        """
+        CREATE TABLE IF NOT EXISTS notifications (
+            id         TEXT PRIMARY KEY,
+            user_id    TEXT NOT NULL,
+            type       TEXT NOT NULL DEFAULT 'system',
+            title      TEXT NOT NULL,
+            message    TEXT NOT NULL,
+            is_read    BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_notifications_user ON notifications(user_id)",
+        """
+        CREATE TABLE IF NOT EXISTS platform_config (
+            key        TEXT PRIMARY KEY,
+            value      TEXT NOT NULL,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS password_change_otps (
+            user_id    TEXT PRIMARY KEY,
+            otp        TEXT NOT NULL,
+            new_hash   TEXT NOT NULL,
+            expires_at TIMESTAMPTZ NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id          TEXT PRIMARY KEY,
+            actor_id    TEXT,
+            actor_email TEXT,
+            actor_name  TEXT,
+            category    TEXT NOT NULL DEFAULT 'system',
+            action      TEXT NOT NULL,
+            resource    TEXT,
+            resource_id TEXT,
+            ip_address  TEXT,
+            status      TEXT NOT NULL DEFAULT 'success',
+            detail      TEXT,
+            created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_audit_log_created ON audit_log(created_at)",
+        "CREATE INDEX IF NOT EXISTS ix_audit_log_actor   ON audit_log(actor_id)",
+        "CREATE INDEX IF NOT EXISTS ix_audit_log_cat     ON audit_log(category)",
+        # ── Additive columns (safe on re-run) ────────────────────────────────
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_phone_verified BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ",
         "ALTER TABLE listings ADD COLUMN IF NOT EXISTS whatsapp_number TEXT",
         "ALTER TABLE listings ADD COLUMN IF NOT EXISTS contact_phone TEXT",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name TEXT",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS country_code TEXT DEFAULT 'NG'",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_phone_verified BOOLEAN DEFAULT FALSE",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_locked BOOLEAN NOT NULL DEFAULT FALSE",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ",
-        # Extra tables
         """
         CREATE TABLE IF NOT EXISTS saved_listings (
             id          TEXT PRIMARY KEY,
