@@ -24,18 +24,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
-# ── Canonical DB path — ALWAYS absolute, computed from __file__ ───────────────
-# Never use a relative path (./dev_gateway.db) which depends on cwd.
-# We honour SQLITE_DB_PATH only if it's an explicit absolute path set externally.
-_sqlite_db_env = os.environ.get("SQLITE_DB_PATH", "").strip()
-_CANONICAL_DB = (
-    _sqlite_db_env
-    if (_sqlite_db_env and os.path.isabs(_sqlite_db_env))
-    else str(ROOT / "velontri.db")
-)
-# Export so every aiosqlite caller in this process uses the same file
-os.environ["SQLITE_DB_PATH"] = _CANONICAL_DB
-
 # Apply stubs before any service code runs
 from native_stubs import apply_patches  # noqa: E402
 apply_patches("gateway")
@@ -150,222 +138,133 @@ def _collect_routers():
 
 # ── Lifespan ───────────────────────────────────────────────────────────────────
 
-def _apply_sqlite_migrations(conn) -> None:  # type: ignore[type-arg]
+async def _apply_pg_migrations(engine) -> None:
     """
-    Idempotent additive migrations for SQLite dev DB.
-    Each statement is wrapped in try/except so it's safe to run on every startup.
+    Idempotent additive migrations for PostgreSQL.
+    Uses IF NOT EXISTS / DO NOTHING patterns so it is safe to run on every restart.
     """
-    cursor = conn.connection.cursor()
-
-    # ── Additive column migrations ─────────────────────────────────────────────
-    additive = [
-        "ALTER TABLE listings ADD COLUMN image_url TEXT",
-        "ALTER TABLE users ADD COLUMN full_name TEXT",
-        "ALTER TABLE users ADD COLUMN phone TEXT",
-        "ALTER TABLE users ADD COLUMN country_code TEXT DEFAULT 'NG'",
-        "ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1",
-        "ALTER TABLE users ADD COLUMN is_phone_verified INTEGER DEFAULT 0",
-        # is_locked — required NOT NULL; default 0 (not locked)
-        "ALTER TABLE users ADD COLUMN is_locked INTEGER NOT NULL DEFAULT 0",
-        "ALTER TABLE users ADD COLUMN locked_until DATETIME",
-        # WhatsApp contact field on listings
-        "ALTER TABLE listings ADD COLUMN whatsapp_number TEXT",
-        "ALTER TABLE listings ADD COLUMN contact_phone TEXT",
-        # Saved listings table created separately below
+    from sqlalchemy import text as _text
+    stmts = [
+        # Additive columns
+        "ALTER TABLE listings ADD COLUMN IF NOT EXISTS image_url TEXT",
+        "ALTER TABLE listings ADD COLUMN IF NOT EXISTS whatsapp_number TEXT",
+        "ALTER TABLE listings ADD COLUMN IF NOT EXISTS contact_phone TEXT",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name TEXT",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS country_code TEXT DEFAULT 'NG'",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_phone_verified BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_locked BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ",
+        # Extra tables
+        """
+        CREATE TABLE IF NOT EXISTS saved_listings (
+            id          TEXT PRIMARY KEY,
+            user_id     TEXT NOT NULL,
+            listing_id  TEXT NOT NULL,
+            saved_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE(user_id, listing_id)
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_saved_listings_user_id ON saved_listings(user_id)",
+        """
+        CREATE TABLE IF NOT EXISTS sub_payments (
+            id          TEXT PRIMARY KEY,
+            user_id     TEXT NOT NULL,
+            plan        TEXT NOT NULL,
+            reference   TEXT NOT NULL,
+            amount_ngn  INTEGER NOT NULL DEFAULT 0,
+            status      TEXT NOT NULL DEFAULT 'success',
+            paid_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_sub_pay_user ON sub_payments(user_id)",
+        "CREATE INDEX IF NOT EXISTS ix_sub_pay_paid ON sub_payments(paid_at)",
+        """
+        CREATE TABLE IF NOT EXISTS notifications (
+            id          TEXT PRIMARY KEY,
+            user_id     TEXT NOT NULL,
+            type        TEXT NOT NULL DEFAULT 'system',
+            title       TEXT NOT NULL,
+            message     TEXT NOT NULL,
+            is_read     BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_notifications_user ON notifications(user_id)",
+        """
+        CREATE TABLE IF NOT EXISTS platform_config (
+            key         TEXT PRIMARY KEY,
+            value       TEXT NOT NULL,
+            updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS password_change_otps (
+            user_id     TEXT PRIMARY KEY,
+            otp         TEXT NOT NULL,
+            new_hash    TEXT NOT NULL,
+            expires_at  TIMESTAMPTZ NOT NULL,
+            created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id          TEXT PRIMARY KEY,
+            actor_id    TEXT,
+            actor_email TEXT,
+            actor_name  TEXT,
+            category    TEXT NOT NULL DEFAULT 'system',
+            action      TEXT NOT NULL,
+            resource    TEXT,
+            resource_id TEXT,
+            ip_address  TEXT,
+            status      TEXT NOT NULL DEFAULT 'success',
+            detail      TEXT,
+            created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_audit_log_created ON audit_log(created_at)",
+        "CREATE INDEX IF NOT EXISTS ix_audit_log_actor ON audit_log(actor_id)",
+        "CREATE INDEX IF NOT EXISTS ix_audit_log_cat ON audit_log(category)",
+        """
+        CREATE TABLE IF NOT EXISTS subscriptions (
+            id                      TEXT PRIMARY KEY,
+            user_id                 TEXT NOT NULL UNIQUE,
+            tier                    TEXT NOT NULL DEFAULT 'starter',
+            is_active               BOOLEAN NOT NULL DEFAULT TRUE,
+            pending_downgrade_tier  TEXT,
+            current_period_start    TIMESTAMPTZ,
+            current_period_end      TIMESTAMPTZ,
+            created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_subscriptions_user ON subscriptions(user_id)",
     ]
-    for sql in additive:
-        try:
-            cursor.execute(sql)
-        except Exception:
-            pass
-
-    # ── Create saved_listings table if it doesn't exist ───────────────────
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS saved_listings (
-                id          TEXT PRIMARY KEY,
-                user_id     TEXT NOT NULL,
-                listing_id  TEXT NOT NULL,
-                saved_at    TEXT NOT NULL DEFAULT (datetime('now')),
-                UNIQUE(user_id, listing_id)
-            )
-        """)
-        cursor.execute(
-            "CREATE INDEX IF NOT EXISTS ix_saved_listings_user_id ON saved_listings(user_id)"
-        )
-    except Exception:
-        pass
-
-    # ── Fix user_roles CheckConstraint to allow 'moderator' role ──────────────
-    # SQLite doesn't support DROP CONSTRAINT, so we recreate the table without it.
-    # We check if the current table has the old restrictive constraint first.
-    try:
-        # Try inserting a test moderator role (will fail if constraint is too strict)
-        # Use a known-safe test approach: check the CREATE TABLE statement
-        cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='user_roles'")
-        row = cursor.fetchone()
-        if row and row[0] and "'moderator'" not in row[0]:
-            # Constraint is present without 'moderator' — recreate table
-            cursor.execute("PRAGMA foreign_keys=OFF")
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS user_roles_new (
-                    id         TEXT PRIMARY KEY,
-                    user_id    TEXT NOT NULL,
-                    role       TEXT NOT NULL,
-                    scope_id   TEXT,
-                    granted_at TEXT NOT NULL DEFAULT (datetime('now'))
-                )
-            """)
-            cursor.execute("""
-                INSERT OR IGNORE INTO user_roles_new (id, user_id, role, scope_id, granted_at)
-                SELECT id, user_id, role, scope_id,
-                       COALESCE(granted_at, created_at, datetime('now'))
-                FROM user_roles
-            """)
-            cursor.execute("DROP TABLE user_roles")
-            cursor.execute("ALTER TABLE user_roles_new RENAME TO user_roles")
-            cursor.execute("CREATE INDEX IF NOT EXISTS ix_user_roles_user_id ON user_roles(user_id)")
-            cursor.execute("PRAGMA foreign_keys=ON")
-    except Exception:
-        pass  # table may not exist yet — will be created by metadata.create_all
-
-    # ── Create sub_payments table for Paystack subscription revenue ───────
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS sub_payments (
-                id          TEXT PRIMARY KEY,
-                user_id     TEXT NOT NULL,
-                plan        TEXT NOT NULL,
-                reference   TEXT NOT NULL,
-                amount_ngn  INTEGER NOT NULL DEFAULT 0,
-                status      TEXT NOT NULL DEFAULT 'success',
-                paid_at     TEXT NOT NULL DEFAULT (datetime('now'))
-            )
-        """)
-        cursor.execute(
-            "CREATE INDEX IF NOT EXISTS ix_sub_pay_user ON sub_payments(user_id)"
-        )
-        cursor.execute(
-            "CREATE INDEX IF NOT EXISTS ix_sub_pay_paid ON sub_payments(paid_at)"
-        )
-    except Exception:
-        pass
-
-    # ── Create notifications table for in-app user notifications ─────────
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS notifications (
-                id          TEXT PRIMARY KEY,
-                user_id     TEXT NOT NULL,
-                type        TEXT NOT NULL DEFAULT 'system',
-                title       TEXT NOT NULL,
-                message     TEXT NOT NULL,
-                is_read     INTEGER NOT NULL DEFAULT 0,
-                created_at  TEXT NOT NULL DEFAULT (datetime('now'))
-            )
-        """)
-        cursor.execute(
-            "CREATE INDEX IF NOT EXISTS ix_notifications_user ON notifications(user_id)"
-        )
-    except Exception:
-        pass
-
-    # ── Create platform_config table for maintenance mode / settings ──────
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS platform_config (
-                key         TEXT PRIMARY KEY,
-                value       TEXT NOT NULL,
-                updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
-            )
-        """)
-    except Exception:
-        pass
-
-    # ── Create password_change_otps table for OTP-verified password changes ──
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS password_change_otps (
-                user_id     TEXT PRIMARY KEY,
-                otp         TEXT NOT NULL,
-                new_hash    TEXT NOT NULL,
-                expires_at  TEXT NOT NULL,
-                created_at  TEXT NOT NULL DEFAULT (datetime('now'))
-            )
-        """)
-    except Exception:
-        pass
-
-    # ── Create audit_log table for admin audit trail ───────────────────────
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS audit_log (
-                id          TEXT PRIMARY KEY,
-                actor_id    TEXT,
-                actor_email TEXT,
-                actor_name  TEXT,
-                category    TEXT NOT NULL DEFAULT 'system',
-                action      TEXT NOT NULL,
-                resource    TEXT,
-                resource_id TEXT,
-                ip_address  TEXT,
-                status      TEXT NOT NULL DEFAULT 'success',
-                detail      TEXT,
-                created_at  TEXT NOT NULL DEFAULT (datetime('now'))
-            )
-        """)
-        cursor.execute(
-            "CREATE INDEX IF NOT EXISTS ix_audit_log_created ON audit_log(created_at)"
-        )
-        cursor.execute(
-            "CREATE INDEX IF NOT EXISTS ix_audit_log_actor ON audit_log(actor_id)"
-        )
-        cursor.execute(
-            "CREATE INDEX IF NOT EXISTS ix_audit_log_cat ON audit_log(category)"
-        )
-    except Exception:
-        pass
-
-    # ── Create subscriptions table for the subscription service ──────────
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS subscriptions (
-                id                  TEXT PRIMARY KEY,
-                user_id             TEXT NOT NULL UNIQUE,
-                tier                TEXT NOT NULL DEFAULT 'starter',
-                is_active           INTEGER NOT NULL DEFAULT 1,
-                pending_downgrade_tier TEXT,
-                current_period_start TEXT,
-                current_period_end   TEXT,
-                created_at          TEXT NOT NULL DEFAULT (datetime('now')),
-                updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
-            )
-        """)
-        cursor.execute(
-            "CREATE INDEX IF NOT EXISTS ix_subscriptions_user ON subscriptions(user_id)"
-        )
-    except Exception:
-        pass
-
-    conn.connection.commit()
+    async with engine.begin() as conn:
+        for stmt in stmts:
+            try:
+                await conn.execute(_text(stmt))
+            except Exception:
+                pass
 
 
-async def _auto_seed_admin(db_file: str) -> None:
+async def _auto_seed_admin(engine) -> None:
     """
-    Idempotently create the super-admin account on every startup.
-    Uses aiosqlite directly so it works even before the ORM session factory
-    is fully initialised.  Safe to call on every restart — skips if exists.
+    Idempotently create the super-admin account on every startup using PostgreSQL.
+    Safe to call on every restart — skips if admin already exists.
     """
     import asyncio
     import functools
     import logging
     import uuid as _uuid
+    from sqlalchemy import text as _text
 
     _log = logging.getLogger("velontri.seed")
 
     try:
         import bcrypt
-        import aiosqlite
 
         email    = "owner@velontri.com"
         phone    = "+2348000000000"
@@ -379,74 +278,76 @@ async def _auto_seed_admin(db_file: str) -> None:
         )
         pw_hash_str = pw_hash.decode()
 
-        async with aiosqlite.connect(db_file) as db:
-            db.row_factory = aiosqlite.Row
-
-            # Ensure tables exist
-            await db.executescript("""
+        async with engine.begin() as conn:
+            # Ensure minimal tables exist (Alembic manages the full schema)
+            await conn.execute(_text("""
                 CREATE TABLE IF NOT EXISTS users (
                     id TEXT PRIMARY KEY,
                     email TEXT UNIQUE NOT NULL,
                     phone TEXT,
-                    phone_verified INTEGER DEFAULT 1,
+                    phone_verified BOOLEAN DEFAULT TRUE,
                     password_hash TEXT,
                     full_name TEXT,
                     country_code TEXT DEFAULT 'NG',
-                    is_active INTEGER DEFAULT 1,
-                    is_locked INTEGER DEFAULT 0,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    is_locked BOOLEAN DEFAULT FALSE,
                     failed_attempts INTEGER DEFAULT 0,
-                    created_at TEXT DEFAULT (datetime('now'))
-                );
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await conn.execute(_text("""
                 CREATE TABLE IF NOT EXISTS user_roles (
                     id TEXT PRIMARY KEY,
                     user_id TEXT NOT NULL,
                     role TEXT NOT NULL,
                     scope_id TEXT,
-                    granted_at TEXT DEFAULT (datetime('now'))
-                );
-                CREATE INDEX IF NOT EXISTS ix_user_roles_user_id ON user_roles(user_id);
-                CREATE UNIQUE INDEX IF NOT EXISTS uq_user_roles_user_role ON user_roles(user_id, role);
-            """)
-            await db.commit()
+                    granted_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await conn.execute(_text(
+                "CREATE INDEX IF NOT EXISTS ix_user_roles_user_id ON user_roles(user_id)"
+            ))
+            await conn.execute(_text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_user_roles_user_role ON user_roles(user_id, role)"
+            ))
 
             # Check if admin already exists
-            rows = await db.execute_fetchall(
-                "SELECT id FROM users WHERE email = ?", [email]
+            result = await conn.execute(
+                _text("SELECT id FROM users WHERE email = :email"), {"email": email}
             )
-            if rows:
-                uid = rows[0]["id"]
-                # Always refresh password hash + unlock — fixes stale hashes from old seeds
-                await db.execute(
-                    "UPDATE users SET password_hash=?, is_active=1, is_locked=0, "
-                    "failed_attempts=0, phone_verified=1 WHERE id=?",
-                    [pw_hash_str, uid],
+            row = result.fetchone()
+            if row:
+                uid = row[0]
+                await conn.execute(
+                    _text("UPDATE users SET password_hash=:h, is_active=TRUE, is_locked=FALSE, "
+                          "failed_attempts=0, phone_verified=TRUE WHERE id=:uid"),
+                    {"h": pw_hash_str, "uid": uid},
                 )
                 role_id = str(_uuid.uuid4())
-                await db.execute(
-                    "INSERT OR IGNORE INTO user_roles (id, user_id, role, granted_at) "
-                    "VALUES (?,?,'enterprise_admin',datetime('now'))",
-                    [role_id, uid],
+                await conn.execute(
+                    _text("INSERT INTO user_roles (id, user_id, role, granted_at) "
+                          "VALUES (:rid, :uid, 'enterprise_admin', NOW()) "
+                          "ON CONFLICT (user_id, role) DO NOTHING"),
+                    {"rid": role_id, "uid": uid},
                 )
-                await db.commit()
                 _log.info(f"auto_seed: admin password refreshed id={uid} email={email}")
                 return
 
             uid     = str(_uuid.uuid4())
             role_id = str(_uuid.uuid4())
-
-            await db.execute(
-                """INSERT INTO users
+            await conn.execute(
+                _text("""INSERT INTO users
                    (id, email, phone, phone_verified, password_hash, full_name,
                     country_code, is_active, is_locked, failed_attempts, created_at)
-                   VALUES (?,?,?,1,?,?,'NG',1,0,0,datetime('now'))""",
-                [uid, email, phone, pw_hash_str, name],
+                   VALUES (:id, :email, :phone, TRUE, :pw, :name, 'NG', TRUE, FALSE, 0, NOW())"""),
+                {"id": uid, "email": email, "phone": phone, "pw": pw_hash_str, "name": name},
             )
-            await db.execute(
-                "INSERT OR IGNORE INTO user_roles (id, user_id, role, granted_at) "
-                "VALUES (?,?,'enterprise_admin',datetime('now'))",
-                [role_id, uid],
+            await conn.execute(
+                _text("INSERT INTO user_roles (id, user_id, role, granted_at) "
+                      "VALUES (:rid, :uid, 'enterprise_admin', NOW()) "
+                      "ON CONFLICT (user_id, role) DO NOTHING"),
+                {"rid": role_id, "uid": uid},
             )
-            await db.commit()
             _log.info(f"auto_seed: admin created id={uid} email={email}")
 
     except Exception as exc:
@@ -463,44 +364,14 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
     from sqlalchemy.ext.asyncio import async_sessionmaker
 
     import os as _os
-    # Use the module-level canonical DB path — computed from __file__, not cwd
-    _db_file = _CANONICAL_DB
-    engine = create_engine(f"sqlite+aiosqlite:///{_db_file}")
+    database_url = _os.environ.get("DATABASE_URL", "postgresql+asyncpg://velontri:velontri@localhost:5432/velontri")
+    engine = create_engine(database_url)
 
-    def _safe_create_all(conn: Any) -> None:
-        """Create all tables, silently ignoring 'already exists' errors for indexes."""
-        from sqlalchemy import text as _text
-        # Create each table individually with checkfirst=True to skip existing tables
-        for table in Base.metadata.sorted_tables:
-            try:
-                table.create(conn, checkfirst=True)
-            except Exception:
-                pass  # table/index already exists — safe to ignore
-        # Ensure indexes exist using IF NOT EXISTS
-        for stmt in [
-            "CREATE INDEX IF NOT EXISTS ix_users_email ON users (email)",
-            "CREATE INDEX IF NOT EXISTS ix_users_phone ON users (phone)",
-            "CREATE INDEX IF NOT EXISTS ix_user_roles_user_id ON user_roles (user_id)",
-            "CREATE INDEX IF NOT EXISTS ix_refresh_tokens_user_id ON refresh_tokens (user_id)",
-            "CREATE INDEX IF NOT EXISTS ix_refresh_tokens_token_hash ON refresh_tokens (token_hash)",
-            "CREATE INDEX IF NOT EXISTS ix_devices_user_id ON devices (user_id)",
-            "CREATE INDEX IF NOT EXISTS ix_login_history_user_id ON login_history (user_id)",
-            "CREATE INDEX IF NOT EXISTS ix_login_history_created_at ON login_history (created_at)",
-            "CREATE INDEX IF NOT EXISTS ix_otps_user_id_purpose ON otps (user_id, purpose)",
-            "CREATE INDEX IF NOT EXISTS ix_audit_logs_user_id ON audit_logs (user_id)",
-            "CREATE INDEX IF NOT EXISTS ix_audit_logs_created_at ON audit_logs (created_at)",
-        ]:
-            try:
-                conn.execute(_text(stmt))
-            except Exception:
-                pass
-
-    async with engine.begin() as conn:
-        await conn.run_sync(_safe_create_all)
-        await conn.run_sync(_apply_sqlite_migrations)
+    # Run additive PostgreSQL migrations (safe to run every startup)
+    await _apply_pg_migrations(engine)
 
     # Auto-seed admin account on every startup (idempotent — skips if exists)
-    await _auto_seed_admin(_db_file)
+    await _auto_seed_admin(engine)
 
     app.state.engine = engine
     app.state.session_factory = async_sessionmaker(
@@ -655,189 +526,73 @@ def create_app() -> FastAPI:
             commit = "unknown"
         return JSONResponse({
             "commit": commit,
-            "db_path_env": _os.environ.get("SQLITE_DB_PATH", "NOT_SET"),
+            "database_url": str(app.state.engine.url).split("@")[-1] if hasattr(app.state, "engine") else "not set",
             "root": str(ROOT),
             "cwd": _os.getcwd(),
         })
 
     @app.get("/debug-admin", include_in_schema=False)
     async def debug_admin():
-        """Temporary debug endpoint — shows admin row state and tests login path."""
-        import aiosqlite, os as _os, bcrypt as _bcrypt, asyncio, functools
-        _db_file = _CANONICAL_DB
+        """Debug endpoint — shows admin row state using PostgreSQL."""
+        import asyncio, functools, bcrypt as _bcrypt
+        from sqlalchemy import text as _text
         try:
-            async with aiosqlite.connect(_db_file) as db:
-                db.row_factory = aiosqlite.Row
-                rows = await db.execute_fetchall(
+            sf = app.state.session_factory
+            engine_url = str(app.state.engine.url)
+            async with sf() as sess:
+                r = await sess.execute(_text(
                     "SELECT id, email, is_active, is_locked, failed_attempts, "
                     "length(password_hash) as hash_len, substr(password_hash,1,7) as hash_prefix "
-                    "FROM users WHERE email='owner@velontri.com'"
-                )
-                roles = await db.execute_fetchall(
-                    "SELECT role FROM user_roles WHERE user_id=("
-                    "SELECT id FROM users WHERE email='owner@velontri.com')"
-                )
-                row = dict(rows[0]) if rows else {}
+                    "FROM users WHERE lower(email)='owner@velontri.com'"
+                ))
+                row_data = r.mappings().fetchone()
+                row = dict(row_data) if row_data else {}
 
-                # Test bcrypt verify
-                if rows:
-                    full_hash = (await db.execute_fetchall(
-                        "SELECT password_hash FROM users WHERE email='owner@velontri.com'"
-                    ))[0][0]
+                roles_r = await sess.execute(_text(
+                    "SELECT role FROM user_roles WHERE user_id=("
+                    "SELECT id FROM users WHERE lower(email)='owner@velontri.com')"
+                ))
+                roles = [r[0] for r in roles_r.fetchall()]
+
+                if row_data:
+                    full_hash = (await sess.execute(_text(
+                        "SELECT password_hash FROM users WHERE lower(email)='owner@velontri.com'"
+                    ))).scalar()
                     loop = asyncio.get_event_loop()
                     match = await loop.run_in_executor(
-                        None, functools.partial(
-                            _bcrypt.checkpw, b"Owner123!", full_hash.encode()
-                        )
+                        None, functools.partial(_bcrypt.checkpw, b"Owner123!", full_hash.encode())
                     )
                     row["bcrypt_verify"] = match
 
-                # Test ORM path
-                orm_result = "untested"
-                try:
-                    from sqlalchemy import text as _text
-                    sf = app.state.session_factory
-                    # Get the actual DB URL the engine is connected to
-                    engine_url = str(app.state.engine.url)
-                    async with sf() as sess:
-                        r = await sess.execute(
-                            _text("SELECT id, email, password_hash, is_active FROM users WHERE lower(email)='owner@velontri.com'")
-                        )
-                        r2 = r.fetchone()
-                        # Also count total users in ORM DB
-                        cnt = (await sess.execute(_text("SELECT COUNT(*) FROM users"))).scalar()
-                        orm_result = {
-                            "engine_url": engine_url,
-                            "found": r2 is not None,
-                            "total_users_in_orm_db": cnt,
-                            "is_active": bool(r2[3]) if r2 else None,
-                            "hash_prefix": str(r2[2])[:7] if r2 else None,
-                        }
-                except Exception as orm_e:
-                    orm_result = f"error: {orm_e}"
+                cnt = (await sess.execute(_text("SELECT COUNT(*) FROM users"))).scalar()
 
-                return JSONResponse({
-                    "db_file": _db_file,
-                    "admin_row": row,
-                    "roles": [dict(r) for r in roles],
-                    "orm_direct_sql": orm_result,
-                })
+            return JSONResponse({
+                "engine_url": engine_url.split("@")[-1],
+                "admin_row": row,
+                "roles": roles,
+                "total_users": cnt,
+            })
         except Exception as e:
-            return JSONResponse({"error": str(e), "db_file": _db_file})
+            return JSONResponse({"error": str(e)}, status_code=500)
 
     @app.get("/seed-admin", include_in_schema=False)
     async def seed_admin():
         """
-        Creates the super admin account if it doesn't exist.
+        Creates/refreshes the super admin account using PostgreSQL.
         Call this once after first deploy: https://velontri.onrender.com/seed-admin
         """
-        import aiosqlite
-        import uuid as _uuid
-        import asyncio
-        import functools
-        import logging
+        import asyncio, functools, uuid as _uuid, logging, bcrypt
+        from sqlalchemy import text as _text
 
         _log = logging.getLogger(__name__)
-        _db_file = _CANONICAL_DB  # use the module-level canonical path
         try:
-            import bcrypt
-            email    = "owner@velontri.com"
-            phone    = "+2348000000000"
-            password = "Owner123!"
-            name     = "Velontri Owner"
-
-            loop = asyncio.get_event_loop()
-            salt = bcrypt.gensalt()
-            pw_hash = await loop.run_in_executor(
-                None,
-                functools.partial(bcrypt.hashpw, password.encode(), salt)
-            )
-            pw_hash_str = pw_hash.decode()
-
-            async with aiosqlite.connect(_db_file) as db:
-                db.row_factory = aiosqlite.Row
-
-                # Ensure tables exist (idempotent)
-                await db.executescript("""
-                    CREATE TABLE IF NOT EXISTS users (
-                        id TEXT PRIMARY KEY,
-                        email TEXT UNIQUE NOT NULL,
-                        phone TEXT,
-                        phone_verified INTEGER DEFAULT 0,
-                        password_hash TEXT,
-                        full_name TEXT,
-                        country_code TEXT DEFAULT 'NG',
-                        is_active INTEGER DEFAULT 1,
-                        is_locked INTEGER DEFAULT 0,
-                        failed_attempts INTEGER DEFAULT 0,
-                        created_at TEXT DEFAULT (datetime('now'))
-                    );
-                    CREATE TABLE IF NOT EXISTS user_roles (
-                        id TEXT PRIMARY KEY,
-                        user_id TEXT NOT NULL,
-                        role TEXT NOT NULL,
-                        scope_id TEXT,
-                        granted_at TEXT DEFAULT (datetime('now'))
-                    );
-                    CREATE INDEX IF NOT EXISTS ix_user_roles_user_id ON user_roles(user_id);
-                """)
-                await db.commit()
-
-                # Check if admin already exists
-                rows = await db.execute_fetchall(
-                    "SELECT id, email FROM users WHERE email = ?", [email]
-                )
-                if rows:
-                    uid = rows[0]["id"]
-                    # Force-refresh password hash — fixes any stale/corrupt hash
-                    await db.execute(
-                        "UPDATE users SET password_hash=?, is_active=1, is_locked=0, "
-                        "failed_attempts=0, phone_verified=1 WHERE id=?",
-                        [pw_hash_str, uid],
-                    )
-                    role_id = str(_uuid.uuid4())
-                    await db.execute(
-                        "INSERT OR IGNORE INTO user_roles (id, user_id, role, granted_at) "
-                        "VALUES (?,?,'enterprise_admin',datetime('now'))",
-                        [role_id, uid],
-                    )
-                    await db.commit()
-                    _log.info(f"seed_admin: password refreshed id={uid}")
-                    return JSONResponse({
-                        "status": "refreshed",
-                        "message": f"✅ Admin password reset. You can now log in.",
-                        "credentials": {"email": email, "password": password},
-                    })
-
-                uid = str(_uuid.uuid4())
-                role_id = str(_uuid.uuid4())
-
-                await db.execute(
-                    """INSERT INTO users (id, email, phone, phone_verified, password_hash, full_name,
-                       country_code, is_active, is_locked, failed_attempts, created_at)
-                       VALUES (?,?,?,1,?,?,?,1,0,0,datetime('now'))""",
-                    [uid, email, phone, pw_hash_str, name, "NG"]
-                )
-
-                await db.execute(
-                    "INSERT INTO user_roles (id, user_id, role, granted_at) VALUES (?,?,'enterprise_admin',datetime('now'))",
-                    [role_id, uid]
-                )
-
-                await db.commit()
-                _log.info(f"seed_admin: created id={uid}")
-
+            await _auto_seed_admin(app.state.engine)
             return JSONResponse({
-                "status": "created",
-                "message": "✅ Admin account created successfully!",
-                "credentials": {
-                    "email": email,
-                    "password": password,
-                    "role": "super_admin",
-                },
+                "status": "ok",
+                "message": "✅ Admin account created/refreshed.",
+                "credentials": {"email": "owner@velontri.com", "password": "Owner123!"},
                 "next": "Login at your frontend /login page with these credentials",
             })
-
         except Exception as e:
             _log.error(f"seed_admin_error: {e}")
             return JSONResponse({"status": "error", "message": str(e)}, status_code=500)

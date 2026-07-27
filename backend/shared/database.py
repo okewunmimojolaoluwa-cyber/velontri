@@ -48,15 +48,15 @@ def create_engine(
     """
     Create a configured async SQLAlchemy engine.
 
-    :param database_url: asyncpg DSN — must start with postgresql+asyncpg:// or sqlite+aiosqlite://
+    :param database_url: asyncpg DSN — must start with postgresql+asyncpg://
     :param pool_size: number of persistent connections in the pool
     :param max_overflow: additional connections beyond pool_size allowed
     :param pool_timeout: seconds to wait for a connection before raising
     :param echo: if True, log all SQL statements (development only)
     """
-    if not (database_url.startswith("postgresql+asyncpg://") or database_url.startswith("sqlite+aiosqlite://")):
+    if not database_url.startswith("postgresql+asyncpg://"):
         raise ValueError(
-            "DATABASE_URL must use the asyncpg driver (postgresql+asyncpg://...) or aiosqlite (sqlite+aiosqlite://...)"
+            "DATABASE_URL must use the asyncpg driver (postgresql+asyncpg://...)"
         )
 
     # Build engine kwargs based on database type
@@ -64,25 +64,18 @@ def create_engine(
         "pool_pre_ping": True,
         "echo": echo,
         "future": True,
+        "pool_size": pool_size,
+        "max_overflow": max_overflow,
+        "pool_timeout": pool_timeout,
     }
-
-    # Only add pool settings for PostgreSQL (SQLite doesn't use connection pooling)
-    if database_url.startswith("postgresql+asyncpg://"):
-        engine_kwargs.update({
-            "pool_size": pool_size,
-            "max_overflow": max_overflow,
-            "pool_timeout": pool_timeout,
-        })
 
     engine = create_async_engine(database_url, **engine_kwargs)
 
-    # Only set search_path for PostgreSQL
-    if database_url.startswith("postgresql+asyncpg://"):
-        @event.listens_for(engine.sync_engine, "connect")
-        def set_search_path(dbapi_conn: Any, _conn_record: Any) -> None:  # noqa: ANN401
-            # Ensure every connection uses the public schema by default.
-            # This prevents accidental cross-schema data access.
-            dbapi_conn.execute("SET search_path TO public")
+    @event.listens_for(engine.sync_engine, "connect")
+    def set_search_path(dbapi_conn: Any, _conn_record: Any) -> None:  # noqa: ANN401
+        # Ensure every connection uses the public schema by default.
+        # This prevents accidental cross-schema data access.
+        dbapi_conn.execute("SET search_path TO public")
 
     return engine
 
@@ -149,3 +142,49 @@ async def dispose_engine(engine: AsyncEngine) -> None:
     """
     await engine.dispose()
     logger.info("database_engine_disposed")
+
+
+class DbShim:
+    """Compatibility shim to translate aiosqlite execute syntax to SQLAlchemy text()"""
+    def __init__(self, conn):
+        self.conn = conn
+        self.row_factory = None
+
+    async def execute_fetchall(self, query: str, params: list = None) -> list[dict]:
+        return await self._exec(query, params)
+
+    async def execute(self, query: str, params: list = None):
+        return await self._exec(query, params)
+        
+    async def commit(self):
+        pass # Automatically managed by engine.begin() context manager
+
+    async def _exec(self, query: str, params: list = None):
+        import re
+        from sqlalchemy import text
+        if params is None:
+            params = []
+            
+        count = 0
+        def repl(_):
+            nonlocal count
+            p = f":p{count}"
+            count += 1
+            return p
+            
+        pg_query = re.sub(r'\?', repl, query)
+        # SQLite uses CAST(... AS REAL), Postgres needs CAST(... AS FLOAT)
+        pg_query = re.sub(r'(?i)CAST\((.*?)\s+AS\s+REAL\)', r'CAST(\1 AS FLOAT)', pg_query)
+        # SQLite uses datetime('now'), Postgres uses NOW()
+        pg_query = re.sub(r"(?i)datetime\('now'\)", 'NOW()', pg_query)
+        
+        param_dict = {f"p{i}": val for i, val in enumerate(params)}
+        result = await self.conn.execute(text(pg_query), param_dict)
+        return [dict(row) for row in result.mappings()]
+
+@asynccontextmanager
+async def get_raw_db(engine):
+    """Context manager replacing aiosqlite.connect for backward-compatibility migrations."""
+    async with engine.begin() as conn:
+        yield DbShim(conn)
+

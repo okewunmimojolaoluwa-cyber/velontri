@@ -53,17 +53,11 @@ async def async_session():
     from sqlalchemy import event
 
     engine = create_async_engine(
-        "sqlite+aiosqlite:///:memory:",
+        __import__("os").environ.get("TEST_DATABASE_URL", "postgresql+asyncpg://velontri:velontri@localhost:5432/velontri_test"),
         echo=False,
     )
 
-    # SQLite doesn't support INET — render as VARCHAR for tests
-    @event.listens_for(engine.sync_engine, "connect")
-    def set_sqlite_pragma(dbapi_conn, _):
-        pass  # no-op; INET override handled via column type patching
-
-    # Patch INET columns in models to use String for SQLite
-    from app.models import Device, LoginHistory, AuditLog
+        from app.models import Device, LoginHistory, AuditLog
     for table in [Device.__table__, LoginHistory.__table__, AuditLog.__table__]:
         for col in table.columns:
             if hasattr(col.type, '__class__') and col.type.__class__.__name__ == 'INET':

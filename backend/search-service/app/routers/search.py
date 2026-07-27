@@ -1,4 +1,4 @@
-﻿"""
+"""
 Search Service HTTP router.
 
 Exposes:
@@ -124,11 +124,12 @@ async def keyword_search(
             },
         )
     except Exception:
-        # Elasticsearch unavailable in dev — fall back to SQLite full-text search
-        return await _sqlite_search_fallback(q, category, condition, page, page_size, sort_by)
+        # Elasticsearch unavailable in dev — fall back to Postgres full-text search
+        return await _search_fallback(request.app.state.engine, q, category, condition, page, page_size, sort_by)
 
 
-async def _sqlite_search_fallback(
+async def _search_fallback(
+    engine,
     q: str,
     category: str | None,
     condition: str | None,
@@ -291,8 +292,7 @@ async def _sqlite_search_fallback(
         return [t for t in all_terms if t and len(t) >= 2]
 
     try:
-        import aiosqlite
-        db_path = __import__("shared.db_path", fromlist=["get_db_path"]).get_db_path()
+        from shared.database import get_raw_db
 
         expanded = _expand_query(q)
 
@@ -331,8 +331,7 @@ async def _sqlite_search_fallback(
         elif sort_by == "newest":
             order = "created_at DESC"
 
-        async with aiosqlite.connect(str(db_path)) as db:
-            db.row_factory = aiosqlite.Row
+        async with get_raw_db(engine) as db:
             count_rows = await db.execute_fetchall(
                 f"SELECT COUNT(*) as cnt FROM listings WHERE {where}", all_params
             )

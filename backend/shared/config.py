@@ -31,8 +31,8 @@ class BaseServiceSettings(BaseSettings):
 
     # ── PostgreSQL ─────────────────────────────────────────────────────
     DATABASE_URL: str = Field(
-        default="sqlite+aiosqlite:///./dev_gateway.db",
-        description="Database DSN. For local dev, defaults to SQLite"
+        default="postgresql+asyncpg://velontri:velontri@localhost:5432/velontri",
+        description="Database DSN. For local dev, defaults to Postgres"
     )
     DB_POOL_SIZE: int = 10
     DB_MAX_OVERFLOW: int = 20
@@ -75,10 +75,9 @@ class BaseServiceSettings(BaseSettings):
     @field_validator("DATABASE_URL")
     @classmethod
     def validate_database_url(cls, v: str) -> str:
-        # Allow SQLite for local development
-        if not (v.startswith("postgresql+asyncpg://") or v.startswith("sqlite+aiosqlite://")):
+        if not v.startswith("postgresql+asyncpg://"):
             raise ValueError(
-                "DATABASE_URL must use asyncpg (postgresql+asyncpg://...) or aiosqlite (sqlite+aiosqlite://...)"
+                "DATABASE_URL must use asyncpg (postgresql+asyncpg://...)"
             )
         return v
 

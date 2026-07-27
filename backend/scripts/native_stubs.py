@@ -1,13 +1,13 @@
 """
 Native development stubs — patch shared infrastructure so all 14 Velontri
-services start without Docker, PostgreSQL, Redis, or RabbitMQ.
+services start without Docker, Redis, or RabbitMQ.
 
 Replacements:
-  PostgreSQL  → SQLite (aiosqlite)
   Redis       → in-process dict
   RabbitMQ    → no-op stubs
   elasticsearch → fake module
-  PostgreSQL types (INET, JSONB, ARRAY, UUID) → SQLite-compatible shims
+
+Database: PostgreSQL (asyncpg) — set DATABASE_URL in backend/.env
 """
 from __future__ import annotations
 
@@ -51,7 +51,7 @@ def _inject_env(svc_name: str) -> None:
     _e("SERVICE_NAME",            svc_name)
     _e("SERVICE_VERSION",         "1.0.0")
     _e("ENVIRONMENT",             "development")
-    _e("DATABASE_URL",            f"sqlite+aiosqlite:///./dev_{db}.db")
+    _e("DATABASE_URL",            "postgresql+asyncpg://velontri:velontri@localhost:5432/velontri")
     _e("REDIS_URL",               "redis://localhost:6379/0")
     _e("RABBITMQ_URL",            "amqp://velontri:velontri@localhost:5672/")
     _e("AWS_S3_BUCKET",           "velontri-local")
@@ -266,11 +266,6 @@ def apply_patches(svc_name: str = "dev-service") -> None:
     _load_dot_env(ROOT)
     _inject_env(svc_name)
 
-    # ── Set canonical SQLite DB path for all inline aiosqlite calls ───────────
-    # If SQLITE_DB_PATH is already set (e.g. by Render env), keep it.
-    # Otherwise default to dev_gateway.db at the backend root.
-    if "SQLITE_DB_PATH" not in os.environ:
-        os.environ["SQLITE_DB_PATH"] = str(ROOT / "dev_gateway.db")
 
     # ── Register fake elasticsearch BEFORE any service imports it ─────────────
     if "elasticsearch" not in sys.modules:
@@ -356,60 +351,11 @@ def apply_patches(svc_name: str = "dev-service") -> None:
         _aioboto3.Session = _FakeSession
         sys.modules["aioboto3"] = _aioboto3
 
-    # ── Patch database → SQLite ───────────────────────────────────────────────
-    import shared.database as db
-    from sqlalchemy.ext.asyncio import create_async_engine as _cae
-    db_name = svc_name.replace("-service", "").replace("-", "_")
-    _url = f"sqlite+aiosqlite:///./dev_{db_name}.db"
-    db.create_engine = lambda *a, **kw: _cae(_url, echo=False, connect_args={"check_same_thread": False})
+    # ── Database: use the shared create_engine (reads DATABASE_URL) ──────────
+    # No patching needed — shared/database.py already enforces asyncpg
 
-    # ── Remove DateTime server_defaults incompatible with SQLite ─────────────
-    # SQLite returns CURRENT_TIMESTAMP as a string; SQLAlchemy cannot parse it
-    # back to datetime. We clear all DateTime server_defaults — Python-side
-    # defaults (default=datetime.utcnow) handle timestamping instead.
-    from sqlalchemy import Column as _Column, DateTime as _DateTime
-    from sqlalchemy.sql.sqltypes import DateTime as _DateTimeType
-
-    _orig_col_init = _Column.__init__
-
-    def _patched_col_init(self, *args, **kwargs):
-        # Detect DateTime type in args or type_ kwarg
-        type_arg = kwargs.get("type_") or (args[1] if len(args) > 1 else None)
-        is_datetime = isinstance(type_arg, _DateTimeType)
-
-        if is_datetime:
-            # Remove any server_default — use Python-side default only
-            kwargs.pop("server_default", None)
-
-        # Also strip gen_random_uuid server_defaults for UUID columns
-        sd = kwargs.get("server_default")
-        if sd is not None:
-            sd_str = str(sd)
-            if any(pg in sd_str for pg in ("gen_random_uuid", "CURRENT_TIMESTAMP", "NOW()", "char_length")):
-                kwargs["server_default"] = None
-
-        _orig_col_init(self, *args, **kwargs)
-
-    _Column.__init__ = _patched_col_init  # type: ignore[method-assign]
-
-    # Patch CheckConstraint to replace PG-only expressions with 1=1
-    from sqlalchemy.sql import schema as _schema
-
-    _PG_ONLY_EXPRS = ("gen_random_uuid", "char_length", "CURRENT_TIMESTAMP", "NOW()", "gen_rand")
-
-    _orig_cc_init = _schema.CheckConstraint.__init__
-
-    def _safe_cc_init(self, sqltext, *args, **kwargs):
-        text_str = str(sqltext) if sqltext is not None else ""
-        if any(pg in text_str for pg in _PG_ONLY_EXPRS):
-            _orig_cc_init(self, "1=1", *args, **kwargs)
-        else:
-            _orig_cc_init(self, sqltext, *args, **kwargs)
-
-    _schema.CheckConstraint.__init__ = _safe_cc_init
-
-    import sqlalchemy as _sa_top
-    _sa_top.CheckConstraint.__init__ = _safe_cc_init
+    # PostgreSQL natively handles DateTime, UUID, JSONB, INET, etc.
+    # No additional patches needed.
 
 
 def _async(val):

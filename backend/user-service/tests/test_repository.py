@@ -37,7 +37,7 @@ from app.repository import (
 
 @pytest_asyncio.fixture(scope="function")
 async def async_session():
-    engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
+    engine = create_async_engine(__import__("os").environ.get("TEST_DATABASE_URL", "postgresql+asyncpg://velontri:velontri@localhost:5432/velontri_test"), echo=False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     factory = async_sessionmaker(bind=engine, expire_on_commit=False)
