@@ -456,6 +456,39 @@ async def admin_review_kyc(doc_id: uuid.UUID, request: Request, service: UserSer
         pass
     return SuccessResponse(data={'reviewed': True, 'status': review_status})
 
+@router.get('/users/admin/moderators', response_model=SuccessResponse, summary='Admin: list all moderator accounts')
+async def admin_list_moderators(request: Request, service: UserService=Depends(_build_service), payload: dict=Depends(get_current_user_payload)) -> SuccessResponse:
+    """Returns all users with moderator role directly, no filtering needed."""
+    try:
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _text
+            rows = (await db.execute(_text("""
+                SELECT u.id, u.email, u.phone, u.full_name, u.country_code,
+                       u.is_active, u.phone_verified, u.created_at,
+                       STRING_AGG(r.role, ',') AS roles
+                FROM users u
+                INNER JOIN user_roles r ON CAST(r.user_id AS TEXT) = CAST(u.id AS TEXT)
+                WHERE r.role = 'moderator'
+                GROUP BY u.id
+                ORDER BY u.created_at DESC
+            """))).mappings().all()
+        data = [{
+            'id': str(r['id']),
+            'email': r['email'],
+            'phone': r['phone'],
+            'full_name': r['full_name'],
+            'country_code': r['country_code'],
+            'is_active': bool(r['is_active']),
+            'is_phone_verified': bool(r['phone_verified']),
+            'created_at': str(r['created_at']),
+            'roles': r['roles'].split(',') if r['roles'] else ['moderator']
+        } for r in rows]
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f'list_moderators_error: {e}')
+        data = []
+    return SuccessResponse(message=f'{len(data)} moderator(s) found.', data=data)
+
 @router.post('/users/admin/moderators', response_model=SuccessResponse, status_code=201, summary='Admin: create a new moderator account')
 async def admin_create_moderator(request: Request, service: UserService=Depends(_build_service), payload: dict=Depends(get_current_user_payload)) -> SuccessResponse:
     """
@@ -473,9 +506,9 @@ async def admin_create_moderator(request: Request, service: UserService=Depends(
         from shared.errors import InvalidInputError
         raise InvalidInputError('email, password and full_name are required.')
     import re
-    if not re.match('^\\+[1-9]\\d{6,14}$', phone):
-        import time
-        phone = f'+234{int(time.time()) % 10000000000:010d}'
+    # Accept any 10-15 digit number with optional + prefix
+    if not re.match(r'^(\+)?[0-9]{10,15}$', phone):
+        phone = phone or 'N/A'  # keep whatever was given, column allows text
     import asyncio
     import functools
     loop = asyncio.get_event_loop()

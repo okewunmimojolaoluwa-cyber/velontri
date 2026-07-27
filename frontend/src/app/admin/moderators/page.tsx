@@ -48,14 +48,8 @@ export default function ModeratorsPage() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin', 'moderators'],
     queryFn: async (): Promise<Moderator[]> => {
-      const res = await apiClient.get<ApiResponse<Moderator[]>>('/users/admin/list', {
-        params: { page_size: 50 },
-      });
-      const users = Array.isArray(res.data?.data) ? res.data.data : [];
-      // Filter to only users with moderator role — exclude enterprise_admin (that's the owner/super admin)
-      return users.filter((u: any) =>
-        Array.isArray(u.roles) && u.roles.includes('moderator') && !u.roles.includes('enterprise_admin')
-      );
+      const res = await apiClient.get<ApiResponse<Moderator[]>>('/users/admin/moderators');
+      return Array.isArray(res.data?.data) ? res.data.data : [];
     },
     staleTime: 0,  // always refetch when invalidated
     refetchOnWindowFocus: true,
