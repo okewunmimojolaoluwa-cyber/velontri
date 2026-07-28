@@ -257,13 +257,25 @@ class MarketplaceService:
                 content=file_content,
                 content_type=mime,
             )
+            image_url: str | None = None  # served via S3/CDN key
+        else:
+            # No S3 — store as a base64 data URL directly on the listing so the
+            # image is still visible. The frontend compresses to ~60 KB first.
+            import base64 as _b64
+            data_url = f"data:{mime};base64,{_b64.b64encode(file_content).decode()}"
+            # Update the listing's image_url if this is the first image
+            if current_count == 0:
+                listing.image_url = data_url
+                await self.session.flush()
+            image_url = data_url
 
         sort_order = current_count  # zero-indexed
         await repo.add_listing_media(
-            self.session, listing_id, "image", s3_key, sort_order
+            self.session, listing_id, "image", s3_key if self.s3_session else (image_url or s3_key), sort_order
         )
         await self.redis.delete(RedisKeys.listing_cache(str(listing_id)))
         return s3_key
+
 
     async def upload_video(
         self,

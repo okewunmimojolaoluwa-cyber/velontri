@@ -58,6 +58,30 @@ export const sellerApi = {
       .then((r) => r.data);
   },
 
+  /** Upload a listing image as multipart (avoids sending huge base64 in JSON). */
+  uploadImage(listingId: string, dataUrl: string): Promise<ApiResponse<{ s3_key: string }>> {
+    // Convert data URL → Blob → File
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] ?? 'image/jpeg';
+    const bstr = atob(arr[1]);
+    const u8 = new Uint8Array(bstr.length);
+    for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
+    const blob = new Blob([u8], { type: mime });
+    const ext = mime.split('/')[1] ?? 'jpg';
+    const file = new File([blob], `listing_image.${ext}`, { type: mime });
+
+    const fd = new FormData();
+    fd.append('file', file);
+
+    return apiClient
+      .post<ApiResponse<{ s3_key: string }>>(`/listings/${listingId}/images`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 60_000, // images can take longer
+      })
+      .then((r) => r.data);
+  },
+
+
   getStats() {
     return apiClient
       .get<ApiResponse<SellerStats>>('/analytics/seller/stats')

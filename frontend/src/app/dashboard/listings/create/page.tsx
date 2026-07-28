@@ -12,6 +12,28 @@ import { MapPin, ChevronRight, ImageIcon, Upload, X, Lock, Zap, ArrowRight } fro
 import { useAuth } from '@/features/auth/auth-provider';
 import Link from 'next/link';
 
+/* ── Client-side image compressor ──────────────────────── */
+/** Compress a data URL to JPEG at max 800px wide, ~60KB output */
+async function compressToJpeg(dataUrl: string, maxPx = 800, quality = 0.55): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(dataUrl); // fallback: use original
+    img.src = dataUrl;
+  });
+}
+
+
 /* ── Plan limits (mirrors subscription page) ────────────── */
 const PLAN_LIMITS: Record<string, number> = {
   free:       3,
@@ -164,7 +186,7 @@ export default function CreateListingPage() {
 
   const { mutate: submit, isPending } = useMutation({
     mutationFn: async () => {
-      // 1. Create the listing
+      // 1. Create the listing WITHOUT the image (avoids sending huge base64 in JSON)
       const res = await sellerApi.createListing({
         title: form.title,
         description: form.description,
@@ -176,17 +198,30 @@ export default function CreateListingPage() {
         state: form.state || undefined,
         country: 'NG',
         condition: form.condition,
-        image_url: form.images[0] || undefined,
         whatsapp_number: form.whatsapp_number || undefined,
         contact_phone: form.contact_phone || undefined,
       });
-      // 2. Publish immediately so it goes live
+
       const listingId = (res.data as any)?.id;
-      if (listingId) {
-        await sellerApi.publishListing(listingId);
+      if (!listingId) throw new Error('No listing ID returned from server.');
+
+      // 2. Compress + upload images as multipart (much faster than base64 in JSON)
+      if (form.images.length > 0) {
+        for (const dataUrl of form.images) {
+          try {
+            const compressed = await compressToJpeg(dataUrl);
+            await sellerApi.uploadImage(listingId, compressed);
+          } catch {
+            // Image upload failures are non-fatal — listing still gets published
+          }
+        }
       }
+
+      // 3. Publish so it goes live
+      await sellerApi.publishListing(listingId);
       return res;
     },
+
     onSuccess: () => {
       // Invalidate user-scoped caches so every page auto-refreshes
       qc.invalidateQueries({ queryKey: [uid, 'seller'] });
