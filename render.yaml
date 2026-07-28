@@ -37,7 +37,7 @@ services:
 
       # ── CORS — set to your actual frontend URL ───────────────────────────
       - key: ALLOWED_ORIGINS
-        value: "https://velontri.pxxl.run,https://velontri.com,https://www.velontri.com,http://localhost:3000,http://localhost:3001"
+        value: "https://velontri.pxxl.run,https://velontri.com,https://www.velontri.com,https://velontri.onrender.com,http://localhost:3000,http://localhost:3001"
 
       # ── JWT keys (generate once, store as Render secrets) ────────────────
       # Generate with: python -c "from cryptography.hazmat.primitives.asymmetric import rsa; from cryptography.hazmat.primitives import serialization; k=rsa.generate_private_key(65537,2048); print(k.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.TraditionalOpenSSL,serialization.NoEncryption()).decode())"
