@@ -145,7 +145,7 @@ async def respond_to_review(review_id: uuid.UUID, body: SellerResponseRequest, s
     return SuccessResponse(data={'message': 'Response submitted.'})
 
 @router.get('/reviews', response_model=SuccessResponse, summary='Get reviews given or received by the authenticated user')
-async def get_my_reviews(type: str=Query(default='given', description="'given' = reviews I wrote, 'received' = reviews on my listings"), page: int=Query(default=1, ge=1), page_size: int=Query(default=20, ge=1, le=50), current_user_id: uuid.UUID=Depends(get_current_user_id), service: MarketplaceService=Depends(_build_service)) -> SuccessResponse:
+async def get_my_reviews(request: Request, type: str=Query(default='given', description="'given' = reviews I wrote, 'received' = reviews on my listings"), page: int=Query(default=1, ge=1), page_size: int=Query(default=20, ge=1, le=50), current_user_id: uuid.UUID=Depends(get_current_user_id), service: MarketplaceService=Depends(_build_service)) -> SuccessResponse:
     """
     Returns reviews associated with the authenticated user.
     - type=given    → reviews where reviewer_id = current user

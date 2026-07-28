@@ -181,21 +181,36 @@ async def paystack_verify(request: Request, payload: Annotated[dict, Depends(get
         _log.getLogger(__name__).warning(f'restore_listings_skipped: {_e}')
     try:
         from datetime import datetime as _dt, timezone as _tz
-        _db = __import__('shared.db_path', fromlist=['get_db_path']).get_db_path()
         _amount = PLAN_PRICES_KOBO.get(plan_id, 0) // 100
         async with request.app.state.session_factory() as _db_conn:
             from sqlalchemy import text as _text
-            await _db_conn.execute("\n                CREATE TABLE IF NOT EXISTS sub_payments (\n                    id TEXT PRIMARY KEY,\n                    user_id TEXT NOT NULL,\n                    plan TEXT NOT NULL,\n                    reference TEXT NOT NULL,\n                    amount_ngn INTEGER NOT NULL,\n                    status TEXT NOT NULL DEFAULT 'success',\n                    paid_at TEXT NOT NULL DEFAULT NOW()\n                )\n            ")
-            await _db_conn.execute('CREATE INDEX IF NOT EXISTS ix_sub_pay_user ON sub_payments(user_id)')
-            await _db_conn.execute("INSERT OR IGNORE INTO sub_payments\n                   (id, user_id, plan, reference, amount_ngn, status, paid_at)\n                   VALUES (?, ?, ?, ?, ?, 'success', ?)", [str(uuid.uuid4()), str(user_id), plan_id, reference, _amount, _dt.now(tz=_tz.utc).isoformat()])
-            from datetime import datetime as _dt2, timezone as _tz2
-            await _db_conn.execute("\n                CREATE TABLE IF NOT EXISTS audit_log (\n                    id TEXT PRIMARY KEY, actor_id TEXT, actor_email TEXT, actor_name TEXT,\n                    category TEXT NOT NULL DEFAULT 'system', action TEXT NOT NULL,\n                    resource TEXT, resource_id TEXT, ip_address TEXT,\n                    status TEXT NOT NULL DEFAULT 'success', detail TEXT,\n                    created_at TEXT NOT NULL DEFAULT NOW()\n                )\n            ")
-            await _db_conn.execute("INSERT OR IGNORE INTO audit_log\n                   (id, actor_id, actor_email, action, resource, resource_id,\n                    category, status, detail, created_at)\n                   VALUES (?,?,?,?,?,?,'admin','success',?,?)", [str(uuid.uuid4()), str(user_id), user_email, 'subscription.payment', 'subscriptions', reference, f'Subscription payment: {plan_id} plan ₦{_amount:,}', _dt.now(tz=_tz.utc).isoformat()])
-            await _db_conn.commit()
-            _notif_id = str(uuid.uuid4())
+            # Record the payment (idempotent via ON CONFLICT DO NOTHING)
+            await _db_conn.execute(_text("""
+                INSERT INTO sub_payments (id, user_id, plan, reference, amount_ngn, status, paid_at)
+                VALUES (:id, :user_id, :plan, :ref, :amount, 'success', NOW())
+                ON CONFLICT (id) DO NOTHING
+            """), {'id': str(uuid.uuid4()), 'user_id': str(user_id), 'plan': plan_id,
+                   'ref': reference, 'amount': _amount})
+            # Audit log
+            await _db_conn.execute(_text("""
+                INSERT INTO audit_log (id, actor_id, actor_email, action, resource, resource_id,
+                                       category, status, detail, created_at)
+                VALUES (:id, :actor_id, :actor_email, :action, :resource, :resource_id,
+                        'admin', 'success', :detail, NOW())
+                ON CONFLICT (id) DO NOTHING
+            """), {'id': str(uuid.uuid4()), 'actor_id': str(user_id), 'actor_email': payload.get('email'),
+                   'action': 'subscription.payment', 'resource': 'subscriptions',
+                   'resource_id': reference,
+                   'detail': f'Subscription payment: {plan_id} plan ₦{_amount:,}'})
+            # Notification
             _plan_name = plan_id.capitalize()
-            await _db_conn.execute("\n                CREATE TABLE IF NOT EXISTS notifications (\n                    id TEXT PRIMARY KEY,\n                    user_id TEXT NOT NULL,\n                    type TEXT NOT NULL DEFAULT 'system',\n                    title TEXT NOT NULL,\n                    message TEXT NOT NULL,\n                    is_read INTEGER NOT NULL DEFAULT 0,\n                    created_at TEXT NOT NULL DEFAULT NOW()\n                )\n            ")
-            await _db_conn.execute("INSERT INTO notifications (id, user_id, type, title, message, is_read, created_at)\n                   VALUES (?, ?, 'payment', ?, ?, 0, ?)", [_notif_id, str(user_id), f'✅ {_plan_name} Plan Activated', f'Your payment of ₦{_amount:,} was successful. Your {_plan_name} subscription is now active for 30 days.', _dt.now(tz=_tz.utc).isoformat()])
+            await _db_conn.execute(_text("""
+                INSERT INTO notifications (id, user_id, type, title, message, is_read)
+                VALUES (:id, :user_id, 'payment', :title, :message, FALSE)
+                ON CONFLICT (id) DO NOTHING
+            """), {'id': str(uuid.uuid4()), 'user_id': str(user_id),
+                   'title': f'✅ {_plan_name} Plan Activated',
+                   'message': f'Your payment of ₦{_amount:,} was successful. Your {_plan_name} subscription is now active for 30 days.'})
             await _db_conn.commit()
     except Exception as _e:
         import logging as _log2
