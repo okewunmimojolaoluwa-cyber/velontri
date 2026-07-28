@@ -47,6 +47,8 @@ class Listing(Base):
     avg_rating: Mapped[float] = mapped_column(Numeric(3, 2), nullable=False, default=0)
     review_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    whatsapp_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    contact_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utc_now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utc_now, onupdate=_utc_now)
 

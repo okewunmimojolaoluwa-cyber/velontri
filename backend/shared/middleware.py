@@ -100,6 +100,7 @@ def configure_middleware(
                 "https://www.velontri.pxxl.run",
                 "https://velontri.com",
                 "https://www.velontri.com",
+                "https://velontri.onrender.com",
             ]
 
     # Use allow_credentials=True with explicit origins (never with wildcard)
@@ -108,7 +109,7 @@ def configure_middleware(
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
-        allow_origin_regex=r"https?://.*\.(velontri\.com|pxxl\.run)",
+        allow_origin_regex=r"https?://.*\.(velontri\.com|pxxl\.run|onrender\.com)",
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type", "X-Request-ID", "Accept", "Origin"],

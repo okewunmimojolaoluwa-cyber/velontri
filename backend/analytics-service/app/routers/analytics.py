@@ -388,13 +388,13 @@ async def admin_overview(request: Request, payload: Annotated[dict, Depends(get_
             except Exception:
                 total_messages = 0
             try:
-                new_users_today = (await db.execute(_text(f"SELECT COUNT(*) AS cnt FROM users u {exclude_admin} AND DATE(u.created_at) = DATE('now')"))).mappings().all()[0]['cnt'] or 0
+                new_users_today = (await db.execute(_text(f"SELECT COUNT(*) AS cnt FROM users u {exclude_admin} AND u.created_at::DATE = CURRENT_DATE"))).mappings().all()[0]['cnt'] or 0
             except Exception:
                 new_users_today = 0
             try:
-                monthly_rows = (await db.execute(_text("SELECT COALESCE(SUM(amount_ngn), 0) AS total FROM sub_payments\n                       WHERE paid_at >= DATE('now', '-30 days') AND status='success'"))).mappings().all()
+                monthly_rows = (await db.execute(_text("SELECT COALESCE(SUM(amount_ngn), 0) AS total FROM sub_payments WHERE paid_at >= NOW() - INTERVAL '30 days' AND status='success'"))).mappings().all()
                 monthly_revenue = int(monthly_rows[0]['total'] or 0)
-                today_rows = (await db.execute(_text("SELECT COALESCE(SUM(amount_ngn), 0) AS total FROM sub_payments\n                       WHERE DATE(paid_at) = DATE('now') AND status='success'"))).mappings().all()
+                today_rows = (await db.execute(_text("SELECT COALESCE(SUM(amount_ngn), 0) AS total FROM sub_payments WHERE paid_at::DATE = CURRENT_DATE AND status='success'"))).mappings().all()
                 today_revenue = int(today_rows[0]['total'] or 0)
                 count_rows = (await db.execute(_text("SELECT COUNT(*) AS cnt FROM sub_payments WHERE status='success'"))).mappings().all()
                 total_sub_payments = count_rows[0]['cnt'] or 0
@@ -412,7 +412,14 @@ async def revenue_daily(request: Request, days: int=14, payload: Annotated[dict,
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            rows = (await db.execute(_text("SELECT DATE(paid_at) AS day, COALESCE(SUM(amount_ngn), 0) AS total\n                   FROM sub_payments\n                   WHERE status='success'\n                     AND paid_at >= DATE('now', :p0 || ' days')\n                   GROUP BY DATE(paid_at)"), {'p0': f'-{days}'})).mappings().all()
+            rows = (await db.execute(_text("""
+                   SELECT paid_at::DATE AS day, COALESCE(SUM(amount_ngn), 0) AS total
+                   FROM sub_payments
+                   WHERE status='success'
+                     AND paid_at >= NOW() - (:days || ' days')::INTERVAL
+                   GROUP BY paid_at::DATE
+                   ORDER BY day
+                """), {'days': days})).mappings().all()
             for r in rows:
                 counts[r['day']] = int(r['total'] or 0)
     except Exception:
@@ -658,9 +665,9 @@ async def admin_revenue_summary(request: Request, payload: Annotated[dict, Depen
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            monthly_row = (await db.execute(_text("SELECT COALESCE(SUM(amount_ngn),0) AS t FROM sub_payments WHERE status='success' AND paid_at>=DATE('now','-30 days')"))).mappings().all()
+            monthly_row = (await db.execute(_text("SELECT COALESCE(SUM(amount_ngn),0) AS t FROM sub_payments WHERE status='success' AND paid_at >= NOW() - INTERVAL '30 days'"))).mappings().all()
             monthly = int(monthly_row[0]['t'] or 0)
-            today_row = (await db.execute(_text("SELECT COALESCE(SUM(amount_ngn),0) AS t FROM sub_payments WHERE status='success' AND DATE(paid_at)=DATE('now')"))).mappings().all()
+            today_row = (await db.execute(_text("SELECT COALESCE(SUM(amount_ngn),0) AS t FROM sub_payments WHERE status='success' AND paid_at::DATE = CURRENT_DATE"))).mappings().all()
             today = int(today_row[0]['t'] or 0)
             all_time_row = (await db.execute(_text("SELECT COALESCE(SUM(amount_ngn),0) AS t, COUNT(*) AS cnt FROM sub_payments WHERE status='success'"))).mappings().all()
             total_all_time = int(all_time_row[0]['t'] or 0)
@@ -678,20 +685,22 @@ async def get_notifications(request: Request, page: int=1, page_size: int=50, un
     if not user_id:
         from shared.errors import UnauthorizedError
         raise UnauthorizedError('Authentication required.')
-    from pathlib import Path
     items = []
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            await db.execute(_text("\n                CREATE TABLE IF NOT EXISTS notifications (\n                    id TEXT PRIMARY KEY,\n                    user_id TEXT NOT NULL,\n                    type TEXT NOT NULL DEFAULT 'system',\n                    title TEXT NOT NULL,\n                    message TEXT NOT NULL,\n                    is_read INTEGER NOT NULL DEFAULT 0,\n                    created_at TEXT NOT NULL DEFAULT NOW()\n                )\n            "))
-            await db.execute(_text('CREATE INDEX IF NOT EXISTS ix_notifs_user ON notifications(user_id)'))
-            await db.commit()
-            where = 'WHERE CAST(user_id AS TEXT) = ?'
-            args: list = [user_id]
+            where = 'WHERE CAST(user_id AS TEXT) = :uid'
+            args: dict = {'uid': user_id}
             if unread_only:
-                where += ' AND is_read = 0'
-            rows = (await db.execute(_text(f'SELECT id, type, title, message, is_read, created_at\n                    FROM notifications\n                    {where}\n                    ORDER BY created_at DESC\n                    LIMIT ? OFFSET ?'), args + [page_size, (page - 1) * page_size])).mappings().all()
-            items = [{'id': r['id'], 'type': r['type'], 'title': r['title'], 'message': r['message'], 'is_read': bool(r['is_read']), 'created_at': r['created_at']} for r in rows]
+                where += ' AND is_read = FALSE'
+            rows = (await db.execute(_text(f"""
+                    SELECT id, type, title, message, is_read, created_at
+                    FROM notifications
+                    {where}
+                    ORDER BY created_at DESC
+                    LIMIT :lim OFFSET :off
+                """), {**args, 'lim': page_size, 'off': (page - 1) * page_size})).mappings().all()
+            items = [{'id': r['id'], 'type': r['type'], 'title': r['title'], 'message': r['message'], 'is_read': bool(r['is_read']), 'created_at': str(r['created_at'])} for r in rows]
     except Exception:
         pass
     return SuccessResponse(message=f'{len(items)} notification(s).', data=items)
@@ -702,11 +711,10 @@ async def mark_notification_read(notification_id: str, request: Request, payload
     if not user_id:
         from shared.errors import UnauthorizedError
         raise UnauthorizedError('Authentication required.')
-    from pathlib import Path
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            await db.execute(_text('UPDATE notifications SET is_read=1 WHERE id=:p0 AND CAST(user_id AS TEXT)=:p1'), {'p0': notification_id, 'p1': user_id})
+            await db.execute(_text('UPDATE notifications SET is_read=TRUE WHERE id=:p0 AND CAST(user_id AS TEXT)=:p1'), {'p0': notification_id, 'p1': user_id})
             await db.commit()
     except Exception:
         pass
@@ -718,11 +726,10 @@ async def mark_all_read(request: Request, payload: Annotated[dict, Depends(get_u
     if not user_id:
         from shared.errors import UnauthorizedError
         raise UnauthorizedError('Authentication required.')
-    from pathlib import Path
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            await db.execute(_text('UPDATE notifications SET is_read=1 WHERE CAST(user_id AS TEXT)=:p0'), {'p0': user_id})
+            await db.execute(_text('UPDATE notifications SET is_read=TRUE WHERE CAST(user_id AS TEXT)=:p0'), {'p0': user_id})
             await db.commit()
     except Exception:
         pass
@@ -730,34 +737,29 @@ async def mark_all_read(request: Request, payload: Annotated[dict, Depends(get_u
 
 @router.get('/admin/maintenance', response_model=SuccessResponse, summary='Get current maintenance mode status')
 async def get_maintenance(request: Request, payload: Annotated[dict, Depends(get_user_payload)]=None) -> SuccessResponse:
-    from pathlib import Path
     enabled = False
     message = 'We are currently performing scheduled maintenance. We will be back shortly.'
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            await db.execute(_text("\n                CREATE TABLE IF NOT EXISTS platform_config (\n                    key TEXT PRIMARY KEY,\n                    value TEXT NOT NULL,\n                    updated_at TEXT NOT NULL DEFAULT NOW()\n                )\n            "))
-            await db.commit()
             row = (await db.execute(_text("SELECT value FROM platform_config WHERE key='maintenance_enabled'"))).mappings().all()
             if row:
-                enabled = row[0][0] == '1'
+                enabled = row[0]['value'] == '1'
             msg_row = (await db.execute(_text("SELECT value FROM platform_config WHERE key='maintenance_message'"))).mappings().all()
             if msg_row:
-                message = msg_row[0][0]
+                message = msg_row[0]['value']
     except Exception:
         pass
     return SuccessResponse(message='Maintenance status retrieved.', data={'enabled': enabled, 'message': message})
 
 @router.post('/admin/maintenance', response_model=SuccessResponse, summary='Update maintenance mode (admin only)')
 async def set_maintenance(request: Request, payload: Annotated[dict, Depends(get_user_payload)]=None) -> SuccessResponse:
-    from pathlib import Path
     body = await request.json()
     enabled: bool = bool(body.get('enabled', False))
     message: str = str(body.get('message') or 'We are currently performing scheduled maintenance. We will be back shortly.')
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            await db.execute(_text("\n                CREATE TABLE IF NOT EXISTS platform_config (\n                    key TEXT PRIMARY KEY,\n                    value TEXT NOT NULL,\n                    updated_at TEXT NOT NULL DEFAULT NOW()\n                )\n            "))
             await db.execute(_text("INSERT INTO platform_config (key, value, updated_at) VALUES ('maintenance_enabled', :p0, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()"), {'p0': '1' if enabled else '0'})
             await db.execute(_text("INSERT INTO platform_config (key, value, updated_at) VALUES ('maintenance_message', :p0, NOW()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()"), {'p0': message})
             await db.commit()
@@ -767,9 +769,8 @@ async def set_maintenance(request: Request, payload: Annotated[dict, Depends(get
     return SuccessResponse(message=f"Maintenance mode {('enabled' if enabled else 'disabled')}.", data={'enabled': enabled, 'message': message})
 
 @router.get('/platform/maintenance', response_model=SuccessResponse, summary='Public: check if platform is in maintenance mode', include_in_schema=False)
-async def public_maintenance_check() -> SuccessResponse:
+async def public_maintenance_check(request: Request) -> SuccessResponse:
     """Called by the frontend on every page load to show/hide maintenance banner."""
-    from pathlib import Path
     enabled = False
     message = ''
     try:
@@ -777,10 +778,10 @@ async def public_maintenance_check() -> SuccessResponse:
             from sqlalchemy import text as _text
             row = (await db.execute(_text("SELECT value FROM platform_config WHERE key='maintenance_enabled'"))).mappings().all()
             if row:
-                enabled = row[0][0] == '1'
+                enabled = row[0]['value'] == '1'
             msg_row = (await db.execute(_text("SELECT value FROM platform_config WHERE key='maintenance_message'"))).mappings().all()
             if msg_row:
-                message = msg_row[0][0]
+                message = msg_row[0]['value']
     except Exception:
         pass
     return SuccessResponse(data={'enabled': enabled, 'message': message})
@@ -803,57 +804,47 @@ async def admin_audit_logs(request: Request, type: str='all', page: int=1, page_
     Returns real audit events from audit_log table.
     Populated automatically from logins, registrations, listings, payments.
     """
-    from pathlib import Path
     from shared.errors import paginated_meta
     logs = []
     total = 0
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            await db.execute(_text("\n                CREATE TABLE IF NOT EXISTS audit_log (\n                    id TEXT PRIMARY KEY,\n                    actor_id TEXT,\n                    actor_email TEXT,\n                    actor_name TEXT,\n                    category TEXT NOT NULL DEFAULT 'system',\n                    action TEXT NOT NULL,\n                    resource TEXT,\n                    resource_id TEXT,\n                    ip_address TEXT,\n                    status TEXT NOT NULL DEFAULT 'success',\n                    detail TEXT,\n                    created_at TEXT NOT NULL DEFAULT NOW()\n                )\n            "))
-            await db.commit()
             where_parts = []
-            args: list = []
+            args: dict = {}
             if type != 'all':
-                where_parts.append('category = ?')
-                args.append(type)
+                where_parts.append('category = :cat')
+                args['cat'] = type
             if search:
-                where_parts.append('(action LIKE ? OR actor_email LIKE ? OR actor_name LIKE ? OR resource LIKE ?)')
+                where_parts.append('(action ILIKE :s0 OR actor_email ILIKE :s1 OR actor_name ILIKE :s2 OR resource ILIKE :s3)')
                 like = f'%{search}%'
-                args.extend([like, like, like, like])
+                args['s0'] = like; args['s1'] = like; args['s2'] = like; args['s3'] = like
             where_sql = 'WHERE ' + ' AND '.join(where_parts) if where_parts else ''
             count_row = (await db.execute(_text(f'SELECT COUNT(*) AS cnt FROM audit_log {where_sql}'), args)).mappings().all()
             total = count_row[0]['cnt'] if count_row else 0
             if total == 0:
+                # Backfill from real data
                 import uuid as _uuid2
-                from datetime import datetime, timezone, timedelta
-                backfill_rows = []
+                from datetime import datetime, timezone
                 try:
-                    users = (await db.execute(_text('SELECT id, email, full_name, created_at FROM users\n                           ORDER BY created_at DESC LIMIT 20'))).mappings().all()
+                    users = (await db.execute(_text('SELECT id, email, full_name, created_at FROM users ORDER BY created_at DESC LIMIT 20'))).mappings().all()
                     for u in users:
-                        backfill_rows.append((str(_uuid2.uuid4()), str(u['id']), u['email'] or '', u['full_name'] or 'User', 'user', 'user.register', 'users', str(u['id']), '127.0.0.1', 'success', f"New user registered: {u['email']}", u['created_at'] or datetime.now(tz=timezone.utc).isoformat()))
+                        await db.execute(_text('INSERT INTO audit_log (id, actor_id, actor_email, actor_name, category, action, resource, resource_id, ip_address, status, detail) VALUES (:id,:aid,:ae,:an,:cat,:act,:res,:rid,:ip,:st,:det) ON CONFLICT (id) DO NOTHING'),
+                            {'id': str(_uuid2.uuid4()), 'aid': str(u['id']), 'ae': u['email'] or '', 'an': u['full_name'] or 'User', 'cat': 'user', 'act': 'user.register', 'res': 'users', 'rid': str(u['id']), 'ip': '127.0.0.1', 'st': 'success', 'det': f"New user registered: {u['email']}"})
                 except Exception:
                     pass
                 try:
-                    payments = (await db.execute(_text('SELECT p.id, p.user_id, p.plan, p.amount_ngn, p.paid_at,\n                                  u.email, u.full_name\n                           FROM sub_payments p\n                           LEFT JOIN users u ON CAST(u.id AS TEXT)=CAST(p.user_id AS TEXT)\n                           ORDER BY p.paid_at DESC LIMIT 10'))).mappings().all()
+                    payments = (await db.execute(_text('SELECT p.id, p.user_id, p.plan, p.amount_ngn, p.paid_at, u.email, u.full_name FROM sub_payments p LEFT JOIN users u ON CAST(u.id AS TEXT)=CAST(p.user_id AS TEXT) ORDER BY p.paid_at DESC LIMIT 10'))).mappings().all()
                     for p in payments:
-                        backfill_rows.append((str(_uuid2.uuid4()), str(p['user_id']), p['email'] or '', p['full_name'] or 'User', 'admin', 'subscription.payment', 'subscriptions', str(p['id']), '127.0.0.1', 'success', f"Subscription payment: {p['plan']} plan ₦{p['amount_ngn']:,}", p['paid_at'] or datetime.now(tz=timezone.utc).isoformat()))
+                        await db.execute(_text('INSERT INTO audit_log (id, actor_id, actor_email, actor_name, category, action, resource, resource_id, ip_address, status, detail) VALUES (:id,:aid,:ae,:an,:cat,:act,:res,:rid,:ip,:st,:det) ON CONFLICT (id) DO NOTHING'),
+                            {'id': str(_uuid2.uuid4()), 'aid': str(p['user_id']), 'ae': p['email'] or '', 'an': p['full_name'] or 'User', 'cat': 'admin', 'act': 'subscription.payment', 'res': 'subscriptions', 'rid': str(p['id']), 'ip': '127.0.0.1', 'st': 'success', 'det': f"Subscription payment: {p['plan']} plan"})
                 except Exception:
                     pass
-                try:
-                    listings = (await db.execute(_text('SELECT l.id, l.seller_id, l.title, l.created_at,\n                                  u.email, u.full_name\n                           FROM listings l\n                           LEFT JOIN users u ON CAST(u.id AS TEXT)=CAST(l.seller_id AS TEXT)\n                           ORDER BY l.created_at DESC LIMIT 15'))).mappings().all()
-                    for l in listings:
-                        backfill_rows.append((str(_uuid2.uuid4()), str(l['seller_id']), l['email'] or '', l['full_name'] or 'Seller', 'user', 'listing.create', 'listings', str(l['id']), '127.0.0.1', 'success', f"Listing created: {l['title'][:60]}", l['created_at'] or datetime.now(tz=timezone.utc).isoformat()))
-                except Exception:
-                    pass
-                if backfill_rows:
-                    await db.executemany('INSERT OR IGNORE INTO audit_log\n                           (id, actor_id, actor_email, actor_name, category, action,\n                            resource, resource_id, ip_address, status, detail, created_at)\n                           VALUES (?,?,?,?,?,?,?,?,?,?,?,?)', backfill_rows)
-                    await db.commit()
-                    total = len(backfill_rows)
-            rows = (await db.execute(_text(f'SELECT * FROM audit_log {where_sql}\n                    ORDER BY created_at DESC\n                    LIMIT ? OFFSET ?'), args + [page_size, (page - 1) * page_size])).mappings().all()
-            count_row2 = (await db.execute(_text(f'SELECT COUNT(*) AS cnt FROM audit_log {where_sql}'), args)).mappings().all()
-            total = count_row2[0]['cnt'] if count_row2 else total
-            logs = [{'id': r['id'], 'timestamp': r['created_at'], 'actor_id': r['actor_id'] or '', 'user_name': r['actor_name'] or 'System', 'user_email': r['actor_email'] or '', 'category': r['category'], 'action': r['action'], 'resource': r['resource'] or '', 'resource_id': r['resource_id'] or '', 'ip_address': r['ip_address'] or '—', 'status': r['status'], 'detail': r['detail'] or ''} for r in rows]
+                await db.commit()
+                count_row2 = (await db.execute(_text(f'SELECT COUNT(*) AS cnt FROM audit_log {where_sql}'), args)).mappings().all()
+                total = count_row2[0]['cnt'] if count_row2 else 0
+            rows = (await db.execute(_text(f'SELECT * FROM audit_log {where_sql} ORDER BY created_at DESC LIMIT :lim OFFSET :off'), {**args, 'lim': page_size, 'off': (page - 1) * page_size})).mappings().all()
+            logs = [{'id': r['id'], 'timestamp': str(r['created_at']), 'actor_id': r['actor_id'] or '', 'user_name': r['actor_name'] or 'System', 'user_email': r['actor_email'] or '', 'category': r['category'], 'action': r['action'], 'resource': r['resource'] or '', 'resource_id': r['resource_id'] or '', 'ip_address': r['ip_address'] or '—', 'status': r['status'], 'detail': r['detail'] or ''} for r in rows]
     except Exception as exc:
         import logging
         logging.getLogger(__name__).error(f'audit_log_error: {exc}')

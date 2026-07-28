@@ -68,9 +68,9 @@ async def keyword_search(
     status: str | None = Query(default=None, max_length=30),
     trust_badge: str | None = Query(default=None, max_length=20),
     sort_by: str | None = Query(default=None, description="Sort: relevance, newest, price_asc, price_desc"),
+    request: Request = None,
     svc: SearchService = Depends(_build_service),
 ) -> SuccessResponse:
-    from fastapi import Request
 
     q = q.strip()
     if not q:
@@ -292,35 +292,29 @@ async def _search_fallback(
         return [t for t in all_terms if t and len(t) >= 2]
 
     try:
-        from shared.database import get_raw_db
-
         expanded = _expand_query(q)
 
-        # Build OR conditions for each expanded term across all searchable columns
         search_clauses = []
-        params: list = []
-        for term in expanded:
+        all_params: dict = {}
+        for i, term in enumerate(expanded):
             like = f"%{term}%"
             search_clauses.append(
-                "(title LIKE ? OR description LIKE ? OR category LIKE ? OR listing_type LIKE ?)"
+                f"(title ILIKE :q_{i} OR description ILIKE :q_{i} OR category ILIKE :q_{i} OR listing_type ILIKE :q_{i})"
             )
-            params.extend([like, like, like, like])
+            all_params[f"q_{i}"] = like
 
         search_condition = "(" + " OR ".join(search_clauses) + ")"
 
-        # Always filter for active listings
         extra_conditions = [f"status = 'active'", search_condition]
-        extra_params: list = []
 
         if category:
-            extra_conditions.append("category = ?")
-            extra_params.append(category)
+            extra_conditions.append("category = :cat")
+            all_params["cat"] = category
         if condition:
-            extra_conditions.append("condition = ?")
-            extra_params.append(condition)
+            extra_conditions.append("condition = :cond")
+            all_params["cond"] = condition
 
         where = " AND ".join(extra_conditions)
-        all_params = params + extra_params
         offset = (page - 1) * page_size
 
         order = "created_at DESC"
@@ -331,25 +325,27 @@ async def _search_fallback(
         elif sort_by == "newest":
             order = "created_at DESC"
 
-        async with get_raw_db(engine) as db:
-            count_rows = await db.execute_fetchall(
-                f"SELECT COUNT(*) as cnt FROM listings WHERE {where}", all_params
-            )
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _text
+            count_rows = (await db.execute(_text(
+                f"SELECT COUNT(*) as cnt FROM listings WHERE {where}"
+            ), all_params)).mappings().all()
             total = count_rows[0]["cnt"] if count_rows else 0
 
-            rows = await db.execute_fetchall(
+            all_params["lim"] = page_size
+            all_params["off"] = offset
+            rows = (await db.execute(_text(
                 f"""SELECT id, seller_id, listing_type, title, description, price,
                            currency, country, state, city, category, condition,
                            status, avg_rating, review_count, image_url, created_at
                     FROM listings WHERE {where}
-                    ORDER BY {order} LIMIT ? OFFSET ?""",
-                all_params + [page_size, offset],
-            )
+                    ORDER BY {order} LIMIT :lim OFFSET :off"""
+            ), all_params)).mappings().all()
 
         total_pages = max(1, -(-total // page_size))
         data = [
             {
-                "id": r["id"],
+                "id": str(r["id"]),
                 "title": r["title"],
                 "description": r["description"],
                 "price": float(r["price"]) if r["price"] is not None else 0,
@@ -362,7 +358,7 @@ async def _search_fallback(
                 "image_url": r["image_url"],
                 "avg_rating": float(r["avg_rating"]) if r["avg_rating"] else 0.0,
                 "review_count": r["review_count"] or 0,
-                "seller_id": r["seller_id"],
+                "seller_id": str(r["seller_id"]),
                 "status": r["status"],
             }
             for r in rows
