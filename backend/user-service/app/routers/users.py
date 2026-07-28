@@ -123,35 +123,41 @@ async def admin_list_users(request: Request, search: str=Query(default='', descr
     async with request.app.state.session_factory() as db:
         from sqlalchemy import text as _text
         where = ''
-        params: list = []
+        count_params: dict = {}
         if search and search.strip():
             q = f'%{search.strip()}%'
-            where = 'WHERE (u.full_name LIKE ? OR u.email LIKE ? OR u.phone LIKE ?)'
-            params = [q, q, q]
-        count_rows = (await db.execute(_text(f'SELECT COUNT(*) as cnt FROM users u {where}'), params)).mappings().all()
+            where = 'WHERE (u.full_name ILIKE :q0 OR u.email ILIKE :q1 OR u.phone ILIKE :q2)'
+            count_params = {'q0': q, 'q1': q, 'q2': q}
+        count_rows = (await db.execute(_text(f'SELECT COUNT(*) AS cnt FROM users u {where}'), count_params)).mappings().all()
         total = int(count_rows[0]['cnt']) if count_rows else 0
         total_pages = max(1, (total + page_size - 1) // page_size)
         offset = (page - 1) * page_size
-        rows = (await db.execute(_text(f'SELECT u.id, u.email, u.phone, u.full_name, u.country_code,\n                       u.is_active, u.phone_verified, u.created_at\n                FROM users u {where}\n                ORDER BY u.created_at DESC\n                LIMIT ? OFFSET ?'), params + [page_size, offset])).mappings().all()
+        list_params: dict = {**count_params, 'lim': page_size, 'off': offset}
+        rows = (await db.execute(_text(f"""
+            SELECT u.id, u.email, u.phone, u.full_name, u.country_code,
+                   u.is_active, u.phone_verified, u.created_at
+            FROM users u {where}
+            ORDER BY u.created_at DESC
+            LIMIT :lim OFFSET :off
+        """), list_params)).mappings().all()
+        role_map: dict[str, list[str]] = {}
         if rows:
             uid_list = [str(r['id']) for r in rows]
-            placeholders = ','.join(['?' for _ in uid_list])
-            role_rows = (await db.execute(_text(f'SELECT user_id, role FROM user_roles WHERE user_id IN ({placeholders})'), uid_list)).mappings().all()
-            role_map: dict[str, list[str]] = {}
+            role_rows = (await db.execute(
+                _text('SELECT CAST(user_id AS TEXT) AS user_id, role FROM user_roles WHERE CAST(user_id AS TEXT) = ANY(:ids)'),
+                {'ids': uid_list}
+            )).mappings().all()
             for rr in role_rows:
                 role_map.setdefault(str(rr['user_id']), []).append(str(rr['role']))
-        else:
-            role_map = {}
         users = []
         for r in rows:
             uid = str(r['id'])
             phone = str(r['phone'] or '')
-            if phone and (not phone.startswith('+')) and (len(phone) > 15):
-                phone = ''
-            elif phone and phone.startswith('+0000'):
+            if phone.startswith('+0000'):
                 phone = ''
             users.append({'id': uid, 'email': str(r['email'] or ''), 'phone': phone, 'full_name': str(r['full_name'] or ''), 'country_code': str(r['country_code'] or 'NG'), 'is_active': bool(r['is_active']), 'is_phone_verified': bool(r['phone_verified']), 'created_at': str(r['created_at'] or ''), 'roles': role_map.get(uid, [])})
     return SuccessResponse(message=f'{total} users found.', data=users, meta={'total': total, 'page': page, 'page_size': page_size, 'total_pages': total_pages, 'has_prev': page > 1, 'has_next': page < total_pages})
+
 
 @router.patch('/users/admin/{user_id}', response_model=SuccessResponse, summary="Admin: update a user's status or roles")
 async def admin_update_user(user_id: uuid.UUID, request: Request, payload: dict=Depends(get_current_user_payload)) -> SuccessResponse:
