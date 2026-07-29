@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { MapPin, ChevronRight, ImageIcon, Upload, X, Lock, Zap, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/features/auth/auth-provider';
+import { normalizePhoneNumber } from '@/lib/utils/formatters';
 import Link from 'next/link';
 
 /* ── Client-side image compressor ──────────────────────── */
@@ -187,6 +188,7 @@ export default function CreateListingPage() {
   const { mutate: submit, isPending } = useMutation({
     mutationFn: async () => {
       // 1. Create the listing WITHOUT the image (avoids sending huge base64 in JSON)
+      const normalizedPhone = normalizePhoneNumber(form.whatsapp_number);
       const res = await sellerApi.createListing({
         title: form.title,
         description: form.description,
@@ -198,8 +200,8 @@ export default function CreateListingPage() {
         state: form.state || undefined,
         country: 'NG',
         condition: form.condition,
-        whatsapp_number: form.whatsapp_number || undefined,
-        contact_phone: form.contact_phone || undefined,
+        whatsapp_number: normalizedPhone || undefined,
+        contact_phone: normalizedPhone || undefined,
       });
 
       const listingId = (res.data as any)?.id;
@@ -246,9 +248,9 @@ export default function CreateListingPage() {
     if (step === 2) {
       if (!form.state) { setError('Select your state.'); return; }
       if (!form.whatsapp_number.trim()) { setError('WhatsApp number is required.'); return; }
-      // Basic validation: 10-15 digits with optional plus
-      if (!/^(\+)?[0-9]{10,15}$/.test(form.whatsapp_number.trim())) {
-        setError('Enter a valid 10-15 digit WhatsApp number (e.g. 08012345678).');
+      const normalized = normalizePhoneNumber(form.whatsapp_number);
+      if (!/^[0-9]{10,15}$/.test(normalized)) {
+        setError('Enter a valid WhatsApp number (e.g. 08012345678).');
         return;
       }
     }

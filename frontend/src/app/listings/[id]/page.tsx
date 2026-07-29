@@ -14,6 +14,7 @@ import { useAuth } from '@/features/auth/auth-provider';
 import { apiClient } from '@/lib/api/client';
 import { Navbar } from '@/components/layout/navbar';
 import { ROUTES } from '@/config/routes';
+import { normalizePhoneNumber } from '@/lib/utils/formatters';
 import type { ApiResponse } from '@/types/api';
 
 function fmt(n: number, currency: string) {
@@ -211,7 +212,7 @@ export default function ListingDetailPage() {
 
   function buildWhatsAppUrl() {
     if (!whatsapp) return '#';
-    const clean = whatsapp.replace(/\D/g, '');
+    const clean = normalizePhoneNumber(whatsapp);
     const title = listing?.title ?? 'your listing';
     const msg = encodeURIComponent(
       `Hello, I found your listing on Velontri.\nI'm interested in: ${title}\nIs it still available?`
