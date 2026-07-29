@@ -11,6 +11,7 @@ import { setTokens } from '@/lib/auth/token-refresh';
 import { useAuth } from '@/features/auth/auth-provider';
 import { parseJwtPayload, payloadToSession } from '@/lib/auth/jwt';
 import { GoogleSignInButton, AuthDivider } from '@/components/auth/google-sign-in';
+import { normalizePhoneNumber } from '@/lib/utils/formatters';
 
 const inputCls = [
   'w-full h-12 rounded-xl border border-slate-200 bg-slate-50',
@@ -107,13 +108,14 @@ export default function RegisterPage() {
     setError('');
     const pwE = validatePassword(form.password);
     if (pwE) { setPwErr(pwE); return; }
-    if (!/^(\+)?[0-9]{10,15}$/.test(form.phone)) {
+    const normPhone = normalizePhoneNumber(form.phone) || form.phone;
+    if (!/^(\+)?[0-9]{10,15}$/.test(normPhone)) {
       setError('Phone must be a valid 10-15 digit number (e.g. 08012345678)');
       return;
     }
     setLoading(true);
     try {
-      const res = await authApi.register({ ...form, country_code: form.country_code.toUpperCase() });
+      const res = await authApi.register({ ...form, phone: normPhone, country_code: form.country_code.toUpperCase() });
       const email = res.data?.email || form.email;
       // Bypass OTP verification: user is already active. Redirect to login directly.
       router.push(`${ROUTES.login}?email=${encodeURIComponent(email)}`);

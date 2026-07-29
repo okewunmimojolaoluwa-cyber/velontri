@@ -12,6 +12,7 @@ import { ROUTES, resolveHomePath } from '@/config/routes';
 import { VelontriApiError } from '@/types/api';
 import { parseJwtPayload, payloadToSession } from '@/lib/auth/jwt';
 import { GoogleSignInButton, AuthDivider } from '@/components/auth/google-sign-in';
+import { normalizePhoneNumber } from '@/lib/utils/formatters';
 
 const inputCls = [
   'w-full h-12 rounded-xl border border-slate-200 bg-slate-50',
@@ -85,7 +86,8 @@ function LoginInner() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    await doLogin(identifier, password);
+    const normId = identifier.includes('@') ? identifier : normalizePhoneNumber(identifier) || identifier;
+    await doLogin(normId, password);
   }
 
   return (
