@@ -50,13 +50,11 @@ export const usersApi = {
       .then((r) => r.data);
   },
 
-  uploadAvatar(file: File) {
-    const form = new FormData();
-    form.append('file', file);
+  uploadAvatar(file: File): Promise<ApiResponse<{ avatar_url: string }>> {
+    const fd = new FormData();
+    fd.append('file', file);
     return apiClient
-      .post<ApiResponse<{ avatar_url: string }>>('/users/me/avatar', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      .post<ApiResponse<{ avatar_url: string }>>('/users/me/avatar', fd)
       .then((r) => r.data);
   },
 };

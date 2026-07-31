@@ -86,8 +86,7 @@ function LoginInner() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const normId = identifier.includes('@') ? identifier : normalizePhoneNumber(identifier) || identifier;
-    await doLogin(normId, password);
+    await doLogin(identifier.trim(), password);
   }
 
   return (

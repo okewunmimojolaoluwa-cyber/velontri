@@ -75,7 +75,6 @@ export const sellerApi = {
 
     return apiClient
       .post<ApiResponse<{ s3_key: string }>>(`/listings/${listingId}/images`, fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 60_000, // images can take longer
       })
       .then((r) => r.data);

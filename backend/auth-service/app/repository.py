@@ -156,12 +156,50 @@ async def get_user_by_email(session: AsyncSession, email: str) -> User | None:
         return None
 
 
+def get_phone_variants(phone: str) -> list[str]:
+    """Generate all equivalent stored forms of a phone number (e.g. +234..., 234..., 0...)."""
+    if not phone:
+        return []
+    raw = phone.strip()
+    digits = "".join(c for c in raw if c.isdigit())
+    
+    variants = set()
+    if raw:
+        variants.add(raw)
+    if digits:
+        variants.add(digits)
+        variants.add("+" + digits)
+        
+        # Nigerian number format handling:
+        # e.g. digits = '2349158200927' (13 digits starting with 234)
+        if digits.startswith("234") and len(digits) == 13:
+            local = "0" + digits[3:]
+            variants.add(local)
+            variants.add("+" + digits)
+        # e.g. digits = '09158200927' (11 digits starting with 0)
+        elif digits.startswith("0") and len(digits) == 11:
+            int_code = "234" + digits[1:]
+            variants.add(int_code)
+            variants.add("+" + int_code)
+        # e.g. digits = '9158200927' (10 digits)
+        elif len(digits) == 10:
+            local = "0" + digits
+            int_code = "234" + digits
+            variants.add(local)
+            variants.add(int_code)
+            variants.add("+" + int_code)
+            
+    return [v for v in variants if v]
+
+
 async def get_user_by_phone(session: AsyncSession, phone: str) -> User | None:
-    """Look up user by phone. Falls back to raw SQL if ORM mapping fails."""
-    phone_clean = phone.strip()
+    """Look up user by phone. Searches all equivalent phone number variations."""
+    variants = get_phone_variants(phone)
+    if not variants:
+        return None
     try:
         result = await session.execute(
-            select(User).where(User.phone == phone_clean)
+            select(User).where(User.phone.in_(variants))
         )
         user = result.scalars().first()
         if user is not None:
@@ -172,11 +210,15 @@ async def get_user_by_phone(session: AsyncSession, phone: str) -> User | None:
     # Raw SQL fallback
     try:
         from sqlalchemy import text as _text
+        placeholders = [f":p{i}" for i in range(len(variants))]
+        in_sql = ", ".join(placeholders)
+        params = {f"p{i}": v for i, v in enumerate(variants)}
+        
         raw = await session.execute(
-            _text("SELECT id, email, phone, phone_verified, password_hash, full_name, "
-                  "country_code, is_active, is_locked, failed_attempts, created_at "
-                  "FROM users WHERE phone = :phone"),
-            {"phone": phone_clean},
+            _text(f"SELECT id, email, phone, phone_verified, password_hash, full_name, "
+                  f"country_code, is_active, is_locked, failed_attempts, created_at "
+                  f"FROM users WHERE phone IN ({in_sql})"),
+            params,
         )
         row = raw.fetchone()
         if row is None:
