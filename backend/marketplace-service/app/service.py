@@ -249,6 +249,8 @@ class MarketplaceService:
         mime = validate_upload(file_content, UploadCategory.LISTING_IMAGE, filename)
         s3_key = S3Keys.listing_image(str(listing_id))
 
+        # Do the heavy I/O (S3 upload or base64 encoding) BEFORE touching the DB
+        # so the connection is not held open during the slow operation.
         if self.s3_session:
             await upload_file(
                 self.s3_session,
@@ -262,17 +264,18 @@ class MarketplaceService:
             # No S3 — store as a base64 data URL directly on the listing so the
             # image is still visible. The frontend compresses to ~60 KB first.
             import base64 as _b64
-            data_url = f"data:{mime};base64,{_b64.b64encode(file_content).decode()}"
-            # Update the listing's image_url if this is the first image
-            if current_count == 0:
-                listing.image_url = data_url
-                await self.session.flush()
-            image_url = data_url
+            image_url = f"data:{mime};base64,{_b64.b64encode(file_content).decode()}"
 
+        # Now write to DB in a single flush so the connection is released quickly
         sort_order = current_count  # zero-indexed
-        await repo.add_listing_media(
-            self.session, listing_id, "image", s3_key if self.s3_session else (image_url or s3_key), sort_order
-        )
+        media_url = s3_key if self.s3_session else (image_url or s3_key)
+
+        if not self.s3_session and current_count == 0:
+            # Set cover image on the listing row
+            listing.image_url = image_url
+        await repo.add_listing_media(self.session, listing_id, "image", media_url, sort_order)
+        await self.session.flush()  # flush immediately so connection returns to pool sooner
+
         await self.redis.delete(RedisKeys.listing_cache(str(listing_id)))
         return s3_key
 

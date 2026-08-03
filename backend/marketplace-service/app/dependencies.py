@@ -21,15 +21,13 @@ def get_marketplace_settings() -> MarketplaceSettings:
 
 
 async def get_db_session(request: Request):  # type: ignore[return]
-    session = request.app.state.session_factory()
-    try:
-        yield session
-        await session.commit()
-    except Exception:
-        await session.rollback()
-        raise
-    finally:
-        await session.close()
+    async with request.app.state.session_factory() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
 
 async def get_redis(request: Request):

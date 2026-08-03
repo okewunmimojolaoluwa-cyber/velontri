@@ -36,7 +36,9 @@ export const sellerApi = {
 
   createListing(data: CreateListingRequest) {
     return apiClient
-      .post<ApiResponse<ListingSummary>>('/listings', data)
+      .post<ApiResponse<ListingSummary>>('/listings', data, {
+        timeout: 60_000, // listing creation can be slow on cold DB connections
+      })
       .then((r) => r.data);
   },
 

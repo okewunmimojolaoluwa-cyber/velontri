@@ -207,16 +207,18 @@ export default function CreateListingPage() {
       const listingId = (res.data as any)?.id;
       if (!listingId) throw new Error('No listing ID returned from server.');
 
-      // 2. Compress + upload images as multipart (much faster than base64 in JSON)
+      // 2. Compress + upload images as multipart in parallel (much faster than sequential)
       if (form.images.length > 0) {
-        for (const dataUrl of form.images) {
-          try {
-            const compressed = await compressToJpeg(dataUrl);
-            await sellerApi.uploadImage(listingId, compressed);
-          } catch {
-            // Image upload failures are non-fatal — listing still gets published
-          }
-        }
+        await Promise.all(
+          form.images.map(async (dataUrl) => {
+            try {
+              const compressed = await compressToJpeg(dataUrl);
+              await sellerApi.uploadImage(listingId, compressed);
+            } catch {
+              // Image upload failures are non-fatal — listing still gets published
+            }
+          })
+        );
       }
 
       // 3. Publish so it goes live
