@@ -6,7 +6,8 @@ import {
 } from 'react';
 import type { AuthSession } from '@/types/auth';
 import { parseJwtPayload, payloadToSession } from '@/lib/auth/jwt';
-import { getAccessToken, clearTokens } from '@/lib/auth/token-refresh';
+import { getAccessToken, getRefreshToken, clearTokens, refreshTokenSingleFlight } from '@/lib/auth/token-refresh';
+import { siteConfig } from '@/config/site';
 
 interface AuthContextValue {
   session: AuthSession;
@@ -57,39 +58,81 @@ export function AuthProvider({
   initialSession?: AuthSession | null;
   onClearCache?: () => void;
 }) {
-  // Server: always GUEST (no document.cookie).
-  // Client: useState initializer reads cookie synchronously before first render.
-  const [session, setSession] = useState<AuthSession>(GUEST_SESSION);
+  // Synchronously initialize state on client if cookie exists
+  const [session, setSession] = useState<AuthSession>(() => {
+    if (initialSession) return initialSession;
+    return readSessionFromCookie() ?? GUEST_SESSION;
+  });
 
-  // After hydration, sync to cookie (runs only on client)
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    if (initialSession) return false;
+    const s = readSessionFromCookie();
+    return !s; // If valid cookie exists immediately, not loading. If missing, loading while checking refresh token.
+  });
+
   useEffect(() => {
-    const s = initialSession ?? readSessionFromCookie();
-    if (s) setSession(s);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    let active = true;
+    async function initAuth() {
+      const s = initialSession ?? readSessionFromCookie();
+      if (s) {
+        if (active) {
+          setSession(s);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      // If no valid access token cookie, try silent refresh using refresh token
+      const rt = getRefreshToken();
+      if (rt) {
+        try {
+          const newAccess = await refreshTokenSingleFlight(siteConfig.apiUrl);
+          if (newAccess) {
+            const freshSession = readSessionFromCookie();
+            if (freshSession && active) {
+              setSession(freshSession);
+              setIsLoading(false);
+              return;
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (active) {
+        setSession(GUEST_SESSION);
+        setIsLoading(false);
+      }
+    }
+
+    initAuth();
+    return () => { active = false; };
+  }, [initialSession]);
 
   const setSessionFromToken = useCallback((token: string) => {
     const payload = parseJwtPayload(token);
     if (payload) {
       onClearCache?.();
       setSession(payloadToSession(payload));
+      setIsLoading(false);
     }
   }, [onClearCache]);
 
   const clearSession = useCallback(() => {
     onClearCache?.();
     setSession(GUEST_SESSION);
+    setIsLoading(false);
   }, [onClearCache]);
 
   const logout = useCallback(() => {
     clearTokens();
     onClearCache?.();
     setSession(GUEST_SESSION);
+    setIsLoading(false);
   }, [onClearCache]);
 
   const value = useMemo(
-    () => ({ session, isLoading: false, setSessionFromToken, clearSession, logout }),
-    [session, setSessionFromToken, clearSession, logout],
+    () => ({ session, isLoading, setSessionFromToken, clearSession, logout }),
+    [session, isLoading, setSessionFromToken, clearSession, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
