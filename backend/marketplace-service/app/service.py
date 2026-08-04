@@ -433,17 +433,22 @@ class MarketplaceService:
                 "message": message,
                 "listing_id": listing_id,
             })
-            # Insert directly into the notifications table
+            # Insert into notifications table — include both old (user_id, title, message)
+            # and new (recipient_user_id, content) columns for full schema compatibility.
             await self.session.execute(
                 _text(
                     "INSERT INTO notifications "
-                    "(id, recipient_user_id, channel, notification_type, content, status, is_read, attempts, created_at) "
-                    "VALUES (:id, :uid, 'in_app', :ntype, :content, 'sent', FALSE, 1, NOW())"
+                    "(id, user_id, recipient_user_id, type, channel, notification_type, "
+                    " title, message, content, status, is_read, attempts, created_at) "
+                    "VALUES (:id, :uid, :uid, 'system', 'in_app', :ntype, "
+                    "        :title, :message, :content, 'sent', FALSE, 1, NOW())"
                 ),
                 {
                     "id": notif_id,
                     "uid": seller_id,
                     "ntype": notification_type,
+                    "title": title,
+                    "message": message,
                     "content": content,
                 },
             )
