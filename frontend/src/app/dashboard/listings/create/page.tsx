@@ -151,6 +151,7 @@ export default function CreateListingPage() {
   const [step, setStep] = useState(0);
   const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
+  const [warmingUp, setWarmingUp] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Quota check: how many active listings does this user have? ────────
@@ -186,16 +187,32 @@ export default function CreateListingPage() {
   });
 
   const { mutate: submit, isPending } = useMutation({
-    retry: 1, // retry once on network error (handles Render cold-start edge cases)
-    retryDelay: 2000,
+    retry: 1,
+    retryDelay: 3000,
     mutationFn: async () => {
-      // Warm up the backend — on Render free tier a cold start can take 20-30s.
-      // Sending a cheap OPTIONS/health request first keeps the main POST within timeout.
-      try {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'https://velontri.onrender.com/api/v1'}/listings`.replace('/api/v1/listings', '/health'), {
-          method: 'GET', signal: AbortSignal.timeout(5000),
-        });
-      } catch { /* ignore — proceed regardless */ }
+      // ── Wake up Render free tier if cold ──────────────────────────────
+      // Poll /health until the server responds (up to 45s), then proceed.
+      const apiBase = (process.env.NEXT_PUBLIC_API_URL ?? 'https://velontri.onrender.com/api/v1')
+        .replace(/\/api\/v1\/?$/, '');
+      const healthUrl = `${apiBase}/health`;
+
+      let serverReady = false;
+      setWarmingUp(true);
+      for (let attempt = 0; attempt < 9; attempt++) {
+        try {
+          const r = await fetch(healthUrl, {
+            method: 'GET',
+            signal: AbortSignal.timeout(6000),
+          });
+          if (r.ok) { serverReady = true; break; }
+        } catch { /* still waking */ }
+        await new Promise(res => setTimeout(res, 3000));
+      }
+      setWarmingUp(false);
+
+      if (!serverReady) {
+        throw new Error('Server is unavailable. Please try again in a moment.');
+      }
 
       // 1. Create the listing WITHOUT the image (avoids sending huge base64 in JSON)
       const normalizedPhone = normalizePhoneNumber(form.whatsapp_number);
@@ -396,6 +413,18 @@ export default function CreateListingPage() {
 
       {/* Step content card */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        {/* Warm-up notice */}
+        {warmingUp && (
+          <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 flex items-center gap-3">
+            <svg className="h-4 w-4 animate-spin text-indigo-600 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+                strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
+            </svg>
+            <p className="text-sm font-medium text-indigo-700">
+              Connecting to server — this may take up to 30 seconds on first use…
+            </p>
+          </div>
+        )}
         {error && (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
             <p className="text-sm font-medium text-red-600">{error}</p>
@@ -748,14 +777,22 @@ export default function CreateListingPage() {
         >
           {step === 0 ? 'Cancel' : '← Back'}
         </Button>
-        <Button onClick={next} disabled={isPending}>
-          {isPending ? (
+        <Button onClick={next} disabled={isPending || warmingUp}>
+          {warmingUp ? (
             <span className="flex items-center gap-2">
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
                 <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
                   strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
               </svg>
-              Submitting…
+              Connecting…
+            </span>
+          ) : isPending ? (
+            <span className="flex items-center gap-2">
+              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+                  strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
+              </svg>
+              Posting…
             </span>
           ) : step === STEPS.length - 1 ? (
             'Post Listing →'
