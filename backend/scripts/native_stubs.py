@@ -280,36 +280,14 @@ def apply_patches(svc_name: str = "dev-service") -> None:
         _exm.NotFoundError = _FakeESNotFound
         sys.modules["elasticsearch.exceptions"] = _exm
 
-    # ── Patch PostgreSQL dialect types → SQLite-compatible ────────────────────
-    from sqlalchemy import String, Text, types as sa_types
-    from sqlalchemy.dialects import postgresql as pg
+    # ── PostgreSQL dialect: no patching needed ────────────────────────────────
+    # The app exclusively uses PostgreSQL (asyncpg). Do NOT patch pg.UUID,
+    # pg.JSONB, pg.INET, or pg.ARRAY — PostgreSQL handles these natively and
+    # replacing pg.UUID with a String(36) TypeDecorator causes:
+    #   "operator does not exist: uuid = character varying"
+    # because SQLAlchemy would send $1::VARCHAR instead of $1::UUID.
 
-    class _INET(String):
-        def __init__(self, *a, **kw): super().__init__(45)
 
-    class _JSONB(Text):
-        pass
-
-    class _ARRAY(Text):
-        def __init__(self, *a, **kw): super().__init__()
-
-    class _UUID(sa_types.TypeDecorator):
-        impl = sa_types.String(36)
-        cache_ok = True
-        def __init__(self, *a, **kw): kw.pop('as_uuid', None); super().__init__()
-        def process_bind_param(self, v, d):
-            return None if v is None else str(v)
-        def process_result_value(self, v, d):
-            if v is None: return None
-            try: return _uuid_mod.UUID(str(v))
-            except Exception: return v
-
-    pg.INET  = _INET
-    pg.JSONB = _JSONB
-    pg.ARRAY = _ARRAY
-    pg.UUID  = _UUID
-
-    # ── Patch config validators to accept any URL ─────────────────────────────
     import shared.config as cfg
     cfg.BaseServiceSettings.validate_database_url = classmethod(lambda cls, v: v)
     cfg.BaseServiceSettings.validate_redis_url    = classmethod(lambda cls, v: v)
