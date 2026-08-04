@@ -1,9 +1,10 @@
 """Notification Service router."""
 from __future__ import annotations
+import json
 import uuid
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy import and_, select
+from sqlalchemy import and_, select, text as _text
 from shared.errors import SuccessResponse
 from shared.jwt_utils import verify_token
 from ..config import NotificationSettings, get_settings
@@ -22,6 +23,128 @@ def _settings() -> NotificationSettings:
 
 def _user(token: str = Query(...), settings: NotificationSettings = Depends(_settings)) -> dict:
     return verify_token(settings.JWT_PUBLIC_KEY_PATH, token)
+
+
+@router.get("/notifications", response_model=SuccessResponse, summary="Get current user's in-app notifications")
+async def get_notifications(
+    request: Request,
+    page: int = Query(default=1, ge=1),
+    unread_only: bool = Query(default=False),
+) -> SuccessResponse:
+    from shared.jwt_utils import verify_token as _vt
+    settings = get_settings()
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header.removeprefix("Bearer ").strip()
+    try:
+        payload = _vt(settings.JWT_PUBLIC_KEY_PATH, token)
+        user_id = payload["sub"]
+    except Exception:
+        from shared.errors import ForbiddenError
+        raise ForbiddenError("Invalid or missing token.")
+
+    async with request.app.state.session_factory() as session:
+        # Try the notifications table (may have either schema — support both)
+        try:
+            conditions = "WHERE (recipient_user_id = :uid OR user_id = :uid)"
+            if unread_only:
+                conditions += " AND is_read = FALSE"
+            offset = (page - 1) * 20
+            rows = (await session.execute(
+                _text(f"""
+                    SELECT id,
+                           COALESCE(notification_type, type, 'system') AS notification_type,
+                           COALESCE(content, message, '{{}}') AS content,
+                           is_read,
+                           created_at,
+                           channel
+                    FROM notifications
+                    {conditions}
+                    ORDER BY created_at DESC
+                    LIMIT 20 OFFSET :offset
+                """),
+                {"uid": user_id, "offset": offset}
+            )).mappings().all()
+            unread_count = (await session.execute(
+                _text("SELECT COUNT(*) FROM notifications WHERE (recipient_user_id = :uid OR user_id = :uid) AND is_read = FALSE"),
+                {"uid": user_id}
+            )).scalar() or 0
+        except Exception:
+            rows = []
+            unread_count = 0
+
+    notifications = []
+    for r in rows:
+        content_raw = r["content"] or "{}"
+        try:
+            content_parsed = json.loads(content_raw)
+        except Exception:
+            content_parsed = {"message": content_raw}
+        notifications.append({
+            "id": str(r["id"]),
+            "type": r["notification_type"],
+            "title": content_parsed.get("title", "Notification"),
+            "message": content_parsed.get("message", ""),
+            "listing_id": content_parsed.get("listing_id"),
+            "is_read": r["is_read"],
+            "channel": r.get("channel", "in_app"),
+            "created_at": str(r["created_at"]),
+        })
+    return SuccessResponse(data={"notifications": notifications, "unread_count": unread_count})
+
+
+@router.post("/notifications/{notification_id}/read", response_model=SuccessResponse, summary="Mark a notification as read")
+async def mark_notification_read(
+    notification_id: str,
+    request: Request,
+) -> SuccessResponse:
+    from shared.jwt_utils import verify_token as _vt
+    settings = get_settings()
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header.removeprefix("Bearer ").strip()
+    try:
+        payload = _vt(settings.JWT_PUBLIC_KEY_PATH, token)
+        user_id = payload["sub"]
+    except Exception:
+        from shared.errors import ForbiddenError
+        raise ForbiddenError("Invalid or missing token.")
+
+    async with request.app.state.session_factory() as session:
+        try:
+            await session.execute(
+                _text("UPDATE notifications SET is_read = TRUE WHERE id = :nid AND (recipient_user_id = :uid OR user_id = :uid)"),
+                {"nid": notification_id, "uid": user_id}
+            )
+            await session.commit()
+        except Exception:
+            pass
+    return SuccessResponse(data={"marked_read": True})
+
+
+@router.post("/notifications/read-all", response_model=SuccessResponse, summary="Mark all notifications as read")
+async def mark_all_read(
+    request: Request,
+) -> SuccessResponse:
+    from shared.jwt_utils import verify_token as _vt
+    settings = get_settings()
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header.removeprefix("Bearer ").strip()
+    try:
+        payload = _vt(settings.JWT_PUBLIC_KEY_PATH, token)
+        user_id = payload["sub"]
+    except Exception:
+        from shared.errors import ForbiddenError
+        raise ForbiddenError("Invalid or missing token.")
+
+    async with request.app.state.session_factory() as session:
+        try:
+            await session.execute(
+                _text("UPDATE notifications SET is_read = TRUE WHERE (recipient_user_id = :uid OR user_id = :uid) AND is_read = FALSE"),
+                {"uid": user_id}
+            )
+            await session.commit()
+        except Exception:
+            pass
+    return SuccessResponse(data={"marked_all_read": True})
 
 
 @router.get("/notifications/history", response_model=SuccessResponse)

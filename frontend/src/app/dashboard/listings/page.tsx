@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Package, MapPin, Trash2, Eye, Search, AlertCircle } from 'lucide-react';
+import { Plus, Package, MapPin, Trash2, Eye, Search, AlertCircle, RotateCcw } from 'lucide-react';
 import { sellerApi, sellerKeys } from '@/lib/api/endpoints/seller';
+import { apiClient } from '@/lib/api/client';
 import { listingKeys } from '@/lib/api/endpoints/listings';
 import { useAuth } from '@/features/auth/auth-provider';
 import { ROUTES } from '@/config/routes';
@@ -25,6 +26,36 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }>
   archived:       { bg: 'bg-slate-100',  text: 'text-slate-400',   label: 'Archived'  },
   sold:           { bg: 'bg-violet-50',  text: 'text-violet-700',  label: 'Sold'      },
 };
+
+// Small inline component to avoid hook-in-loop issues
+function ResubmitButton({ listingId, onSuccess }: { listingId: string; onSuccess: () => void }) {
+  const { useMutation: _useMutation } = require('@tanstack/react-query');
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const handleResubmit = async () => {
+    setLoading(true);
+    try {
+      await apiClient.post(`/listings/${listingId}/publish`);
+      setDone(true);
+      onSuccess();
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  };
+  if (done) return <span className="text-[11px] text-amber-700 font-semibold">Submitted ✓</span>;
+  return (
+    <button
+      onClick={handleResubmit}
+      disabled={loading}
+      className="flex-shrink-0 flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+    >
+      <RotateCcw className="h-3 w-3" />
+      {loading ? 'Submitting…' : 'Resubmit'}
+    </button>
+  );
+}
 
 export default function UserListingsPage() {
   const { session } = useAuth();
@@ -182,82 +213,110 @@ export default function UserListingsPage() {
           {items.map((l) => {
             const st = STATUS_STYLES[l.status ?? 'draft'] ?? STATUS_STYLES.draft;
             const isDeleting = deletingId === l.id;
+            const isRejected = l.status === 'rejected';
+            const isPending = l.status === 'pending_review';
             return (
-              <div
-                key={l.id}
-                className={`flex items-center gap-3 px-4 py-3.5 transition-all ${
-                  isDeleting ? 'opacity-40 pointer-events-none' : 'hover:bg-slate-50'
-                }`}
-              >
-                {/* Thumbnail */}
-                <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100 border border-slate-200">
-                  {l.image_url ? (
-                    <img
-                      src={l.image_url}
-                      alt={l.title}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-2xl">
-                      {l.listing_type === 'vehicle' ? '🚗'
-                        : l.listing_type === 'property' ? '🏠'
-                        : l.listing_type === 'job' ? '💼'
-                        : l.listing_type === 'service' ? '🔧'
-                        : '📦'}
-                    </div>
-                  )}
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-bold text-slate-900 truncate">{l.title}</p>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span className="text-[11px] text-slate-400 capitalize">{l.listing_type}</span>
-                    {l.city && (
-                      <span className="flex items-center gap-0.5 text-[11px] text-slate-400">
-                        <MapPin className="h-2.5 w-2.5" />{l.city}
-                      </span>
+              <div key={l.id} className={`flex flex-col transition-all ${isDeleting ? 'opacity-40 pointer-events-none' : ''}`}>
+                <div className={`flex items-center gap-3 px-4 py-3.5 ${!isDeleting ? 'hover:bg-slate-50' : ''}`}>
+                  {/* Thumbnail */}
+                  <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100 border border-slate-200">
+                    {l.image_url ? (
+                      <img
+                        src={l.image_url}
+                        alt={l.title}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-2xl">
+                        {l.listing_type === 'vehicle' ? '🚗'
+                          : l.listing_type === 'property' ? '🏠'
+                          : l.listing_type === 'job' ? '💼'
+                          : l.listing_type === 'service' ? '🔧'
+                          : '📦'}
+                      </div>
                     )}
                   </div>
-                  <span className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${st.bg} ${st.text}`}>
-                    {st.label}
-                  </span>
-                </div>
 
-                {/* Price */}
-                <p className="text-[14px] font-black text-indigo-600 whitespace-nowrap shrink-0">
-                  {fmt(l.price, l.currency)}
-                </p>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-bold text-slate-900 truncate">{l.title}</p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <span className="text-[11px] text-slate-400 capitalize">{l.listing_type}</span>
+                      {l.city && (
+                        <span className="flex items-center gap-0.5 text-[11px] text-slate-400">
+                          <MapPin className="h-2.5 w-2.5" />{l.city}
+                        </span>
+                      )}
+                    </div>
+                    <span className={`mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${st.bg} ${st.text}`}>
+                      {isPending && <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />}
+                      {st.label}
+                    </span>
+                  </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <Link
-                    href={`/listings/${l.id}`}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200
-                      text-slate-400 hover:border-indigo-300 hover:text-indigo-600 transition-all"
-                    title="View listing"
-                  >
-                    <Eye className="h-3.5 w-3.5" />
-                  </Link>
-                  <button
-                    disabled={isDeleting}
-                    onClick={() => setConfirmId(l.id)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200
-                      text-slate-400 hover:border-red-200 hover:bg-red-50 hover:text-red-500
-                      transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                    title="Delete listing"
-                  >
-                    {isDeleting ? (
-                      <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
-                          strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
-                      </svg>
-                    ) : (
-                      <Trash2 className="h-3.5 w-3.5" />
+                  {/* Price */}
+                  <p className="text-[14px] font-black text-indigo-600 whitespace-nowrap shrink-0">
+                    {fmt(l.price, l.currency)}
+                  </p>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {(l.status === 'active' || l.status === 'pending_review') && (
+                      <Link
+                        href={`/listings/${l.id}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200
+                          text-slate-400 hover:border-indigo-300 hover:text-indigo-600 transition-all"
+                        title="View listing"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </Link>
                     )}
-                  </button>
+                    <button
+                      disabled={isDeleting}
+                      onClick={() => setConfirmId(l.id)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200
+                        text-slate-400 hover:border-red-200 hover:bg-red-50 hover:text-red-500
+                        transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="Delete listing"
+                    >
+                      {isDeleting ? (
+                        <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+                            strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
+                        </svg>
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
+
+                {/* Rejection reason banner */}
+                {isRejected && (
+                  <div className="mx-4 mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-bold text-red-700 uppercase tracking-wide mb-0.5">
+                        Listing Rejected
+                      </p>
+                      <p className="text-[12px] text-red-600">
+                        {(l as any).rejection_reason || 'Your listing did not meet our guidelines.'}
+                      </p>
+                    </div>
+                    <ResubmitButton listingId={l.id} onSuccess={() => qc.invalidateQueries({ queryKey: [uid, 'seller'] })} />
+                  </div>
+                )}
+
+                {/* Pending review info banner */}
+                {isPending && (
+                  <div className="mx-4 mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 flex items-center gap-2">
+                    <span className="inline-block h-2 w-2 rounded-full bg-amber-500 animate-pulse flex-shrink-0" />
+                    <p className="text-[12px] text-amber-700">
+                      Under review — our team will approve or provide feedback shortly.
+                    </p>
+                  </div>
+                )}
               </div>
             );
           })}

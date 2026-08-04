@@ -633,6 +633,33 @@ async def _apply_pg_migrations(engine) -> None:
             except Exception:
                 pass
 
+    # ── Additive column migrations (safe to run every restart) ────────────────
+    additive = [
+        # Listings — rejection reason stored so seller can see why it was rejected
+        "ALTER TABLE listings ADD COLUMN IF NOT EXISTS rejection_reason TEXT",
+        # Notifications — add notification-service ORM-compatible columns
+        # (the table may already exist from an older migration with different columns)
+        "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS recipient_user_id TEXT",
+        "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS channel TEXT DEFAULT 'in_app'",
+        "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS notification_type TEXT DEFAULT 'system'",
+        "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS content TEXT",
+        "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'sent'",
+        "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS attempts INTEGER DEFAULT 1",
+        "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS sent_at TIMESTAMPTZ",
+        "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS failure_reason TEXT",
+        # Back-fill recipient_user_id from user_id where it is NULL
+        "UPDATE notifications SET recipient_user_id = user_id WHERE recipient_user_id IS NULL AND user_id IS NOT NULL",
+        # Index for fast per-user notification lookups
+        "CREATE INDEX IF NOT EXISTS ix_notifications_recipient ON notifications(recipient_user_id)",
+        "CREATE INDEX IF NOT EXISTS ix_notifications_read ON notifications(recipient_user_id, is_read)",
+    ]
+    async with engine.begin() as conn:
+        for stmt in additive:
+            try:
+                await conn.execute(_text(stmt))
+            except Exception:
+                pass
+
 
 async def _auto_seed_admin(engine) -> None:
     """

@@ -90,16 +90,14 @@ async def update_me(request: Request, service: UserService=Depends(_build_servic
     if 'country_code' in body and body['country_code'] is not None:
         user_table_fields['country_code'] = str(body['country_code']).upper()[:2]
     if user_table_fields:
-        set_parts = ', '.join((f'{k} = ?' for k in user_table_fields))
-        values = list(user_table_fields.values()) + [str(current_user_id)]
+        set_clause = ', '.join((f'{k} = :{k}' for k in user_table_fields))
+        user_table_fields['uid'] = str(current_user_id)
         try:
             async with request.app.state.session_factory() as _db:
                 from sqlalchemy import text as _text
-                await _db.execute(_text(f'UPDATE users SET {set_parts} WHERE id = ?'), values)
+                await _db.execute(_text(f'UPDATE users SET {set_clause} WHERE id = :uid'), user_table_fields)
                 await _db.commit()
         except Exception:
-            set_clause = ', '.join((f'{k} = :{k}' for k in user_table_fields))
-            user_table_fields['uid'] = str(current_user_id)
             await service.session.execute(text(f'UPDATE users SET {set_clause} WHERE id = :uid'), user_table_fields)
             await service.session.commit()
     profile_body = {k: v for k, v in body.items() if k in ('bio', 'country', 'state', 'city', 'default_currency')}

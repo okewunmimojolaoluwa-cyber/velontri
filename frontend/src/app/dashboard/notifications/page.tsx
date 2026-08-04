@@ -22,6 +22,7 @@ export default function UserNotificationsPage() {
     queryKey: [uid, 'notifications', 'list'],
     queryFn: () => notificationsApi.getNotifications({ page: 1, page_size: 50 }),
     enabled: session.isAuthenticated,
+    refetchInterval: 15_000,
   });
 
   const { mutate: markAll } = useMutation({
@@ -29,8 +30,14 @@ export default function UserNotificationsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: [uid, 'notifications'] }),
   });
 
-  const notifs = Array.isArray(data?.data) ? data.data : [];
-  const unread = notifs.filter(n => !n.is_read).length;
+  const { mutate: markRead } = useMutation({
+    mutationFn: (id: string) => notificationsApi.markAsRead(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [uid, 'notifications'] }),
+  });
+
+  const payload = data?.data;
+  const notifs = Array.isArray(payload?.notifications) ? payload.notifications : [];
+  const unread = payload?.unread_count ?? notifs.filter((n: any) => !n.is_read).length;
 
   return (
       <div className="space-y-5 max-w-2xl">
@@ -68,11 +75,14 @@ export default function UserNotificationsPage() {
             </div>
           ) : (
             <ul className="divide-y divide-slate-100">
-              {notifs.map(n => {
+              {notifs.map((n: any) => {
                 const Icon = TYPE_ICON[n.type] ?? Bell;
                 return (
                   <li key={n.id}
-                    className={`flex items-start gap-3 px-5 py-4 transition-colors ${!n.is_read ? 'bg-indigo-50/40' : 'hover:bg-slate-50'}`}>
+                    onClick={() => {
+                      if (!n.is_read) markRead(n.id);
+                    }}
+                    className={`flex items-start gap-3 px-5 py-4 transition-colors ${!n.is_read ? 'bg-indigo-50/40 cursor-pointer hover:bg-indigo-50/70' : 'hover:bg-slate-50'}`}>
                     <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl
                       ${!n.is_read ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
                       <Icon className="h-4 w-4" />

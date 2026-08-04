@@ -315,14 +315,13 @@ class MarketplaceService:
             raise NotFoundError("Listing not found.")
         if listing.seller_id != seller_id:
             raise ForbiddenError("You can only publish your own listings.")
-        if listing.status not in ("draft",):
+        if listing.status not in ("draft", "rejected"):
             raise InvalidInputError(
-                f"Listing with status '{listing.status}' cannot be published."
+                f"Listing with status '{listing.status}' cannot be submitted for review."
             )
 
-        # Go straight to active — moderators can reject later if needed.
-        # In production, change this to "pending_review" and enable the moderation queue.
-        await repo.update_listing_status(self.session, listing_id, "active")
+        # Submit listing to the moderation queue — goes live only after approval.
+        await repo.update_listing_status(self.session, listing_id, "pending_review")
         await self.redis.delete(RedisKeys.listing_cache(str(listing_id)))
 
     async def moderate_listing(
@@ -330,10 +329,15 @@ class MarketplaceService:
         listing_id: uuid.UUID,
         approved: bool,
         rejection_reason: str | None = None,
+        moderator_notes: str | None = None,
     ) -> None:
         listing = await repo.get_listing(self.session, listing_id)
         if listing is None:
             raise NotFoundError("Listing not found.")
+        if listing.status != "pending_review":
+            raise InvalidInputError(
+                f"Only listings with status 'pending_review' can be moderated (current: '{listing.status}')."
+            )
 
         if approved:
             await repo.update_listing_status(self.session, listing_id, "active")
@@ -368,13 +372,89 @@ class MarketplaceService:
                     listing_id=str(listing_id),
                     exc_info=True,
                 )
+            # Notify seller — listing approved
+            await self._notify_seller(
+                seller_id=str(listing.seller_id),
+                title="🎉 Listing Approved!",
+                message=(
+                    f"Your listing \"{listing.title}\" has been approved and is now live on Velontri."
+                ),
+                notification_type="listing_approved",
+                listing_id=str(listing_id),
+            )
         else:
             await repo.update_listing_status(self.session, listing_id, "rejected")
+            # Store rejection reason on the listing for the seller to see
+            try:
+                from sqlalchemy import text as _text
+                await self.session.execute(
+                    _text(
+                        "UPDATE listings SET rejection_reason = :reason WHERE id = :lid"
+                    ),
+                    {"reason": rejection_reason or "Does not meet our listing guidelines.", "lid": str(listing_id)},
+                )
+                await self.session.commit()
+            except Exception:
+                logger.warning("rejection_reason_store_failed", listing_id=str(listing_id), exc_info=True)
+            # Notify seller — listing rejected
+            reason_text = rejection_reason or "Does not meet our listing guidelines."
+            await self._notify_seller(
+                seller_id=str(listing.seller_id),
+                title="❌ Listing Rejected",
+                message=(
+                    f"Your listing \"{listing.title}\" was not approved. "
+                    f"Reason: {reason_text}. "
+                    "You can edit your listing and resubmit for review."
+                ),
+                notification_type="listing_rejected",
+                listing_id=str(listing_id),
+            )
 
         await self.redis.delete(RedisKeys.listing_cache(str(listing_id)))
         await self.redis.delete(
             RedisKeys.seller_listing_count(str(listing.seller_id))
         )
+
+    async def _notify_seller(
+        self,
+        seller_id: str,
+        title: str,
+        message: str,
+        notification_type: str,
+        listing_id: str,
+    ) -> None:
+        """Create an in-app notification record for the seller."""
+        import json as _json
+        from sqlalchemy import text as _text
+        try:
+            notif_id = str(uuid.uuid4())
+            content = _json.dumps({
+                "title": title,
+                "message": message,
+                "listing_id": listing_id,
+            })
+            # Insert directly into the notifications table
+            await self.session.execute(
+                _text(
+                    "INSERT INTO notifications "
+                    "(id, recipient_user_id, channel, notification_type, content, status, is_read, attempts, created_at) "
+                    "VALUES (:id, :uid, 'in_app', :ntype, :content, 'sent', FALSE, 1, NOW())"
+                ),
+                {
+                    "id": notif_id,
+                    "uid": seller_id,
+                    "ntype": notification_type,
+                    "content": content,
+                },
+            )
+            await self.session.commit()
+        except Exception:
+            logger.warning(
+                "seller_notification_failed",
+                seller_id=seller_id,
+                notification_type=notification_type,
+                exc_info=True,
+            )
 
     # ── Property listing ──────────────────────────────────────────────────────
 

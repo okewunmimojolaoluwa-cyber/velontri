@@ -235,7 +235,7 @@ async def admin_list_listings(service: MarketplaceService=Depends(_build_service
 @router.get('/listings/admin/pending', response_model=SuccessResponse, summary='Admin: list all pending-review listings')
 async def admin_pending_listings(service: MarketplaceService=Depends(_build_service), roles: list[str]=Depends(get_user_roles), page: int=Query(default=1, ge=1), page_size: int=Query(default=50, ge=1, le=200)) -> SuccessResponse:
     from shared.errors import ForbiddenError, paginated_meta
-    from sqlalchemy import select, func as sa_func
+    from sqlalchemy import select, func as sa_func, text as _text
     from ..models import Listing
     allowed_roles = {'moderator', 'enterprise_admin', 'super_admin'}
     if not allowed_roles.intersection(set(roles)):
@@ -243,8 +243,112 @@ async def admin_pending_listings(service: MarketplaceService=Depends(_build_serv
     offset = (page - 1) * page_size
     total = (await service.session.execute(select(sa_func.count()).select_from(Listing).where(Listing.status == 'pending_review'))).scalar() or 0
     items = (await service.session.execute(select(Listing).where(Listing.status == 'pending_review').order_by(Listing.created_at.asc()).offset(offset).limit(page_size))).scalars().all()
-    data = [{'id': str(l.id), 'title': l.title, 'description': l.description, 'price': float(l.price) if l.price is not None else 0, 'currency': l.currency, 'category': l.category, 'listing_type': l.listing_type, 'seller_id': str(l.seller_id), 'seller_name': 'Seller', 'image_url': None, 'created_at': l.created_at.isoformat() if l.created_at else None} for l in items]
+    # Fetch seller names in one query
+    seller_ids = list({str(l.seller_id) for l in items})
+    seller_map: dict[str, dict] = {}
+    if seller_ids:
+        try:
+            rows = (await service.session.execute(
+                _text("SELECT id, full_name, email, phone FROM users WHERE id = ANY(:ids)"),
+                {"ids": seller_ids}
+            )).mappings().all()
+            seller_map = {r['id']: dict(r) for r in rows}
+        except Exception:
+            pass
+    data = []
+    for l in items:
+        seller = seller_map.get(str(l.seller_id), {})
+        # Get first image from listing_media
+        try:
+            media_row = (await service.session.execute(
+                _text("SELECT s3_key FROM listing_media WHERE listing_id = :lid AND media_type = 'image' ORDER BY sort_order LIMIT 1"),
+                {"lid": str(l.id)}
+            )).mappings().first()
+            image_key = media_row['s3_key'] if media_row else None
+        except Exception:
+            image_key = None
+        data.append({
+            'id': str(l.id),
+            'title': l.title,
+            'description': l.description,
+            'price': float(l.price) if l.price is not None else 0,
+            'currency': l.currency,
+            'category': l.category,
+            'subcategory': l.subcategory,
+            'listing_type': l.listing_type,
+            'condition': l.condition,
+            'status': l.status,
+            'seller_id': str(l.seller_id),
+            'seller_name': seller.get('full_name') or 'Unknown Seller',
+            'seller_email': seller.get('email', ''),
+            'location': f"{l.city or ''}{', ' + l.country if l.country else ''}".strip(', '),
+            'city': l.city,
+            'country': l.country,
+            'image_url': image_key,
+            'created_at': l.created_at.isoformat() if l.created_at else None,
+        })
     return SuccessResponse(message=f'{total} listing(s) pending review.', data=data, meta=paginated_meta(page, page_size, total))
+
+# ── Moderator route aliases (frontend calls /mod/listings, /mod/listings/{id}/approve etc.) ──
+@router.get('/mod/listings', response_model=SuccessResponse, summary='Moderator: list listings by status')
+async def mod_listings(service: MarketplaceService=Depends(_build_service), roles: list[str]=Depends(get_user_roles), status_filter: str=Query(default='pending_review', alias='status'), page: int=Query(default=1, ge=1), page_size: int=Query(default=50, ge=1, le=200)) -> SuccessResponse:
+    from shared.errors import ForbiddenError, paginated_meta
+    from sqlalchemy import select, func as sa_func, text as _text
+    from ..models import Listing
+    allowed_roles = {'moderator', 'enterprise_admin', 'super_admin'}
+    if not allowed_roles.intersection(set(roles)):
+        raise ForbiddenError('Moderator or Admin role required.')
+    # Map frontend status values to DB values
+    status_map = {'pending': 'pending_review', 'approved': 'active', 'rejected': 'rejected', 'all': None, 'pending_review': 'pending_review', 'active': 'active'}
+    db_status = status_map.get(status_filter)
+    offset = (page - 1) * page_size
+    base_q = select(Listing)
+    count_q = select(sa_func.count()).select_from(Listing)
+    if db_status:
+        base_q = base_q.where(Listing.status == db_status)
+        count_q = count_q.where(Listing.status == db_status)
+    total = (await service.session.execute(count_q)).scalar() or 0
+    items = (await service.session.execute(base_q.order_by(Listing.created_at.asc()).offset(offset).limit(page_size))).scalars().all()
+    seller_ids = list({str(l.seller_id) for l in items})
+    seller_map: dict[str, dict] = {}
+    if seller_ids:
+        try:
+            rows = (await service.session.execute(
+                _text("SELECT id, full_name, email FROM users WHERE id = ANY(:ids)"),
+                {"ids": seller_ids}
+            )).mappings().all()
+            seller_map = {r['id']: dict(r) for r in rows}
+        except Exception:
+            pass
+    data = [{
+        'id': str(l.id), 'title': l.title, 'description': l.description,
+        'price': float(l.price) if l.price is not None else 0, 'currency': l.currency,
+        'category': l.category, 'listing_type': l.listing_type, 'status': l.status,
+        'seller_id': str(l.seller_id),
+        'seller_name': seller_map.get(str(l.seller_id), {}).get('full_name') or 'Unknown Seller',
+        'seller_email': seller_map.get(str(l.seller_id), {}).get('email', ''),
+        'location': f"{l.city or ''}{', ' + l.country if l.country else ''}".strip(', '),
+        'image_url': l.image_url,
+        'created_at': l.created_at.isoformat() if l.created_at else None,
+    } for l in items]
+    return SuccessResponse(message=f'{total} listing(s).', data=data, meta=paginated_meta(page, page_size, total))
+
+@router.post('/mod/listings/{listing_id}/approve', response_model=SuccessResponse, summary='Moderator: approve a listing')
+async def mod_approve_listing(listing_id: uuid.UUID, service: MarketplaceService=Depends(_build_service), roles: list[str]=Depends(get_user_roles)) -> SuccessResponse:
+    from shared.errors import ForbiddenError
+    if not {'moderator', 'enterprise_admin', 'super_admin'}.intersection(set(roles)):
+        raise ForbiddenError('Moderator or Admin role required.')
+    await service.moderate_listing(listing_id, approved=True, rejection_reason=None)
+    return SuccessResponse(message='Listing approved and is now live.', data={'listing_id': str(listing_id)})
+
+@router.post('/mod/listings/{listing_id}/reject', response_model=SuccessResponse, summary='Moderator: reject a listing')
+async def mod_reject_listing(listing_id: uuid.UUID, service: MarketplaceService=Depends(_build_service), roles: list[str]=Depends(get_user_roles), reason: str | None=Query(default=None)) -> SuccessResponse:
+    from shared.errors import ForbiddenError
+    if not {'moderator', 'enterprise_admin', 'super_admin'}.intersection(set(roles)):
+        raise ForbiddenError('Moderator or Admin role required.')
+    await service.moderate_listing(listing_id, approved=False, rejection_reason=reason)
+    return SuccessResponse(message='Listing rejected.', data={'listing_id': str(listing_id)})
+
 
 @router.get('/listings/admin/featured', response_model=SuccessResponse, summary='Admin: list featured/promoted listings')
 async def admin_featured_listings(service: MarketplaceService=Depends(_build_service), roles: list[str]=Depends(get_user_roles)) -> SuccessResponse:

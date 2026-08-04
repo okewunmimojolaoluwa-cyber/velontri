@@ -24,7 +24,7 @@ export interface NotificationPreferences {
 export const notificationsApi = {
   getNotifications(params: { page?: number; page_size?: number; unread_only?: boolean } = {}) {
     return apiClient
-      .get<ApiResponse<Notification[]>>('/notifications', { params })
+      .get<ApiResponse<{ notifications: Notification[]; unread_count: number }>>('/notifications', { params })
       .then((r) => r.data);
   },
 

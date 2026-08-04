@@ -10,13 +10,21 @@ from alembic import context
 
 # Import all models to ensure they are registered with Base.metadata
 from shared.database import Base
-# You may need to import specific models here if they aren't loaded by default
-from auth_service.app.models import *
-from user_service.app.models import *
-from marketplace_service.app.models import *
-from subscription_service.app.models import *
-from analytics_service.app.models import *
-# ... etc
+import importlib.util
+import sys
+
+def load_models(service_dir):
+    module_name = f"{service_dir.replace('-', '_')}_models"
+    file_path = os.path.join(os.path.dirname(__file__), "..", service_dir, "app", "models.py")
+    if os.path.exists(file_path):
+        spec = importlib.util.spec_from_file_location(module_name, file_path)
+        if spec and spec.loader:
+            mod = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = mod
+            spec.loader.exec_module(mod)
+
+for svc in ["auth-service", "user-service", "marketplace-service", "subscription-service", "analytics-service", "chat-service", "notification-service", "payment-service", "wallet-service", "inventory-service", "logistics-service", "crm-service", "search-service"]:
+    load_models(svc)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -35,7 +43,6 @@ def get_url():
     # Attempt to load from environment first
     url = os.environ.get("DATABASE_URL")
     if not url:
-        # Load from .env if possible
         try:
             from dotenv import load_dotenv
             load_dotenv()
@@ -43,11 +50,12 @@ def get_url():
         except ImportError:
             pass
     if not url:
-        url = "postgresql+asyncpg://velontri:velontri@localhost:5432/velontri"
+        url = "postgresql+psycopg2://velontri:velontri@localhost:5432/velontri"
+    else:
+        url = url.replace('+asyncpg', '+psycopg2')
     return url
 
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode."""
     url = get_url()
     context.configure(
         url=url,
@@ -55,40 +63,23 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
     )
-
     with context.begin_transaction():
         context.run_migrations()
 
-
-def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
-
-    with context.begin_transaction():
-        context.run_migrations()
-
-
-async def run_async_migrations() -> None:
-    """In this scenario we need to create an Engine
-    and associate a connection with the context.
-    """
+def run_migrations_online() -> None:
     configuration = config.get_section(config.config_ini_section, {})
     configuration["sqlalchemy.url"] = get_url()
-
-    connectable = async_engine_from_config(
-        configuration,
-        prefix="sqlalchemy.",
+    
+    from sqlalchemy import create_engine
+    connectable = create_engine(
+        get_url(),
         poolclass=pool.NullPool,
     )
 
-    async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
-
-    await connectable.dispose()
-
-
-def run_migrations_online() -> None:
-    """Run migrations in 'online' mode."""
-    asyncio.run(run_async_migrations())
+    with connectable.connect() as connection:
+        context.configure(connection=connection, target_metadata=target_metadata)
+        with context.begin_transaction():
+            context.run_migrations()
 
 if context.is_offline_mode():
     run_migrations_offline()

@@ -171,10 +171,10 @@ async def admin_revenue(request: Request, period: str=Query(default='30d'), payl
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            rows = (await db.execute(_text(f"SELECT DATE(created_at) as date, COALESCE(SUM(amount), 0) as revenue FROM payments WHERE created_at >= date('now', '-{days} days') GROUP BY DATE(created_at) ORDER BY date ASC"))).mappings().all()
+            rows = (await db.execute(_text(f"SELECT DATE(created_at) as date, COALESCE(SUM(amount), 0) as revenue FROM payments WHERE created_at >= NOW() - INTERVAL '{days} days' GROUP BY DATE(created_at) ORDER BY date ASC"))).mappings().all()
             data_points = [dict(row) for row in rows]
             total_revenue = sum((p['revenue'] for p in data_points))
-            total_transactions = (await db.execute(_text(f"SELECT COUNT(*) as cnt FROM payments WHERE created_at >= date('now', '-{days} days')"))).mappings().all()[0]['cnt']
+            total_transactions = (await db.execute(_text(f"SELECT COUNT(*) as cnt FROM payments WHERE created_at >= NOW() - INTERVAL '{days} days'"))).mappings().all()[0]['cnt']
             active_subscriptions = (await db.execute(_text("SELECT COUNT(*) as cnt FROM subscriptions WHERE status='active'"))).mappings().all()[0]['cnt']
     except Exception as e:
         print(f'Analytics error: {e}')
@@ -438,7 +438,7 @@ async def users_daily(request: Request, days: int=7, payload: Annotated[dict, De
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            rows = (await db.execute(_text("SELECT DATE(created_at) AS day, COUNT(*) AS cnt FROM users\n                   WHERE id NOT IN (\n                       SELECT user_id FROM user_roles\n                       WHERE role IN ('enterprise_admin', 'super_admin')\n                   )\n                   AND created_at >= DATE('now', :p0 || ' days')\n                   GROUP BY DATE(created_at)"), {'p0': f'-{days}'})).mappings().all()
+            rows = (await db.execute(_text("SELECT DATE(created_at) AS day, COUNT(*) AS cnt FROM users\n                   WHERE id NOT IN (\n                       SELECT user_id FROM user_roles\n                       WHERE role IN ('enterprise_admin', 'super_admin')\n                   )\n                   AND created_at >= NOW() - (:p0 || ' days')::INTERVAL\n                   GROUP BY DATE(created_at)"), {'p0': f'{days}'})).mappings().all()
             for r in rows:
                 counts[r['day']] = r['cnt']
     except Exception:
