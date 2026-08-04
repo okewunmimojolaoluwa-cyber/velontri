@@ -205,7 +205,7 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
     logger.info("gateway_starting")
 
     from shared.database import Base, create_engine, dispose_engine
-    from sqlalchemy.ext.asyncio import async_sessionmaker
+    from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
     import os as _os
 
     # Use PostgreSQL DB
@@ -216,7 +216,7 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
 
     app.state.engine = engine
     app.state.session_factory = async_sessionmaker(
-        bind=engine, autocommit=False, autoflush=False, expire_on_commit=False
+        bind=engine, class_=AsyncSession, autocommit=False, autoflush=False, expire_on_commit=False
     )
 
     # Auto-seed admin account on every startup
