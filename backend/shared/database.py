@@ -40,8 +40,8 @@ def utc_now() -> datetime:
 
 def create_engine(
     database_url: str,
-    pool_size: int = 10,
-    max_overflow: int = 20,
+    pool_size: int = 2,
+    max_overflow: int = 5,
     pool_timeout: int = 30,
     echo: bool = False,
 ) -> AsyncEngine:
