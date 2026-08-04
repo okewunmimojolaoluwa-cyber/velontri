@@ -56,7 +56,9 @@ export const sellerApi = {
 
   publishListing(id: string) {
     return apiClient
-      .post<ApiResponse<unknown>>(`/listings/${id}/publish`, {})
+      .post<ApiResponse<unknown>>(`/listings/${id}/publish`, {}, {
+        timeout: 60_000,
+      })
       .then((r) => r.data);
   },
 

@@ -186,7 +186,17 @@ export default function CreateListingPage() {
   });
 
   const { mutate: submit, isPending } = useMutation({
+    retry: 1, // retry once on network error (handles Render cold-start edge cases)
+    retryDelay: 2000,
     mutationFn: async () => {
+      // Warm up the backend — on Render free tier a cold start can take 20-30s.
+      // Sending a cheap OPTIONS/health request first keeps the main POST within timeout.
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'https://velontri.onrender.com/api/v1'}/listings`.replace('/api/v1/listings', '/health'), {
+          method: 'GET', signal: AbortSignal.timeout(5000),
+        });
+      } catch { /* ignore — proceed regardless */ }
+
       // 1. Create the listing WITHOUT the image (avoids sending huge base64 in JSON)
       const normalizedPhone = normalizePhoneNumber(form.whatsapp_number);
       const res = await sellerApi.createListing({
@@ -233,8 +243,18 @@ export default function CreateListingPage() {
       router.push(ROUTES.user.listings);
     },
     onError: (err: any) => {
-      const detail = err?.response?.data?.error?.message || err?.message;
-      setError(detail ?? 'Failed to create listing. Please try again.');
+      // VelontriApiError (from interceptor) has .message directly
+      // Axios errors have .response.data.error.message
+      const detail =
+        err?.message ||
+        err?.response?.data?.error?.message ||
+        'Failed to create listing. Please try again.';
+      // Don't show raw "Network Error" — give a helpful message
+      if (detail === 'Network Error' || err?.status === 0) {
+        setError('Connection timed out. Please check your internet and try again.');
+      } else {
+        setError(detail);
+      }
     },
   });
 
