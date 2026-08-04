@@ -626,12 +626,13 @@ async def _apply_pg_migrations(engine) -> None:
         """,
         "CREATE INDEX IF NOT EXISTS ix_invoices_user_id ON invoices(user_id)",
     ]
-    async with engine.begin() as conn:
-        for stmt in stmts:
-            try:
+    # Run each statement in its own transaction — one failure never kills the rest
+    for stmt in stmts:
+        try:
+            async with engine.begin() as conn:
                 await conn.execute(_text(stmt))
-            except Exception:
-                pass
+        except Exception:
+            pass
 
     # ── Additive column migrations (safe to run every restart) ────────────────
     additive = [
@@ -653,12 +654,20 @@ async def _apply_pg_migrations(engine) -> None:
         "CREATE INDEX IF NOT EXISTS ix_notifications_recipient ON notifications(recipient_user_id)",
         "CREATE INDEX IF NOT EXISTS ix_notifications_read ON notifications(recipient_user_id, is_read)",
     ]
-    async with engine.begin() as conn:
-        for stmt in additive:
-            try:
+    # Also make old NOT NULL columns on notifications nullable so new inserts work
+    additive += [
+        "ALTER TABLE notifications ALTER COLUMN title DROP NOT NULL",
+        "ALTER TABLE notifications ALTER COLUMN message DROP NOT NULL",
+        "ALTER TABLE notifications ALTER COLUMN user_id DROP NOT NULL",
+        "ALTER TABLE notifications ALTER COLUMN type DROP NOT NULL",
+    ]
+    # Run each statement in its own transaction — one failure never kills the rest
+    for stmt in additive:
+        try:
+            async with engine.begin() as conn:
                 await conn.execute(_text(stmt))
-            except Exception:
-                pass
+        except Exception:
+            pass
 
 
 async def _auto_seed_admin(engine) -> None:
