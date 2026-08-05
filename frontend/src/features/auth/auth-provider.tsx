@@ -6,7 +6,7 @@ import {
 } from 'react';
 import type { AuthSession } from '@/types/auth';
 import { parseJwtPayload, payloadToSession } from '@/lib/auth/jwt';
-import { getAccessToken, getRefreshToken, clearTokens, refreshTokenSingleFlight } from '@/lib/auth/token-refresh';
+import { getAccessToken, getRefreshToken, clearTokens, refreshTokenSingleFlight, proactiveRefresh } from '@/lib/auth/token-refresh';
 import { siteConfig } from '@/config/site';
 
 interface AuthContextValue {
@@ -73,16 +73,24 @@ export function AuthProvider({
   useEffect(() => {
     let active = true;
     async function initAuth() {
+      // Try to use existing access token first
       const s = initialSession ?? readSessionFromCookie();
       if (s) {
         if (active) {
           setSession(s);
           setIsLoading(false);
         }
+        // Proactively refresh in the background if access token is near expiry
+        // This ensures the user stays logged in without any visible interruption
+        proactiveRefresh(siteConfig.apiUrl).then(() => {
+          if (!active) return;
+          const refreshed = readSessionFromCookie();
+          if (refreshed) setSession(refreshed);
+        }).catch(() => {});
         return;
       }
 
-      // If no valid access token cookie, try silent refresh using refresh token
+      // No valid access token — try silent refresh using the 1-year refresh token
       const rt = getRefreshToken();
       if (rt) {
         try {

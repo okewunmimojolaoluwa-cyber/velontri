@@ -24,8 +24,8 @@ logger = get_logger(__name__)
 
 JWT_ALGORITHM = "RS256"
 JWT_AUDIENCE = "velontri-platform"
-ACCESS_TOKEN_TTL_SECONDS  = 8 * 60 * 60    # 8 hours (dev-friendly; use 15 min in production)
-REFRESH_TOKEN_TTL_SECONDS = 7 * 24 * 3600  # 7 days
+ACCESS_TOKEN_TTL_SECONDS  = 8 * 60 * 60         # 8 hours
+REFRESH_TOKEN_TTL_SECONDS = 365 * 24 * 3600    # 1 year — permanent session until explicit logout
 
 
 def _load_key(path: str) -> str:

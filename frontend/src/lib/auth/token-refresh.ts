@@ -3,6 +3,9 @@
 const ACCESS_KEY  = 'velontri_access';
 const REFRESH_KEY = 'velontri_refresh';
 
+const ACCESS_MAX_AGE  = 8 * 60 * 60;         // 8 hours — matches backend
+const REFRESH_MAX_AGE = 365 * 24 * 60 * 60;  // 1 year — permanent session
+
 export function getAccessToken(): string | null {
   if (typeof document === 'undefined') return null;
   return getCookie(ACCESS_KEY);
@@ -15,14 +18,27 @@ export function getRefreshToken(): string | null {
 
 export function setTokens(access: string, refresh?: string): void {
   if (typeof document === 'undefined') return;
-  setCookie(ACCESS_KEY, access, 8 * 60 * 60); // 8 hours — matches backend ACCESS_TOKEN_TTL
-  if (refresh) setCookie(REFRESH_KEY, refresh, 7 * 24 * 3600);
+  setCookie(ACCESS_KEY, access, ACCESS_MAX_AGE);
+  if (refresh) setCookie(REFRESH_KEY, refresh, REFRESH_MAX_AGE);
 }
 
 export function clearTokens(): void {
   if (typeof document === 'undefined') return;
   deleteCookie(ACCESS_KEY);
   deleteCookie(REFRESH_KEY);
+}
+
+/** Returns seconds until the access token expires, or 0 if expired/missing. */
+function accessTokenExpiresIn(): number {
+  const token = getAccessToken();
+  if (!token) return 0;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const remaining = payload.exp - Math.floor(Date.now() / 1000);
+    return Math.max(0, remaining);
+  } catch {
+    return 0;
+  }
 }
 
 // ── Cookie helpers ─────────────────────────────────────────────────────────
@@ -75,4 +91,16 @@ export async function refreshTokenSingleFlight(
     .finally(() => { refreshPromise = null; });
 
   return refreshPromise;
+}
+
+/**
+ * Proactively refresh the access token if it expires within 30 minutes.
+ * Call this on app mount so users are never surprised by mid-session expiry.
+ */
+export async function proactiveRefresh(apiUrl: string): Promise<void> {
+  const remaining = accessTokenExpiresIn();
+  // Refresh if access token is missing OR expires within 30 minutes
+  if (remaining < 30 * 60) {
+    await refreshTokenSingleFlight(apiUrl);
+  }
 }
