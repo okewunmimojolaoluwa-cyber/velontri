@@ -136,8 +136,7 @@ export default function ModOverviewPage() {
               { label: 'Active Listings',   value: ov?.active_listings?.toLocaleString() ?? '—',  color: '#059669' },
               { label: 'Registered Users',  value: ov?.active_users?.toLocaleString() ?? '—',     color: '#0369A1' },
               { label: 'Messages Sent',     value: ov?.total_messages?.toLocaleString() ?? '—',   color: '#7C3AED' },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="flex items-center justify-between">
+            ].map(({ label, value, color }) => (              <div key={label} className="flex items-center justify-between">
                 <p className="text-[13px] text-slate-600">{label}</p>
                 <p className="text-[14px] font-black" style={{ color }}>
                   {isLoading

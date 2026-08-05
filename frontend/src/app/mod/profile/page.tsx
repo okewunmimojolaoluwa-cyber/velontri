@@ -1,186 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
+import { User, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
-
-export default function ModProfilePage() {
-  const { session } = useAuth();
-  const queryClient = useQueryClient();
-  const [isEditing, setIsEditing] = useState(false);
-  const [form, setForm] = useState({
-    full_name: '',
-    email: '',
-  });
-  const [message, setMessage] = useState('');
-
-  const { data: profileData, isLoading } = useQuery({
-    queryKey: ['mod-profile'],
-    queryFn: () =>
-      apiClient.get<ApiResponse<ModProfile>>('/mod/profile').then((r) => r.data),
-    enabled: session?.isAuthenticated,
-  });
-
-  useEffect(() => {
-    const profile = profileData?.data;
-    if (profile) {
-      setForm({
-        full_name: profile.full_name || '',
-        email: profile.email || '',
-      });
-    }
-  }, [profileData]);
-
-  const updateMutation = useMutation({
-    mutationFn: (data: typeof form) =>
-      apiClient.put('/mod/profile', data),
-    onSuccess: () => {
-      setMessage('Profile updated successfully');
-      setIsEditing(false);
-      setTimeout(() => setMessage(''), 3000);
-      queryClient.invalidateQueries({ queryKey: ['mod-profile'] });
-    },
-    onError: () => {
-      setMessage('Failed to update profile');
-    },
-  });
-
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateMutation.mutate(form);
-  };
-
-  if (isLoading) {
-    return (
-      
-        <div className="space-y-6">
-          <Skeleton className="h-8 w-48" />
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-            <Skeleton className="h-20 w-20 rounded-full mb-4" />
-            <Skeleton className="h-6 w-3/4 mb-2" />
-            <Skeleton className="h-4 w-full" />
-          </div>
-        </div>
-      
-    );
-  }
-
-  const profile = profileData?.data;
-
-  return (
-    
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Moderator Profile</h1>
-            <p className="text-gray-600 dark:text-gray-400">Manage your moderator account</p>
-          </div>
-          {!isEditing && (
-            <Button onClick={() => setIsEditing(true)}>
-              Edit Profile
-            </Button>
-          )}
-        </div>
-
-        {message && (
-          <div className={`px-4 py-3 rounded-md ${
-            message.includes('success')
-              ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800'
-              : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800'
-          }`}>
-            {message}
-          </div>
-        )}
-
-        {isEditing ? (
-          <form onSubmit={handleSave} className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Full Name
-              </label>
-              <Input
-                value={form.full_name}
-                onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                placeholder="Your full name"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email
-              </label>
-              <Input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="your@email.com"
-                disabled
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Email cannot be changed</p>
-            </div>
-
-            <div className="flex gap-2">
-              <Button type="submit" disabled={updateMutation.isPending}>
-                {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsEditing(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-start gap-6">
-              <div className="h-32 w-32 rounded-full bg-amber-100 dark:bg-amber-900 flex items-center justify-center overflow-hidden flex-shrink-0">
-                <span className="text-4xl font-bold text-amber-600 dark:text-amber-400">
-                  {profile?.full_name?.charAt(0) || 'M'}
-                </span>
-              </div>
-
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  {profile?.full_name}
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">{profile?.email}</p>
-
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-500 dark:text-gray-400">Role</p>
-                    <p className="font-medium text-gray-900 dark:text-white">Moderator</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 dark:text-gray-400">Status</p>
-                    <p className="font-medium text-green-600 dark:text-green-400">Active</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 dark:text-gray-400">Actions Taken</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{profile?.actions_count || 0}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 dark:text-gray-400">Member Since</p>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    
-  );
-}
 
 interface ModProfile {
   id: string;
@@ -188,4 +13,164 @@ interface ModProfile {
   email: string;
   actions_count?: number;
   created_at?: string;
+}
+
+const inputCls = 'w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-[14px] text-slate-900 placeholder-slate-400 outline-none focus:border-amber-400 focus:bg-white focus:ring-2 focus:ring-amber-500/10 transition-all';
+
+export default function ModProfilePage() {
+  const { session } = useAuth();
+  const qc = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
+  const [form, setForm] = useState({ full_name: '' });
+  const [message, setMessage] = useState('');
+  const [isError, setIsError] = useState(false);
+
+  const { data: profileData, isLoading } = useQuery({
+    queryKey: ['mod-profile'],
+    queryFn: () =>
+      apiClient.get<ApiResponse<ModProfile>>('/mod/profile').then((r) => r.data),
+    enabled: session.isAuthenticated,
+    retry: false,
+  });
+
+  const profile = profileData?.data;
+
+  useEffect(() => {
+    if (profile) setForm({ full_name: profile.full_name || '' });
+  }, [profile]);
+
+  const updateMutation = useMutation({
+    mutationFn: (data: typeof form) => apiClient.put('/mod/profile', data),
+    onSuccess: () => {
+      setMessage('Profile updated successfully.');
+      setIsError(false);
+      setIsEditing(false);
+      qc.invalidateQueries({ queryKey: ['mod-profile'] });
+      setTimeout(() => setMessage(''), 4000);
+    },
+    onError: (err: any) => {
+      setMessage(err?.message || 'Failed to update profile.');
+      setIsError(true);
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 rounded-xl bg-slate-100 animate-pulse" />
+        <div className="h-48 rounded-2xl bg-slate-100 animate-pulse" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-xl space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <User className="h-5 w-5 text-amber-500" /> Moderator Profile
+          </h1>
+          <p className="text-[13px] text-slate-400 mt-0.5">Manage your moderator account</p>
+        </div>
+        {!isEditing && (
+          <button
+            onClick={() => setIsEditing(true)}
+            className="h-9 rounded-xl bg-amber-500 px-4 text-[13px] font-bold text-white hover:bg-amber-600 transition-colors"
+          >
+            Edit Profile
+          </button>
+        )}
+      </div>
+
+      {message && (
+        <div className={`flex items-center gap-2 rounded-xl border px-4 py-3 ${
+          isError ? 'border-red-200 bg-red-50' : 'border-emerald-200 bg-emerald-50'
+        }`}>
+          {isError
+            ? <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+            : <CheckCircle className="h-4 w-4 text-emerald-600 flex-shrink-0" />}
+          <p className={`text-[13px] font-medium ${isError ? 'text-red-600' : 'text-emerald-700'}`}>
+            {message}
+          </p>
+        </div>
+      )}
+
+      {isEditing ? (
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-100 bg-slate-50 px-5 py-3.5">
+            <h2 className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">Edit Profile</h2>
+          </div>
+          <div className="p-5 space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[13px] font-semibold text-slate-700">Full Name</label>
+              <input
+                value={form.full_name}
+                onChange={(e) => setForm({ full_name: e.target.value })}
+                placeholder="Your full name"
+                className={inputCls}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[13px] font-semibold text-slate-700">Email</label>
+              <input
+                value={profile?.email || ''}
+                disabled
+                className={`${inputCls} opacity-60 cursor-not-allowed`}
+              />
+              <p className="text-[11px] text-slate-400">Email cannot be changed</p>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => updateMutation.mutate(form)}
+                disabled={updateMutation.isPending || !form.full_name.trim()}
+                className="h-10 rounded-xl bg-amber-500 px-5 text-[13px] font-bold text-white hover:bg-amber-600 transition-colors disabled:opacity-50"
+              >
+                {updateMutation.isPending ? 'Saving…' : 'Save Changes'}
+              </button>
+              <button
+                onClick={() => setIsEditing(false)}
+                className="h-10 rounded-xl border border-slate-200 px-5 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="p-6 flex items-center gap-5">
+            <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 text-[28px] font-black text-amber-700">
+              {profile?.full_name?.charAt(0)?.toUpperCase() || 'M'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[20px] font-black text-slate-900">{profile?.full_name || 'Moderator'}</p>
+              <p className="text-[13px] text-slate-500 mt-0.5">{profile?.email}</p>
+              <span className="mt-2 inline-flex items-center rounded-full bg-amber-100 px-3 py-0.5 text-[11px] font-bold text-amber-700">
+                Moderator
+              </span>
+            </div>
+          </div>
+          <div className="border-t border-slate-100 px-6 py-4 grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Status</p>
+              <p className="text-[13px] font-semibold text-emerald-600 mt-0.5">Active</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Actions Taken</p>
+              <p className="text-[13px] font-semibold text-slate-900 mt-0.5">{profile?.actions_count ?? 0}</p>
+            </div>
+            {profile?.created_at && (
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Member Since</p>
+                <p className="text-[13px] font-semibold text-slate-900 mt-0.5">
+                  {new Date(profile.created_at).toLocaleDateString()}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

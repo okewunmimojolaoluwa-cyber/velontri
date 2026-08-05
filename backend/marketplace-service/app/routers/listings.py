@@ -443,3 +443,68 @@ async def check_saved(listing_id: uuid.UUID, request: Request, current_user_id: 
         return SuccessResponse(data={'saved': bool(rows)})
     except Exception:
         return SuccessResponse(data={'saved': False})
+
+
+@router.get('/mod/reported-listings', response_model=SuccessResponse, summary='Moderator: list reported listings')
+async def mod_reported_listings(
+    service: MarketplaceService = Depends(_build_service),
+    roles: list[str] = Depends(get_user_roles),
+    status_filter: str = Query(default='open', alias='status'),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=200),
+) -> SuccessResponse:
+    from shared.errors import ForbiddenError, paginated_meta
+    if not {'moderator', 'enterprise_admin', 'super_admin'}.intersection(set(roles)):
+        raise ForbiddenError('Moderator role required.')
+    # Return empty list — reported listings feature not yet implemented
+    return SuccessResponse(message='0 reported listing(s).', data=[], meta=paginated_meta(1, page_size, 0))
+
+@router.post('/mod/reported-listings/{listing_id}/resolve', response_model=SuccessResponse)
+async def mod_resolve_reported_listing(listing_id: uuid.UUID, roles: list[str] = Depends(get_user_roles)) -> SuccessResponse:
+    from shared.errors import ForbiddenError
+    if not {'moderator', 'enterprise_admin', 'super_admin'}.intersection(set(roles)):
+        raise ForbiddenError('Moderator role required.')
+    return SuccessResponse(message='Resolved.', data={'listing_id': str(listing_id)})
+
+@router.post('/mod/reported-listings/{listing_id}/dismiss', response_model=SuccessResponse)
+async def mod_dismiss_reported_listing(listing_id: uuid.UUID, roles: list[str] = Depends(get_user_roles)) -> SuccessResponse:
+    from shared.errors import ForbiddenError
+    if not {'moderator', 'enterprise_admin', 'super_admin'}.intersection(set(roles)):
+        raise ForbiddenError('Moderator role required.')
+    return SuccessResponse(message='Dismissed.', data={'listing_id': str(listing_id)})
+
+
+# ── Reported listings mod endpoints ────────────────────────────────────────
+
+@router.get('/mod/reported-listings', response_model=SuccessResponse, summary='Moderator: list reported listings')
+async def mod_reported_listings(
+    service: MarketplaceService = Depends(_build_service),
+    roles: list[str] = Depends(get_user_roles),
+    status_filter: str = Query(default='open', alias='status'),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=200),
+) -> SuccessResponse:
+    from shared.errors import ForbiddenError, paginated_meta
+    if not {'moderator', 'enterprise_admin', 'super_admin'}.intersection(set(roles)):
+        raise ForbiddenError('Moderator role required.')
+    return SuccessResponse(message='0 reported listing(s).', data=[], meta=paginated_meta(1, page_size, 0))
+
+@router.post('/mod/reported-listings/{listing_id}/resolve', response_model=SuccessResponse, summary='Moderator: resolve a reported listing')
+async def mod_resolve_reported_listing(
+    listing_id: uuid.UUID,
+    roles: list[str] = Depends(get_user_roles),
+) -> SuccessResponse:
+    from shared.errors import ForbiddenError
+    if not {'moderator', 'enterprise_admin', 'super_admin'}.intersection(set(roles)):
+        raise ForbiddenError('Moderator role required.')
+    return SuccessResponse(message='Resolved.', data={'listing_id': str(listing_id)})
+
+@router.post('/mod/reported-listings/{listing_id}/dismiss', response_model=SuccessResponse, summary='Moderator: dismiss a reported listing')
+async def mod_dismiss_reported_listing(
+    listing_id: uuid.UUID,
+    roles: list[str] = Depends(get_user_roles),
+) -> SuccessResponse:
+    from shared.errors import ForbiddenError
+    if not {'moderator', 'enterprise_admin', 'super_admin'}.intersection(set(roles)):
+        raise ForbiddenError('Moderator role required.')
+    return SuccessResponse(message='Dismissed.', data={'listing_id': str(listing_id)})

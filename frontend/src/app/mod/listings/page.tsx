@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/empty-state';
 import { useAuth } from '@/features/auth/auth-provider';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -15,11 +15,35 @@ export default function ModListingsPage() {
   const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['mod-listings', filter],
     queryFn: () =>
       apiClient.get<ApiResponse<ModListing[]>>(`/mod/listings?status=${filter}`).then((r) => r.data),
     enabled: session?.isAuthenticated,
+    retry: false,
+  });
+
+  const queryClient = useQueryClient();
+
+  const approveMutation = useMutation({
+    mutationFn: (id: string) => apiClient.post(`/mod/listings/${id}/approve`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mod-listings'] });
+    },
+    onError: (err: any) => {
+      alert(err?.message || 'Failed to approve listing. Please try again.');
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      apiClient.post(`/mod/listings/${id}/reject?reason=${encodeURIComponent(reason)}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mod-listings'] });
+    },
+    onError: (err: any) => {
+      alert(err?.message || 'Failed to reject listing. Please try again.');
+    },
   });
 
   const listings = data?.data || [];
@@ -59,6 +83,13 @@ export default function ModListingsPage() {
           </div>
         </div>
 
+        {isError && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center">
+            <p className="text-[14px] font-semibold text-amber-700 mb-1">Feature under development</p>
+            <p className="text-[13px] text-amber-600">This section will be available soon.</p>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
@@ -89,11 +120,13 @@ export default function ModListingsPage() {
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                     listing.status === 'approved'
                       ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                      : listing.status === 'pending_review'
+                      ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
                       : listing.status === 'pending'
-                      ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
+                      ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
                       : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
                   }`}>
-                    {listing.status}
+                    {listing.status === 'pending_review' ? 'Pending Review' : listing.status}
                   </span>
                 </div>
 
@@ -101,10 +134,26 @@ export default function ModListingsPage() {
                   {listing.description}
                 </p>
 
-                {listing.status === 'pending' && (
+                {(listing.status === 'pending' || listing.status === 'pending_review') && (
                   <div className="flex gap-2">
-                    <Button size="sm">Approve</Button>
-                    <Button variant="outline" size="sm">Reject</Button>
+                    <Button
+                      size="sm"
+                      onClick={() => approveMutation.mutate(listing.id)}
+                      disabled={approveMutation.isPending}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const reason = window.prompt('Rejection reason:');
+                        if (reason) rejectMutation.mutate({ id: listing.id, reason });
+                      }}
+                      disabled={rejectMutation.isPending}
+                    >
+                      Reject
+                    </Button>
                     <Button variant="outline" size="sm">View Details</Button>
                   </div>
                 )}
@@ -124,5 +173,5 @@ interface ModListing {
   seller_name: string;
   price: number;
   currency: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'pending_review' | 'approved' | 'rejected';
 }

@@ -30,8 +30,10 @@ export default function ModLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isLoading) return;
-    if (!session.isAuthenticated) router.replace(ROUTES.login);
-    else if (session.role !== 'moderator') router.replace(ROUTES.dashboard);
+    if (!session.isAuthenticated) { router.replace(ROUTES.login); return; }
+    // enterprise_admin is normalised to super_admin by the token parser
+    if (session.role === 'super_admin') { router.replace(ROUTES.admin.overview); return; }
+    if (session.role !== 'moderator') { router.replace(ROUTES.dashboard); return; }
   }, [session, isLoading, router]);
 
   if (isLoading) return <Spinner />;

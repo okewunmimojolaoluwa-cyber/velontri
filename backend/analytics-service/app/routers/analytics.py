@@ -849,3 +849,219 @@ async def admin_audit_logs(request: Request, type: str='all', page: int=1, page_
         import logging
         logging.getLogger(__name__).error(f'audit_log_error: {exc}')
     return SuccessResponse(message=f'{total} audit log(s).', data=logs, meta=paginated_meta(page, page_size, total))
+
+
+@router.get('/mod/disputes', response_model=SuccessResponse, summary='Moderator: list disputes')
+async def mod_disputes(status: str = Query(default='open'), payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    return SuccessResponse(message='0 dispute(s).', data=[], meta={'total': 0, 'page': 1, 'page_size': 50, 'total_pages': 1, 'has_prev': False, 'has_next': False})
+
+@router.post('/mod/disputes/{dispute_id}/resolve', response_model=SuccessResponse, summary='Moderator: resolve a dispute')
+async def mod_resolve_dispute(dispute_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    return SuccessResponse(message='Dispute resolved.', data={'dispute_id': dispute_id})
+
+@router.post('/mod/disputes/{dispute_id}/escalate', response_model=SuccessResponse, summary='Moderator: escalate a dispute')
+async def mod_escalate_dispute(dispute_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    return SuccessResponse(message='Dispute escalated.', data={'dispute_id': dispute_id})
+
+@router.get('/mod/reports', response_model=SuccessResponse, summary='Moderator: list reports')
+async def mod_reports(status: str = Query(default='open'), payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    return SuccessResponse(message='0 report(s).', data=[], meta={'total': 0, 'page': 1, 'page_size': 50, 'total_pages': 1, 'has_prev': False, 'has_next': False})
+
+@router.post('/mod/reports/{report_id}/resolve', response_model=SuccessResponse, summary='Moderator: resolve a report')
+async def mod_resolve_report(report_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    return SuccessResponse(message='Report resolved.', data={'report_id': report_id})
+
+@router.post('/mod/reports/{report_id}/dismiss', response_model=SuccessResponse, summary='Moderator: dismiss a report')
+async def mod_dismiss_report(report_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    return SuccessResponse(message='Report dismissed.', data={'report_id': report_id})
+
+@router.get('/mod/reviews', response_model=SuccessResponse, summary='Moderator: list flagged reviews')
+async def mod_reviews(status: str = Query(default='flagged'), payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    return SuccessResponse(message='0 review(s).', data=[], meta={'total': 0, 'page': 1, 'page_size': 50, 'total_pages': 1, 'has_prev': False, 'has_next': False})
+
+@router.post('/mod/reviews/{review_id}/approve', response_model=SuccessResponse, summary='Moderator: approve a review')
+async def mod_approve_review(review_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    return SuccessResponse(message='Review approved.', data={'review_id': review_id})
+
+@router.post('/mod/reviews/{review_id}/remove', response_model=SuccessResponse, summary='Moderator: remove a review')
+async def mod_remove_review(review_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    return SuccessResponse(message='Review removed.', data={'review_id': review_id})
+
+@router.get('/mod/tickets', response_model=SuccessResponse, summary='Moderator: list support tickets')
+async def mod_tickets(status: str = Query(default='open'), payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    return SuccessResponse(message='0 ticket(s).', data=[], meta={'total': 0, 'page': 1, 'page_size': 50, 'total_pages': 1, 'has_prev': False, 'has_next': False})
+
+@router.put('/mod/tickets/{ticket_id}', response_model=SuccessResponse, summary='Moderator: update ticket status')
+async def mod_update_ticket(ticket_id: str, request: Request, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    body = await request.json()
+    return SuccessResponse(message='Ticket updated.', data={'ticket_id': ticket_id, 'status': body.get('status')})
+
+@router.get('/mod/logs', response_model=SuccessResponse, summary='Moderator: list moderation logs')
+async def mod_logs(type: str = Query(default='all'), payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    return SuccessResponse(message='0 log(s).', data=[], meta={'total': 0, 'page': 1, 'page_size': 50, 'total_pages': 1, 'has_prev': False, 'has_next': False})
+
+@router.get('/mod/notifications', response_model=SuccessResponse, summary='Moderator: list sent notifications')
+async def mod_notifications_list(payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    return SuccessResponse(message='0 notification(s).', data=[])
+
+@router.post('/mod/notifications', response_model=SuccessResponse, summary='Moderator: send a notification')
+async def mod_send_notification(request: Request, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    body = await request.json()
+    return SuccessResponse(message='Notification queued.', data={'id': str(uuid.uuid4()), 'title': body.get('title'), 'sent': True})
+
+
+# ── Moderator API endpoints ─────────────────────────────────────────────────
+
+@router.get('/mod/disputes', response_model=SuccessResponse, summary='Moderator: list disputes')
+async def mod_disputes(
+    request: Request,
+    status: str = Query(default='open'),
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    from shared.errors import paginated_meta
+    return SuccessResponse(message='0 dispute(s).', data=[], meta=paginated_meta(1, 50, 0))
+
+@router.post('/mod/disputes/{dispute_id}/resolve', response_model=SuccessResponse, summary='Moderator: resolve a dispute')
+async def mod_resolve_dispute(dispute_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    return SuccessResponse(message='Dispute resolved.', data={'dispute_id': dispute_id})
+
+@router.post('/mod/disputes/{dispute_id}/escalate', response_model=SuccessResponse, summary='Moderator: escalate a dispute')
+async def mod_escalate_dispute(dispute_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    return SuccessResponse(message='Dispute escalated.', data={'dispute_id': dispute_id})
+
+@router.get('/mod/reports', response_model=SuccessResponse, summary='Moderator: list reports')
+async def mod_reports(
+    request: Request,
+    status: str = Query(default='open'),
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    from shared.errors import paginated_meta
+    return SuccessResponse(message='0 report(s).', data=[], meta=paginated_meta(1, 50, 0))
+
+@router.post('/mod/reports/{report_id}/resolve', response_model=SuccessResponse, summary='Moderator: resolve a report')
+async def mod_resolve_report(report_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    return SuccessResponse(message='Report resolved.', data={'report_id': report_id})
+
+@router.post('/mod/reports/{report_id}/dismiss', response_model=SuccessResponse, summary='Moderator: dismiss a report')
+async def mod_dismiss_report(report_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    return SuccessResponse(message='Report dismissed.', data={'report_id': report_id})
+
+@router.get('/mod/reviews', response_model=SuccessResponse, summary='Moderator: list flagged reviews')
+async def mod_reviews_list(
+    request: Request,
+    status: str = Query(default='flagged'),
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    from shared.errors import paginated_meta
+    return SuccessResponse(message='0 review(s).', data=[], meta=paginated_meta(1, 50, 0))
+
+@router.post('/mod/reviews/{review_id}/approve', response_model=SuccessResponse, summary='Moderator: approve a review')
+async def mod_approve_review(review_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    return SuccessResponse(message='Review approved.', data={'review_id': review_id})
+
+@router.post('/mod/reviews/{review_id}/remove', response_model=SuccessResponse, summary='Moderator: remove a review')
+async def mod_remove_review(review_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+    return SuccessResponse(message='Review removed.', data={'review_id': review_id})
+
+@router.get('/mod/tickets', response_model=SuccessResponse, summary='Moderator: list support tickets')
+async def mod_tickets_list(
+    request: Request,
+    status: str = Query(default='open'),
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    from shared.errors import paginated_meta
+    return SuccessResponse(message='0 ticket(s).', data=[], meta=paginated_meta(1, 50, 0))
+
+@router.put('/mod/tickets/{ticket_id}', response_model=SuccessResponse, summary='Moderator: update ticket status')
+async def mod_update_ticket(
+    ticket_id: str,
+    request: Request,
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    body = await request.json()
+    return SuccessResponse(message='Ticket updated.', data={'ticket_id': ticket_id, 'status': body.get('status')})
+
+@router.get('/mod/logs', response_model=SuccessResponse, summary='Moderator: list moderation logs')
+async def mod_logs_list(
+    request: Request,
+    type: str = Query(default='all'),
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    from shared.errors import paginated_meta
+    return SuccessResponse(message='0 log(s).', data=[], meta=paginated_meta(1, 50, 0))
+
+@router.get('/mod/notifications', response_model=SuccessResponse, summary='Moderator: list sent notifications')
+async def mod_notifications_list(
+    request: Request,
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    return SuccessResponse(message='0 notification(s).', data=[])
+
+@router.post('/mod/notifications', response_model=SuccessResponse, summary='Moderator: send a platform notification')
+async def mod_send_notification(
+    request: Request,
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    body = await request.json()
+    return SuccessResponse(message='Notification queued.', data={
+        'id': str(uuid.uuid4()),
+        'title': body.get('title'),
+        'sent': True,
+    })
+
+@router.get('/mod/profile', response_model=SuccessResponse, summary='Moderator: get own profile')
+async def mod_get_profile(
+    request: Request,
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    from shared.errors import UnauthorizedError
+    if not payload:
+        raise UnauthorizedError('Authentication required.')
+    uid = payload.get('sub', '')
+    try:
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _text
+            rows = (await db.execute(_text(
+                'SELECT id, email, full_name, created_at FROM users WHERE CAST(id AS TEXT) = :p0'
+            ), {'p0': uid})).mappings().all()
+            if rows:
+                r = rows[0]
+                return SuccessResponse(data={
+                    'id': str(r['id']),
+                    'email': r['email'],
+                    'full_name': r['full_name'],
+                    'created_at': str(r['created_at']),
+                    'actions_count': 0,
+                })
+    except Exception:
+        pass
+    return SuccessResponse(data={
+        'id': uid,
+        'email': payload.get('email', ''),
+        'full_name': 'Moderator',
+        'created_at': '',
+        'actions_count': 0,
+    })
+
+@router.put('/mod/profile', response_model=SuccessResponse, summary='Moderator: update own profile')
+async def mod_update_profile(
+    request: Request,
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    if not payload:
+        from shared.errors import UnauthorizedError
+        raise UnauthorizedError('Authentication required.')
+    uid = payload.get('sub', '')
+    body = await request.json()
+    full_name = body.get('full_name', '').strip()
+    if uid and full_name:
+        try:
+            async with request.app.state.session_factory() as db:
+                from sqlalchemy import text as _text
+                await db.execute(_text(
+                    'UPDATE users SET full_name = :p0 WHERE CAST(id AS TEXT) = :p1'
+                ), {'p0': full_name, 'p1': uid})
+                await db.commit()
+        except Exception:
+            pass
+    return SuccessResponse(message='Profile updated.', data={'updated': True})

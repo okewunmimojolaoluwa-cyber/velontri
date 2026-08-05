@@ -32,22 +32,28 @@ export default function ModAnnouncementsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['mod-announcements'],
     queryFn: () =>
-      apiClient.get<ApiResponse<Announcement[]>>('/analytics/admin/notifications').then(r => r.data),
+      apiClient.get<ApiResponse<Announcement[]>>('/admin/notifications').then(r => r.data),
     enabled: session.isAuthenticated,
   });
 
   const { mutate: create, isPending: creating } = useMutation({
-    mutationFn: () => apiClient.post('/analytics/admin/notifications', form),
+    mutationFn: () => apiClient.post('/admin/notifications', form),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['mod-announcements'] });
       setShowCreate(false);
       setForm({ title: '', content: '', target_audience: 'all' });
     },
+    onError: (err: any) => {
+      alert(err?.message || 'Failed to create announcement. Please try again.');
+    },
   });
 
   const { mutate: remove } = useMutation({
-    mutationFn: (id: string) => apiClient.delete(`/analytics/admin/notifications/${id}`),
+    mutationFn: (id: string) => apiClient.delete(`/admin/notifications/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['mod-announcements'] }),
+    onError: (err: any) => {
+      alert(err?.message || 'Failed to delete announcement. Please try again.');
+    },
   });
 
   const announcements: Announcement[] = Array.isArray(data?.data) ? data.data as Announcement[] : [];

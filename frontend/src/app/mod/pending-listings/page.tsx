@@ -68,6 +68,9 @@ export default function ModPendingListingsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mod-pending-listings'] });
     },
+    onError: (err: any) => {
+      alert(err?.message || 'Failed to approve listing. Please try again.');
+    },
   });
 
   const rejectMutation = useMutation({
@@ -77,6 +80,9 @@ export default function ModPendingListingsPage() {
       queryClient.invalidateQueries({ queryKey: ['mod-pending-listings'] });
       setRejectModal(null);
       setRejectReason('');
+    },
+    onError: (err: any) => {
+      alert(err?.message || 'Failed to reject listing. Please try again.');
     },
   });
 

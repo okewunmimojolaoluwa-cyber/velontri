@@ -1,157 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { EmptyState } from '@/components/shared/empty-state';
+import { AlertCircle } from 'lucide-react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
-
-export default function ModDisputesPage() {
-  const { session } = useAuth();
-  const queryClient = useQueryClient();
-  const [filter, setFilter] = useState<'open' | 'resolved' | 'escalated' | 'all'>('open');
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['mod-disputes', filter],
-    queryFn: () =>
-      apiClient.get<ApiResponse<Dispute[]>>(`/mod/disputes?status=${filter}`).then((r) => r.data),
-    enabled: session?.isAuthenticated,
-  });
-
-  const resolveMutation = useMutation({
-    mutationFn: (id: string) => apiClient.post(`/mod/disputes/${id}/resolve`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['mod-disputes'] });
-    },
-  });
-
-  const escalateMutation = useMutation({
-    mutationFn: (id: string) => apiClient.post(`/mod/disputes/${id}/escalate`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['mod-disputes'] });
-    },
-  });
-
-  const disputes = data?.data || [];
-
-  return (
-    
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Disputes</h1>
-          <p className="text-gray-600 dark:text-gray-400">Manage transaction disputes and conflicts</p>
-        </div>
-
-        <div className="flex gap-2">
-          {(['all', 'open', 'resolved', 'escalated'] as const).map((status) => (
-            <Button
-              key={status}
-              variant={filter === status ? 'default' : 'outline'}
-              onClick={() => setFilter(status)}
-              size="sm"
-              className="capitalize"
-            >
-              {status}
-            </Button>
-          ))}
-        </div>
-
-        {isLoading ? (
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-40 w-full" />
-            ))}
-          </div>
-        ) : disputes.length === 0 ? (
-          <EmptyState
-            title="No disputes found"
-            description="There are no disputes matching your criteria"
-          />
-        ) : (
-          <div className="space-y-4">
-            {disputes.map((dispute) => (
-              <div
-                key={dispute.id}
-                className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">
-                      Dispute #{dispute.id}
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {dispute.listing_title} • {dispute.currency} {dispute.amount}
-                    </p>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    dispute.status === 'resolved'
-                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
-                      : dispute.status === 'open'
-                      ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
-                      : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
-                  }`}>
-                    {dispute.status}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
-                  <div>
-                    <p className="text-gray-500 dark:text-gray-400">Buyer</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{dispute.buyer_name}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 dark:text-gray-400">Seller</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{dispute.seller_name}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 dark:text-gray-400">Opened</p>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {new Date(dispute.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 dark:text-gray-400">Reason</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{dispute.reason}</p>
-                  </div>
-                </div>
-
-                <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
-                  {dispute.description}
-                </p>
-
-                {dispute.status === 'open' && (
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => resolveMutation.mutate(dispute.id)}
-                      disabled={resolveMutation.isPending}
-                    >
-                      Resolve
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => escalateMutation.mutate(dispute.id)}
-                      disabled={escalateMutation.isPending}
-                    >
-                      Escalate to Admin
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      View Details
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    
-  );
-}
 
 interface Dispute {
   id: string;
@@ -164,4 +18,121 @@ interface Dispute {
   description: string;
   status: 'open' | 'resolved' | 'escalated';
   created_at: string;
+}
+
+export default function ModDisputesPage() {
+  const { session } = useAuth();
+  const qc = useQueryClient();
+  const [filter, setFilter] = useState<'all' | 'open' | 'resolved' | 'escalated'>('open');
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['mod-disputes', filter],
+    queryFn: () =>
+      apiClient
+        .get<ApiResponse<Dispute[]>>(`/mod/disputes?status=${filter}`)
+        .then((r) => r.data),
+    enabled: session.isAuthenticated,
+    retry: false,
+  });
+
+  const resolveMutation = useMutation({
+    mutationFn: (id: string) => apiClient.post(`/mod/disputes/${id}/resolve`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['mod-disputes'] }),
+    onError: (err: any) => alert(err?.message || 'Failed to resolve dispute.'),
+  });
+
+  const escalateMutation = useMutation({
+    mutationFn: (id: string) => apiClient.post(`/mod/disputes/${id}/escalate`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['mod-disputes'] }),
+    onError: (err: any) => alert(err?.message || 'Failed to escalate dispute.'),
+  });
+
+  const disputes: Dispute[] = Array.isArray(data?.data) ? data.data as Dispute[] : [];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <AlertCircle className="h-5 w-5 text-amber-500" /> Disputes
+        </h1>
+        <p className="text-[13px] text-slate-400 mt-0.5">Manage transaction disputes</p>
+      </div>
+
+      <div className="flex gap-1.5">
+        {(['all', 'open', 'resolved', 'escalated'] as const).map((s) => (
+          <button key={s} onClick={() => setFilter(s)}
+            className={`h-8 rounded-xl px-3.5 text-[12px] font-semibold capitalize transition-all ${
+              filter === s ? 'bg-amber-500 text-white' : 'border border-slate-200 text-slate-500 hover:border-amber-300 hover:text-amber-600'
+            }`}>
+            {s}
+          </button>
+        ))}
+      </div>
+
+      {isError && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center">
+          <p className="text-[14px] font-semibold text-amber-700 mb-1">Feature under development</p>
+          <p className="text-[13px] text-amber-600">Dispute resolution system will be available in a future update.</p>
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-36 rounded-2xl bg-slate-100 animate-pulse" />
+          ))}
+        </div>
+      ) : disputes.length === 0 && !isError ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-16 text-center">
+          <AlertCircle className="h-10 w-10 text-slate-200 mb-3" />
+          <p className="text-[14px] font-semibold text-slate-900 mb-1">No disputes</p>
+          <p className="text-[12px] text-slate-400">
+            {filter !== 'all' ? `No ${filter} disputes.` : 'No disputes have been filed.'}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {disputes.map((dispute) => (
+            <div key={dispute.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
+              <div className="flex items-start justify-between mb-3 gap-3">
+                <div>
+                  <p className="text-[14px] font-bold text-slate-900">{dispute.listing_title}</p>
+                  <p className="text-[12px] text-slate-400 mt-0.5">
+                    {dispute.currency} {dispute.amount?.toLocaleString()} · {new Date(dispute.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <span className={`flex-shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-bold capitalize ${
+                  dispute.status === 'resolved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                    : dispute.status === 'open' ? 'bg-amber-50 text-amber-700 border-amber-100'
+                    : 'bg-red-50 text-red-600 border-red-100'
+                }`}>
+                  {dispute.status}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-3 text-[12px]">
+                <div><span className="text-slate-400">Buyer: </span><span className="font-semibold text-slate-700">{dispute.buyer_name}</span></div>
+                <div><span className="text-slate-400">Seller: </span><span className="font-semibold text-slate-700">{dispute.seller_name}</span></div>
+                <div><span className="text-slate-400">Reason: </span><span className="font-semibold text-slate-700">{dispute.reason}</span></div>
+              </div>
+              {dispute.description && (
+                <p className="text-[13px] text-slate-600 mb-3 line-clamp-2">{dispute.description}</p>
+              )}
+              {dispute.status === 'open' && (
+                <div className="flex gap-2">
+                  <button onClick={() => resolveMutation.mutate(dispute.id)} disabled={resolveMutation.isPending}
+                    className="h-8 rounded-lg bg-emerald-600 px-3 text-[12px] font-bold text-white hover:bg-emerald-700 transition-colors disabled:opacity-50">
+                    Resolve
+                  </button>
+                  <button onClick={() => escalateMutation.mutate(dispute.id)} disabled={escalateMutation.isPending}
+                    className="h-8 rounded-lg border border-slate-200 px-3 text-[12px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50">
+                    Escalate to Admin
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
