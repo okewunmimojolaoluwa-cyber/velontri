@@ -222,6 +222,37 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
     # Auto-seed admin account on every startup
     await _auto_seed_admin(app.state.session_factory)
 
+    # ── Ensure critical tables exist (idempotent DDL) ─────────────────────
+    try:
+        async with engine.begin() as _conn:
+            await _conn.execute(_text("""
+                CREATE TABLE IF NOT EXISTS listing_media (
+                    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    listing_id   UUID NOT NULL,
+                    media_type   VARCHAR(20) NOT NULL CHECK (media_type IN ('image','video','tour_360')),
+                    s3_key       TEXT NOT NULL,
+                    sort_order   SMALLINT NOT NULL DEFAULT 0,
+                    uploaded_at  TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await _conn.execute(_text(
+                "CREATE INDEX IF NOT EXISTS ix_listing_media_listing_id ON listing_media(listing_id)"
+            ))
+            # Ensure listings.image_url column exists (may be missing on older schemas)
+            await _conn.execute(_text("""
+                DO $$ BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name='listings' AND column_name='image_url'
+                    ) THEN
+                        ALTER TABLE listings ADD COLUMN image_url TEXT;
+                    END IF;
+                END $$
+            """))
+        logger.info("db_schema_ensured")
+    except Exception as _te:
+        logger.warning(f"db_schema_ensure_failed: {_te}")
+
     # ── Redis (graceful fallback to in-memory stub) ────────────────────────
     pool = None
     try:
