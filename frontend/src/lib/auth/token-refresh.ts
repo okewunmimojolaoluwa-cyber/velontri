@@ -33,11 +33,15 @@ function getCookie(name: string): string | null {
 }
 
 function setCookie(name: string, value: string, maxAge: number): void {
-  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  const isHttps = typeof location !== 'undefined' && location.protocol === 'https:';
+  const secure = isHttps ? '; Secure' : '';
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
 }
 
 function deleteCookie(name: string): void {
-  document.cookie = `${name}=; path=/; max-age=0`;
+  const isHttps = typeof location !== 'undefined' && location.protocol === 'https:';
+  const secure = isHttps ? '; Secure' : '';
+  document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax${secure}`;
 }
 
 // ── Single-flight refresh ──────────────────────────────────────────────────

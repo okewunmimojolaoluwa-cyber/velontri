@@ -63,7 +63,10 @@ QUOTA_MAP = {
 }
 
 
-def _to_listing_response(listing: Listing) -> ListingResponse:
+def _to_listing_response(listing: Listing, media_urls: list[str] | None = None) -> ListingResponse:
+    urls = media_urls if media_urls is not None else (
+        [listing.image_url] if listing.image_url else []
+    )
     return ListingResponse(
         id=listing.id,
         seller_id=listing.seller_id,
@@ -83,6 +86,7 @@ def _to_listing_response(listing: Listing) -> ListingResponse:
         avg_rating=float(listing.avg_rating) if listing.avg_rating else 0.0,
         review_count=listing.review_count,
         image_url=listing.image_url,
+        media_urls=urls,
         whatsapp_number=getattr(listing, 'whatsapp_number', None),
         contact_phone=getattr(listing, 'contact_phone', None),
         created_at=listing.created_at,
@@ -201,7 +205,14 @@ class MarketplaceService:
         if listing is None:
             raise NotFoundError("Listing not found.")
 
-        response = _to_listing_response(listing)
+        # Load all media in sort order
+        media_rows = await repo.get_listing_media(self.session, listing_id)
+        media_urls = [m.s3_key for m in media_rows if m.media_type == "image"]
+        # Fallback: if no media rows but image_url set on listing, use it
+        if not media_urls and listing.image_url:
+            media_urls = [listing.image_url]
+
+        response = _to_listing_response(listing, media_urls)
         await self.redis.setex(cache_key, 300, response.model_dump_json())
         return response
 

@@ -12,6 +12,7 @@ export interface ListingSummary {
   state?: string;
   country?: string;
   image_url?: string;
+  media_urls?: string[];
   description?: string;
   condition?: string;
   status?: string;

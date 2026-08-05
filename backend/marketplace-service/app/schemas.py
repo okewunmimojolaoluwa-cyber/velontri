@@ -86,6 +86,7 @@ class ListingResponse(BaseModel):
     avg_rating: float
     review_count: int
     image_url: str | None = None
+    media_urls: list[str] = []          # all images in sort order
     whatsapp_number: str | None = None
     contact_phone: str | None = None
     created_at: datetime

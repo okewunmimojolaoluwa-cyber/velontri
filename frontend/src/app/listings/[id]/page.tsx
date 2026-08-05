@@ -201,7 +201,12 @@ export default function ListingDetailPage() {
   });
 
   const sellerName = sellerData?.data?.full_name || sellerData?.data?.display_name || 'Seller';
-  const images: string[] = listing?.image_url ? [listing.image_url] : [];
+  // Use media_urls array (all images) if available, fall back to image_url
+  const images: string[] = (listing as any)?.media_urls?.length
+    ? (listing as any).media_urls
+    : listing?.image_url
+    ? [listing.image_url]
+    : [];
   const hasImages = images.length > 0;
 
   // WhatsApp number — from listing data, then seller profile phone as fallback

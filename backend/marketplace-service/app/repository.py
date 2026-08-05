@@ -256,6 +256,18 @@ async def count_listing_images(
     return result.scalar_one()
 
 
+async def get_listing_media(
+    session: AsyncSession, listing_id: uuid.UUID
+) -> list[ListingMedia]:
+    """Return all media rows for a listing ordered by sort_order."""
+    result = await session.execute(
+        select(ListingMedia)
+        .where(ListingMedia.listing_id == listing_id)
+        .order_by(ListingMedia.sort_order.asc())
+    )
+    return list(result.scalars().all())
+
+
 # ── Listing specs and variants ────────────────────────────────────────────────
 
 async def upsert_listing_specs(
