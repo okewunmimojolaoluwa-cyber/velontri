@@ -79,3 +79,7 @@ services:
       # ── SQLite DB path — hardcoded so gateway engine and seed use same file
       - key: SQLITE_DB_PATH
         value: "/opt/render/project/src/backend/velontri.db"
+
+      # ── Supabase PostgreSQL — persistent database (survives all redeploys) ──
+      - key: DATABASE_URL
+        value: "postgresql+asyncpg://postgres.nppxqvgetyetnsiphehm:Okewunmi123@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"

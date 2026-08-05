@@ -60,7 +60,8 @@ def create_engine(
         )
 
     # Build engine kwargs for PostgreSQL + asyncpg
-    # Using session pooler (port 5432) which supports prepared statements natively.
+    # Supabase pooler (port 5432) requires SSL and statement_cache_size=0
+    is_supabase = "supabase.com" in database_url or "pooler.supabase" in database_url
     engine_kwargs = {
         "pool_pre_ping": True,
         "echo": echo,
@@ -71,7 +72,9 @@ def create_engine(
         "connect_args": {
             "server_settings": {
                 "search_path": "public"
-            }
+            },
+            # Supabase session pooler requires SSL and no prepared statements
+            **({"ssl": "require", "statement_cache_size": 0} if is_supabase else {}),
         }
     }
 
