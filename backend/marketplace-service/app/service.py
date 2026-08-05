@@ -282,8 +282,15 @@ class MarketplaceService:
         media_url = s3_key if self.s3_session else (image_url or s3_key)
 
         if not self.s3_session and current_count == 0:
-            # Set cover image on the listing row
-            listing.image_url = image_url
+            # Set cover image on the listing row via explicit UPDATE (not ORM dirty tracking
+            # which can be missed after a prior flush in the same session)
+            from sqlalchemy import update as _update
+            from .models import Listing as _Listing
+            await self.session.execute(
+                _update(_Listing)
+                .where(_Listing.id == listing_id)
+                .values(image_url=image_url)
+            )
         await repo.add_listing_media(self.session, listing_id, "image", media_url, sort_order)
         await self.session.flush()  # flush immediately so connection returns to pool sooner
 

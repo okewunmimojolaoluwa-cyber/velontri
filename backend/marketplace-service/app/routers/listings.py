@@ -29,7 +29,32 @@ async def browse_listings(service: MarketplaceService=Depends(_build_service), p
     """Browse active listings. No authentication required."""
     results, total = await service.list_listings(page=page, page_size=page_size, category=category, listing_type=listing_type, seller_id=seller_id, city=city, country=country, min_price=min_price, max_price=max_price, condition=condition, query=q)
     from shared.errors import paginated_meta
-    return SuccessResponse(message=f'{total} listing(s) found.', data=[{'id': str(r.id), 'seller_id': str(r.seller_id), 'listing_type': r.listing_type, 'title': r.title, 'description': r.description, 'price': float(r.price) if r.price is not None else None, 'currency': r.currency, 'country': r.country, 'state': r.state, 'city': r.city, 'category': r.category, 'condition': r.condition, 'status': r.status, 'image_url': r.image_url, 'avg_rating': float(r.avg_rating) if r.avg_rating else 0.0, 'review_count': r.review_count or 0, 'created_at': r.created_at.isoformat() if r.created_at else None} for r in results], meta=paginated_meta(page, page_size, total))
+    from sqlalchemy import text as _text
+
+    # For listings without image_url, try to get the first media row
+    listing_ids_without_image = [str(r.id) for r in results if not r.image_url]
+    media_map: dict[str, str] = {}
+    if listing_ids_without_image:
+        try:
+            media_rows = (await service.session.execute(_text(
+                "SELECT CAST(listing_id AS TEXT) AS lid, s3_key FROM listing_media "
+                "WHERE CAST(listing_id AS TEXT) = ANY(:ids) AND media_type = 'image' "
+                "ORDER BY sort_order ASC"
+            ), {'ids': listing_ids_without_image})).mappings().all()
+            seen: set = set()
+            for mr in media_rows:
+                lid = str(mr['lid'])
+                if lid not in seen:
+                    media_map[lid] = mr['s3_key']
+                    seen.add(lid)
+        except Exception:
+            pass
+
+    data = []
+    for r in results:
+        img = r.image_url or media_map.get(str(r.id))
+        data.append({'id': str(r.id), 'seller_id': str(r.seller_id), 'listing_type': r.listing_type, 'title': r.title, 'description': r.description, 'price': float(r.price) if r.price is not None else None, 'currency': r.currency, 'country': r.country, 'state': r.state, 'city': r.city, 'category': r.category, 'condition': r.condition, 'status': r.status, 'image_url': img, 'avg_rating': float(r.avg_rating) if r.avg_rating else 0.0, 'review_count': r.review_count or 0, 'created_at': r.created_at.isoformat() if r.created_at else None})
+    return SuccessResponse(message=f'{total} listing(s) found.', data=data, meta=paginated_meta(page, page_size, total))
 
 @router.get('/listings/my', response_model=SuccessResponse, summary="Get the authenticated seller's own listings (all statuses)")
 async def my_listings(service: MarketplaceService=Depends(_build_service), current_user_id: uuid.UUID=Depends(get_current_user_id), page: int=Query(default=1, ge=1), page_size: int=Query(default=20, ge=1, le=200), status: str | None=Query(default=None)) -> SuccessResponse:
@@ -45,7 +70,28 @@ async def my_listings(service: MarketplaceService=Depends(_build_service), curre
     total = count_result.scalar() or 0
     rows_result = await service.session.execute(select(Listing).where(*where_clauses).order_by(Listing.created_at.desc()).offset(offset).limit(page_size))
     listings = rows_result.scalars().all()
-    data = [{'id': str(l.id), 'seller_id': str(l.seller_id), 'listing_type': l.listing_type, 'title': l.title, 'description': l.description, 'price': float(l.price) if l.price is not None else None, 'currency': l.currency, 'country': l.country, 'state': l.state, 'city': l.city, 'category': l.category, 'condition': l.condition, 'status': l.status, 'avg_rating': float(l.avg_rating) if l.avg_rating is not None else 0.0, 'review_count': l.review_count or 0, 'created_at': l.created_at.isoformat() if l.created_at else None, 'updated_at': l.updated_at.isoformat() if l.updated_at else None, 'image_url': l.image_url} for l in listings]
+
+    # For listings without image_url, fetch from listing_media
+    from sqlalchemy import text as _text
+    ids_without_image = [str(l.id) for l in listings if not l.image_url]
+    media_map: dict[str, str] = {}
+    if ids_without_image:
+        try:
+            media_rows = (await service.session.execute(_text(
+                "SELECT CAST(listing_id AS TEXT) AS lid, s3_key FROM listing_media "
+                "WHERE CAST(listing_id AS TEXT) = ANY(:ids) AND media_type = 'image' "
+                "ORDER BY sort_order ASC"
+            ), {'ids': ids_without_image})).mappings().all()
+            seen: set = set()
+            for mr in media_rows:
+                lid = str(mr['lid'])
+                if lid not in seen:
+                    media_map[lid] = mr['s3_key']
+                    seen.add(lid)
+        except Exception:
+            pass
+
+    data = [{'id': str(l.id), 'seller_id': str(l.seller_id), 'listing_type': l.listing_type, 'title': l.title, 'description': l.description, 'price': float(l.price) if l.price is not None else None, 'currency': l.currency, 'country': l.country, 'state': l.state, 'city': l.city, 'category': l.category, 'condition': l.condition, 'status': l.status, 'avg_rating': float(l.avg_rating) if l.avg_rating is not None else 0.0, 'review_count': l.review_count or 0, 'created_at': l.created_at.isoformat() if l.created_at else None, 'updated_at': l.updated_at.isoformat() if l.updated_at else None, 'image_url': l.image_url or media_map.get(str(l.id))} for l in listings]
     return SuccessResponse(message=f'{total} listing(s) found.', data=data, meta=paginated_meta(page, page_size, total))
 
 @router.get('/listings/{listing_id}', response_model=SuccessResponse, summary='Get listing detail')
