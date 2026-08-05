@@ -28,6 +28,8 @@ export default function ModAnnouncementsPage() {
     content: '',
     target_audience: 'all' as 'all' | 'buyers' | 'sellers',
   });
+  const [createSuccess, setCreateSuccess] = useState('');
+  const [createError, setCreateError] = useState('');
 
   const { data, isLoading } = useQuery({
     queryKey: ['mod-announcements'],
@@ -38,13 +40,16 @@ export default function ModAnnouncementsPage() {
 
   const { mutate: create, isPending: creating } = useMutation({
     mutationFn: () => apiClient.post('/admin/notifications', form),
-    onSuccess: () => {
+    onSuccess: (res: any) => {
       qc.invalidateQueries({ queryKey: ['mod-announcements'] });
       setShowCreate(false);
       setForm({ title: '', content: '', target_audience: 'all' });
+      setCreateSuccess('Announcement created successfully.');
+      setCreateError('');
+      setTimeout(() => setCreateSuccess(''), 4000);
     },
     onError: (err: any) => {
-      alert(err?.message || 'Failed to create announcement. Please try again.');
+      setCreateError(err?.message || 'Failed to create announcement. Please try again.');
     },
   });
 
@@ -75,6 +80,23 @@ export default function ModAnnouncementsPage() {
       </div>
 
       {/* Create form */}
+      {(createSuccess || createError) && (
+        <div className={`flex items-center gap-2 rounded-xl border px-4 py-3 ${
+          createError
+            ? 'border-red-200 bg-red-50'
+            : 'border-emerald-200 bg-emerald-50'
+        }`}>
+          <span className={`text-[13px] font-medium ${createError ? 'text-red-600' : 'text-emerald-700'}`}>
+            {createError || createSuccess}
+          </span>
+          <button
+            onClick={() => { setCreateError(''); setCreateSuccess(''); }}
+            className="ml-auto text-slate-400 hover:text-slate-600 text-xs"
+          >✕</button>
+        </div>
+      )}
+
+      {/* Create announcement form */}
       {showCreate && (
         <div className="overflow-hidden rounded-2xl border border-indigo-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 bg-indigo-50/50 px-6 py-4">

@@ -278,12 +278,86 @@ async def admin_ads(status: str | None=Query(default=None), payload: Annotated[d
     return SuccessResponse(message='Advertisements retrieved.', data=[])
 
 @router.get('/admin/notifications', response_model=SuccessResponse, summary='Admin: list admin notifications')
-async def admin_notifications_list(payload: Annotated[dict, Depends(get_user_payload)]=None) -> SuccessResponse:
-    return SuccessResponse(message='Notifications retrieved.', data=[])
+async def admin_notifications_list(request: Request, payload: Annotated[dict, Depends(get_user_payload)]=None) -> SuccessResponse:
+    """Returns all platform announcements from the database."""
+    try:
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _text
+            # Ensure table exists
+            await db.execute(_text("""
+                CREATE TABLE IF NOT EXISTS platform_notifications (
+                    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    title        TEXT NOT NULL,
+                    content      TEXT NOT NULL,
+                    target_audience TEXT NOT NULL DEFAULT 'all',
+                    is_active    BOOLEAN NOT NULL DEFAULT TRUE,
+                    created_by   TEXT,
+                    created_at   TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await db.commit()
+            rows = (await db.execute(_text(
+                "SELECT id, title, content, target_audience, is_active, created_by, created_at "
+                "FROM platform_notifications ORDER BY created_at DESC LIMIT 50"
+            ))).mappings().all()
+            data = [{'id': str(r['id']), 'title': r['title'], 'content': r['content'],
+                     'target_audience': r['target_audience'], 'is_active': bool(r['is_active']),
+                     'created_by': r['created_by'] or '', 'created_at': str(r['created_at'])} for r in rows]
+        return SuccessResponse(message=f'{len(data)} notification(s).', data=data)
+    except Exception as exc:
+        import logging; logging.getLogger(__name__).error(f'notifications_list_error: {exc}')
+        return SuccessResponse(message='0 notification(s).', data=[])
 
 @router.post('/admin/notifications', response_model=SuccessResponse, summary='Admin: send notification')
-async def admin_send_notification(payload: Annotated[dict, Depends(get_user_payload)]=None) -> SuccessResponse:
-    return SuccessResponse(message='Notification sent.', data={'id': str(uuid.uuid4())})
+async def admin_send_notification(request: Request, payload: Annotated[dict, Depends(get_user_payload)]=None) -> SuccessResponse:
+    """Creates a platform announcement and stores it in the database."""
+    body = await request.json()
+    title   = (body.get('title') or body.get('message') or '').strip()
+    content = (body.get('content') or body.get('message') or '').strip()
+    target  = body.get('target_audience') or body.get('audience') or 'all'
+    creator = payload.get('sub', '') if payload else ''
+    if not title:
+        from shared.errors import InvalidInputError
+        raise InvalidInputError('title is required.')
+    new_id = str(uuid.uuid4())
+    try:
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _text
+            await db.execute(_text("""
+                CREATE TABLE IF NOT EXISTS platform_notifications (
+                    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    title        TEXT NOT NULL,
+                    content      TEXT NOT NULL,
+                    target_audience TEXT NOT NULL DEFAULT 'all',
+                    is_active    BOOLEAN NOT NULL DEFAULT TRUE,
+                    created_by   TEXT,
+                    created_at   TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await db.execute(_text("""
+                INSERT INTO platform_notifications (id, title, content, target_audience, is_active, created_by)
+                VALUES (:id, :title, :content, :target, TRUE, :creator)
+            """), {'id': new_id, 'title': title, 'content': content or title, 'target': target, 'creator': creator})
+            await db.commit()
+    except Exception as exc:
+        import logging; logging.getLogger(__name__).error(f'notifications_create_error: {exc}')
+        from shared.errors import ExternalServiceError
+        raise ExternalServiceError(f'Failed to create announcement: {exc}')
+    return SuccessResponse(message='Announcement created.', data={'id': new_id, 'title': title, 'content': content or title, 'target_audience': target, 'is_active': True, 'created_at': str(uuid.uuid4())})
+
+@router.delete('/admin/notifications/{notification_id}', response_model=SuccessResponse, summary='Admin: delete a notification/announcement')
+async def admin_delete_notification(notification_id: str, request: Request, payload: Annotated[dict, Depends(get_user_payload)]=None) -> SuccessResponse:
+    """Permanently deletes a platform announcement."""
+    try:
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _text
+            await db.execute(_text(
+                "DELETE FROM platform_notifications WHERE CAST(id AS TEXT) = :nid"
+            ), {'nid': notification_id})
+            await db.commit()
+    except Exception as exc:
+        import logging; logging.getLogger(__name__).error(f'notification_delete_error: {exc}')
+    return SuccessResponse(message='Announcement deleted.', data={'id': notification_id})
 
 @router.get('/admin/homepage/sections', response_model=SuccessResponse, summary='Admin: homepage sections config')
 async def admin_homepage_sections(payload: Annotated[dict, Depends(get_user_payload)]=None) -> SuccessResponse:

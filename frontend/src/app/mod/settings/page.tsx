@@ -1,17 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Settings, Bell, Lock, LogOut, Eye, EyeOff,
-  CheckCircle, Shield, Smartphone,
+  CheckCircle, Smartphone, AlertCircle,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
-import { clearTokens, getRefreshToken } from '@/lib/auth/token-refresh';
+import { getRefreshToken } from '@/lib/auth/token-refresh';
 import { authApi } from '@/lib/api/endpoints/auth';
 
-const inputCls = 'w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-[14px] text-slate-900 placeholder-slate-400 outline-none focus:border-amber-400 focus:bg-white focus:ring-2 focus:ring-amber-500/10 transition-all';
+const PREFS_KEY = 'velontri_mod_prefs';
+const NOTIF_KEY = 'velontri_mod_notifs';
+
+const inputCls =
+  'w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-[14px] text-slate-900 ' +
+  'placeholder-slate-400 outline-none focus:border-amber-400 focus:bg-white ' +
+  'focus:ring-2 focus:ring-amber-500/10 transition-all';
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
   return (
@@ -24,9 +30,11 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
         checked ? 'bg-amber-500' : 'bg-slate-200'
       }`}
     >
-      <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
-        checked ? 'translate-x-6' : 'translate-x-1'
-      }`} />
+      <span
+        className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+          checked ? 'translate-x-6' : 'translate-x-1'
+        }`}
+      />
     </button>
   );
 }
@@ -39,38 +47,71 @@ function PwStrength({ pw }: { pw: string }) {
   return (
     <div className="space-y-1.5 mt-2">
       <div className="flex gap-1">
-        {[0,1,2,3,4].map(i => (
-          <div key={i} className={`flex-1 h-1.5 rounded-full transition-all ${i < score ? colors[score-1] : 'bg-slate-200'}`} />
+        {[0, 1, 2, 3, 4].map(i => (
+          <div
+            key={i}
+            className={`flex-1 h-1.5 rounded-full transition-all ${
+              i < score ? colors[score - 1] : 'bg-slate-200'
+            }`}
+          />
         ))}
       </div>
-      <p className="text-[11px] text-slate-400">{labels[score-1] ?? 'Enter a password'}</p>
+      <p className="text-[11px] text-slate-400">{labels[score - 1] ?? 'Enter a password'}</p>
     </div>
   );
 }
 
 type Tab = 'general' | 'notifications' | 'security';
 
+const DEFAULT_PREFS = { auto_assign_tickets: true, sound_alerts: false };
+const DEFAULT_NOTIFS = {
+  email_notifications: true,
+  push_notifications: false,
+  new_listing_alerts: true,
+  dispute_alerts: true,
+};
+
+function loadLS<T>(key: string, defaults: T): T {
+  if (typeof window === 'undefined') return defaults;
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
+  } catch {
+    return defaults;
+  }
+}
+
 export default function ModSettingsPage() {
-  const { session, logout: authLogout } = useAuth();
+  const { logout: authLogout } = useAuth();
   const [tab, setTab] = useState<Tab>('general');
 
-  // General preferences (local state — no backend endpoint for mod preferences yet)
-  const [prefs, setPrefs] = useState({
-    auto_assign_tickets: true,
-    sound_alerts: false,
-  });
+  // ── General preferences — persisted to localStorage ──────────────────
+  const [prefs, setPrefs] = useState(DEFAULT_PREFS);
   const [prefsSaved, setPrefsSaved] = useState(false);
 
-  // Notification preferences
-  const [notifs, setNotifs] = useState({
-    email_notifications: true,
-    push_notifications: false,
-    new_listing_alerts: true,
-    dispute_alerts: true,
-  });
+  // ── Notification preferences — persisted to localStorage ─────────────
+  const [notifs, setNotifs] = useState(DEFAULT_NOTIFS);
   const [notifsSaved, setNotifsSaved] = useState(false);
 
-  // Change password
+  // Load from localStorage on mount (client only)
+  useEffect(() => {
+    setPrefs(loadLS(PREFS_KEY, DEFAULT_PREFS));
+    setNotifs(loadLS(NOTIF_KEY, DEFAULT_NOTIFS));
+  }, []);
+
+  function savePrefs() {
+    localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+    setPrefsSaved(true);
+    setTimeout(() => setPrefsSaved(false), 3000);
+  }
+
+  function saveNotifs() {
+    localStorage.setItem(NOTIF_KEY, JSON.stringify(notifs));
+    setNotifsSaved(true);
+    setTimeout(() => setNotifsSaved(false), 3000);
+  }
+
+  // ── Change password ───────────────────────────────────────────────────
   const [curPw, setCurPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confPw, setConfPw] = useState('');
@@ -87,18 +128,24 @@ export default function ModSettingsPage() {
       }),
     onSuccess: () => {
       setPwMsg('Password changed successfully.');
-      setCurPw(''); setNewPw(''); setConfPw('');
+      setPwErr('');
+      setCurPw('');
+      setNewPw('');
+      setConfPw('');
       setTimeout(() => setPwMsg(''), 4000);
     },
     onError: (e: any) => {
-      setPwErr(e?.response?.data?.error?.message || e?.message || 'Failed to change password.');
+      setPwErr(
+        e?.message ||
+        e?.response?.data?.error?.message ||
+        'Failed to change password. Check your current password and try again.'
+      );
     },
   });
 
-  // Sign out all devices
+  // ── Sign out all devices ──────────────────────────────────────────────
   const { mutate: signOutAll, isPending: signingOut } = useMutation({
     mutationFn: async () => {
-      // Revoke current refresh token, then clear local session
       try {
         const rt = getRefreshToken();
         if (rt) await authApi.logout(rt);
@@ -113,8 +160,9 @@ export default function ModSettingsPage() {
   function handlePwSubmit(e: React.FormEvent) {
     e.preventDefault();
     setPwErr('');
+    if (!curPw.trim()) { setPwErr('Current password is required.'); return; }
     if (newPw !== confPw) { setPwErr('New passwords do not match.'); return; }
-    if (newPw.length < 8) { setPwErr('Password must be at least 8 characters.'); return; }
+    if (newPw.length < 8) { setPwErr('New password must be at least 8 characters.'); return; }
     changePw();
   }
 
@@ -131,21 +179,27 @@ export default function ModSettingsPage() {
         <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight flex items-center gap-2">
           <Settings className="h-5 w-5 text-amber-500" /> Settings
         </h1>
-        <p className="text-[13px] text-slate-400 mt-0.5">Manage your moderator account preferences</p>
+        <p className="text-[13px] text-slate-400 mt-0.5">
+          Manage your moderator account preferences
+        </p>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-6 border-b border-slate-200">
         {(['general', 'notifications', 'security'] as Tab[]).map(t => (
-          <button key={t} onClick={() => setTab(t)} className={TAB_CLS(t)}>{t}</button>
+          <button key={t} onClick={() => setTab(t)} className={TAB_CLS(t)}>
+            {t}
+          </button>
         ))}
       </div>
 
-      {/* ── General ─────────────────────────────────── */}
+      {/* ── General ────────────────────────────────────────────────────── */}
       {tab === 'general' && (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 bg-slate-50 px-5 py-3.5">
-            <h2 className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">General Preferences</h2>
+            <h2 className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">
+              General Preferences
+            </h2>
           </div>
           <div className="divide-y divide-slate-100">
             {[
@@ -172,35 +226,37 @@ export default function ModSettingsPage() {
               </div>
             ))}
           </div>
-          <div className="px-5 py-4 border-t border-slate-100">
-            {prefsSaved && (
-              <p className="text-[12px] font-semibold text-emerald-600 mb-2 flex items-center gap-1.5">
-                <CheckCircle className="h-3.5 w-3.5" /> Preferences saved.
-              </p>
-            )}
+          <div className="px-5 py-4 border-t border-slate-100 flex items-center gap-3">
             <button
-              onClick={() => { setPrefsSaved(true); setTimeout(() => setPrefsSaved(false), 3000); }}
-              className="h-10 rounded-xl bg-amber-500 px-5 text-[13px] font-bold text-white
-                hover:bg-amber-600 transition-colors">
+              onClick={savePrefs}
+              className="h-10 rounded-xl bg-amber-500 px-5 text-[13px] font-bold text-white hover:bg-amber-600 transition-colors"
+            >
               Save Changes
             </button>
+            {prefsSaved && (
+              <span className="flex items-center gap-1.5 text-[12px] font-semibold text-emerald-600">
+                <CheckCircle className="h-3.5 w-3.5" /> Saved
+              </span>
+            )}
           </div>
         </div>
       )}
 
-      {/* ── Notifications ────────────────────────────── */}
+      {/* ── Notifications ───────────────────────────────────────────────── */}
       {tab === 'notifications' && (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 bg-slate-50 px-5 py-3.5 flex items-center gap-2">
             <Bell className="h-4 w-4 text-amber-500" />
-            <h2 className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">Notification Preferences</h2>
+            <h2 className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">
+              Notification Preferences
+            </h2>
           </div>
           <div className="divide-y divide-slate-100">
             {[
-              { key: 'email_notifications' as const, label: 'Email Notifications', desc: 'Receive moderation alerts via email' },
-              { key: 'push_notifications' as const,  label: 'Push Notifications',  desc: 'Real-time browser push notifications' },
-              { key: 'new_listing_alerts' as const,  label: 'New Listing Alerts',  desc: 'Get notified when listings need review' },
-              { key: 'dispute_alerts' as const,      label: 'Dispute Alerts',      desc: 'Get notified about new disputes' },
+              { key: 'email_notifications' as const, label: 'Email Notifications',  desc: 'Receive moderation alerts via email' },
+              { key: 'push_notifications'  as const, label: 'Push Notifications',   desc: 'Real-time browser push notifications' },
+              { key: 'new_listing_alerts'  as const, label: 'New Listing Alerts',   desc: 'Get notified when listings need review' },
+              { key: 'dispute_alerts'      as const, label: 'Dispute Alerts',       desc: 'Get notified about new disputes' },
             ].map(({ key, label, desc }) => (
               <div key={key} className="flex items-center justify-between px-5 py-4">
                 <div>
@@ -214,23 +270,23 @@ export default function ModSettingsPage() {
               </div>
             ))}
           </div>
-          <div className="px-5 py-4 border-t border-slate-100">
-            {notifsSaved && (
-              <p className="text-[12px] font-semibold text-emerald-600 mb-2 flex items-center gap-1.5">
-                <CheckCircle className="h-3.5 w-3.5" /> Preferences saved.
-              </p>
-            )}
+          <div className="px-5 py-4 border-t border-slate-100 flex items-center gap-3">
             <button
-              onClick={() => { setNotifsSaved(true); setTimeout(() => setNotifsSaved(false), 3000); }}
-              className="h-10 rounded-xl bg-amber-500 px-5 text-[13px] font-bold text-white
-                hover:bg-amber-600 transition-colors">
+              onClick={saveNotifs}
+              className="h-10 rounded-xl bg-amber-500 px-5 text-[13px] font-bold text-white hover:bg-amber-600 transition-colors"
+            >
               Save Changes
             </button>
+            {notifsSaved && (
+              <span className="flex items-center gap-1.5 text-[12px] font-semibold text-emerald-600">
+                <CheckCircle className="h-3.5 w-3.5" /> Saved
+              </span>
+            )}
           </div>
         </div>
       )}
 
-      {/* ── Security ─────────────────────────────────── */}
+      {/* ── Security ────────────────────────────────────────────────────── */}
       {tab === 'security' && (
         <div className="space-y-4">
 
@@ -238,41 +294,71 @@ export default function ModSettingsPage() {
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-100 bg-slate-50 px-5 py-3.5 flex items-center gap-2">
               <Lock className="h-4 w-4 text-amber-500" />
-              <h2 className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">Change Password</h2>
+              <h2 className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">
+                Change Password
+              </h2>
             </div>
             <form onSubmit={handlePwSubmit} className="p-5 space-y-4">
               <div className="space-y-1.5">
                 <label className="text-[13px] font-semibold text-slate-700">Current password</label>
                 <div className="relative">
-                  <input type={showCur ? 'text' : 'password'} value={curPw}
-                    onChange={e => setCurPw(e.target.value)}
-                    className={`${inputCls} pr-11`} autoComplete="current-password" required />
-                  <button type="button" onClick={() => setShowCur(v => !v)} tabIndex={-1}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  <input
+                    type={showCur ? 'text' : 'password'}
+                    value={curPw}
+                    onChange={e => { setCurPw(e.target.value); setPwErr(''); }}
+                    className={`${inputCls} pr-11`}
+                    autoComplete="current-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCur(v => !v)}
+                    tabIndex={-1}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
                     {showCur ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
+
               <div className="space-y-1">
                 <label className="text-[13px] font-semibold text-slate-700">New password</label>
                 <div className="relative">
-                  <input type={showNew ? 'text' : 'password'} value={newPw}
+                  <input
+                    type={showNew ? 'text' : 'password'}
+                    value={newPw}
                     onChange={e => { setNewPw(e.target.value); setPwErr(''); }}
-                    className={`${inputCls} pr-11`} autoComplete="new-password" required />
-                  <button type="button" onClick={() => setShowNew(v => !v)} tabIndex={-1}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    className={`${inputCls} pr-11`}
+                    autoComplete="new-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNew(v => !v)}
+                    tabIndex={-1}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
                     {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
                 <PwStrength pw={newPw} />
               </div>
+
               <div className="space-y-1.5">
                 <label className="text-[13px] font-semibold text-slate-700">Confirm new password</label>
-                <input type="password" value={confPw} onChange={e => setConfPw(e.target.value)}
-                  className={inputCls} autoComplete="new-password" required />
+                <input
+                  type="password"
+                  value={confPw}
+                  onChange={e => { setConfPw(e.target.value); setPwErr(''); }}
+                  className={inputCls}
+                  autoComplete="new-password"
+                  required
+                />
               </div>
+
               {pwErr && (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5">
+                <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5">
+                  <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
                   <p className="text-[12px] font-medium text-red-600">{pwErr}</p>
                 </div>
               )}
@@ -282,24 +368,32 @@ export default function ModSettingsPage() {
                   <p className="text-[12px] font-semibold text-emerald-700">{pwMsg}</p>
                 </div>
               )}
-              <button type="submit" disabled={changingPw || !curPw || !newPw || !confPw}
+
+              <button
+                type="submit"
+                disabled={changingPw || !curPw || !newPw || !confPw}
                 className="h-10 rounded-xl bg-amber-500 px-5 text-[13px] font-bold text-white
-                  hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 {changingPw ? 'Changing…' : 'Change password'}
               </button>
             </form>
           </div>
 
-          {/* 2FA */}
+          {/* 2FA — coming soon */}
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-100 bg-slate-50 px-5 py-3.5 flex items-center gap-2">
               <Smartphone className="h-4 w-4 text-amber-500" />
-              <h2 className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">Two-Factor Authentication</h2>
+              <h2 className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">
+                Two-Factor Authentication
+              </h2>
             </div>
             <div className="flex items-center justify-between px-5 py-4">
               <div>
                 <p className="text-[14px] font-semibold text-slate-900">Authenticator App</p>
-                <p className="text-[12px] text-slate-400 mt-0.5">Add an extra layer of security to your account</p>
+                <p className="text-[12px] text-slate-400 mt-0.5">
+                  Add an extra layer of security to your account
+                </p>
               </div>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-500">
                 Coming soon
@@ -325,7 +419,8 @@ export default function ModSettingsPage() {
                 disabled={signingOut}
                 className="flex items-center gap-2 h-9 rounded-xl bg-red-600 px-4 text-[12px]
                   font-bold text-white hover:bg-red-700 transition-colors
-                  disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ml-4">
+                  disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ml-4"
+              >
                 <LogOut className="h-3.5 w-3.5" />
                 {signingOut ? 'Signing out…' : 'Sign Out All'}
               </button>
