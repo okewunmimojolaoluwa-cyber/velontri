@@ -214,7 +214,16 @@ export default function CreateListingPage() {
         throw new Error('Server is unavailable. Please try again in a moment.');
       }
 
-      // 1. Create the listing WITHOUT the image (avoids sending huge base64 in JSON)
+      // 1. Compress first image upfront so we can embed it in the create request
+      let coverImageUrl: string | undefined = undefined;
+      if (form.images.length > 0) {
+        try {
+          coverImageUrl = await compressToJpeg(form.images[0]);
+        } catch { /* proceed without image */ }
+      }
+
+      // 2. Create the listing WITH the cover image embedded directly in JSON
+      // This guarantees image_url is set on the listing row immediately.
       const normalizedPhone = normalizePhoneNumber(form.whatsapp_number);
       const res = await sellerApi.createListing({
         title: form.title,
@@ -229,23 +238,23 @@ export default function CreateListingPage() {
         condition: form.condition,
         whatsapp_number: normalizedPhone || undefined,
         contact_phone: normalizedPhone || undefined,
+        image_url: coverImageUrl,
       });
 
       const listingId = (res.data as any)?.id;
       if (!listingId) throw new Error('No listing ID returned from server.');
 
-      // 2. Compress + upload images as multipart in parallel (much faster than sequential)
-      if (form.images.length > 0) {
-        await Promise.all(
-          form.images.map(async (dataUrl) => {
+      // 3. Upload remaining images (index 1+) as multipart in background
+      //    These enhance the gallery but are non-critical — failure is silent.
+      if (form.images.length > 1) {
+        Promise.all(
+          form.images.slice(1).map(async (dataUrl) => {
             try {
               const compressed = await compressToJpeg(dataUrl);
               await sellerApi.uploadImage(listingId, compressed);
-            } catch {
-              // Image upload failures are non-fatal — listing still gets published
-            }
+            } catch { /* non-fatal */ }
           })
-        );
+        ).catch(() => {});
       }
 
       // 3. Publish so it goes live
