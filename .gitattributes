@@ -1,0 +1,6 @@
+# Force LF line endings for shell scripts (required for Linux/Docker execution)
+*.sh text eol=lf
+*.py text eol=lf
+
+# Auto-detect everything else
+* text=auto
