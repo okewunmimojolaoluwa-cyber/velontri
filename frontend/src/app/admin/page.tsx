@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   DollarSign, Users, Package, AlertTriangle,
   FileCheck, TrendingUp, TrendingDown,
   BarChart3, ShieldCheck, Crown, Zap, Activity,
   ChevronRight, Store, BarChart2, CreditCard,
+  WrenchIcon, ToggleRight,
 } from 'lucide-react';
 import {
   AreaChart, Area,
@@ -128,6 +129,8 @@ const EVENT_DOT: Record<string, string> = {
 };
 
 export default function AdminOverviewPage() {
+  const qc = useQueryClient();
+
   /* Platform overview KPIs */
   const { data: overviewData, isLoading: overviewLoading } = useQuery({
     queryKey: ['admin', 'overview'],
@@ -137,6 +140,27 @@ export default function AdminOverviewPage() {
         .then((r) => r.data),
     staleTime: 60_000,
   });
+
+  /* Maintenance status */
+  const { data: maintenanceData } = useQuery({
+    queryKey: ['admin', 'maintenance'],
+    queryFn: () =>
+      apiClient.get<ApiResponse<{ enabled: boolean; message: string }>>('/admin/maintenance')
+        .then(r => r.data),
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+  });
+
+  const { mutate: disableMaintenance, isPending: disabling } = useMutation({
+    mutationFn: () =>
+      apiClient.post('/admin/maintenance', {
+        enabled: false,
+        message: maintenanceData?.data?.message ?? '',
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'maintenance'] }),
+  });
+
+  const maintenanceOn = maintenanceData?.data?.enabled ?? false;
 
   /* Revenue chart — last 14 days */
   const { data: revenueChartData, isLoading: revenueChartLoading } = useQuery({
@@ -207,6 +231,40 @@ export default function AdminOverviewPage() {
           </div>
         </div>
       </div>
+
+      {/* Maintenance mode alert — only visible when ON */}
+      {maintenanceOn && (
+        <div className="flex items-center gap-4 rounded-2xl border-2 border-amber-300 bg-amber-50 px-5 py-4">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-100">
+            <WrenchIcon className="h-5 w-5 text-amber-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[14px] font-black text-amber-900">Maintenance Mode is ON</p>
+            <p className="text-[12px] text-amber-700 mt-0.5">
+              Users are currently blocked from the platform and see the maintenance screen.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => disableMaintenance()}
+              disabled={disabling}
+              className="flex items-center gap-2 h-9 rounded-xl bg-amber-600 px-4 text-[12px]
+                font-bold text-white hover:bg-amber-700 transition-colors disabled:opacity-60"
+            >
+              <ToggleRight className="h-4 w-4" />
+              {disabling ? 'Disabling…' : 'Disable Now'}
+            </button>
+            <Link
+              href="/admin/settings/platform?tab=maintenance"
+              className="h-9 rounded-xl border border-amber-300 bg-white px-4 text-[12px]
+                font-semibold text-amber-700 hover:bg-amber-50 transition-colors no-underline
+                flex items-center"
+            >
+              Settings
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* KPI grid */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/features/auth/auth-provider';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1';
 
@@ -13,22 +14,27 @@ interface MaintenanceData {
 
 export function MaintenanceBanner() {
   const pathname = usePathname();
+  const { session } = useAuth();
   const [data, setData] = useState<MaintenanceData | null>(null);
 
-  // Don't show on admin routes — admins need access during maintenance
-  const isAdmin = pathname?.startsWith('/admin');
+  // Admins and moderators bypass the maintenance screen entirely
+  const isStaff =
+    pathname?.startsWith('/admin') ||
+    pathname?.startsWith('/mod') ||
+    session.role === 'super_admin' ||
+    session.role === 'moderator';
 
   useEffect(() => {
-    if (isAdmin) return;
+    if (isStaff) return;
     fetch(`${API_BASE}/platform/maintenance`)
       .then(r => r.json())
       .then(body => {
         if (body?.data) setData(body.data);
       })
       .catch(() => {});
-  }, [isAdmin]);
+  }, [isStaff]);
 
-  if (!data?.enabled || isAdmin) return null;
+  if (!data?.enabled || isStaff) return null;
 
   return (
     <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-sm p-6">
@@ -40,7 +46,7 @@ export function MaintenanceBanner() {
           🔧 Under Maintenance
         </h1>
         <p className="text-[15px] text-slate-600 leading-relaxed mb-6">
-          {data.message || 'We are currently performing scheduled maintenance. We\'ll be back shortly.'}
+          {data.message || "We are currently performing scheduled maintenance. We'll be back shortly."}
         </p>
         <div className="flex items-center justify-center gap-2 text-[13px] text-slate-400">
           <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
