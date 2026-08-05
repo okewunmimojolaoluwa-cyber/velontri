@@ -1065,3 +1065,63 @@ async def mod_update_profile(
         except Exception:
             pass
     return SuccessResponse(message='Profile updated.', data={'updated': True})
+
+
+@router.post('/platform/maintenance/emergency-disable', response_model=SuccessResponse, summary='Emergency: disable maintenance by verifying admin password (no token required)', include_in_schema=False)
+async def emergency_disable_maintenance(request: Request) -> SuccessResponse:
+    """
+    Secret endpoint — called from the maintenance screen after 5 taps.
+    Verifies the caller is an enterprise_admin by email+password,
+    then disables maintenance mode. No auth token required.
+    """
+    import asyncio, functools
+    body = await request.json()
+    email = (body.get('email') or '').strip().lower()
+    password = (body.get('password') or '').strip()
+    if not email or not password:
+        from shared.errors import InvalidInputError
+        raise InvalidInputError('email and password are required.')
+    try:
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _text
+            # Verify user exists, is active, and has enterprise_admin role
+            row = (await db.execute(_text("""
+                SELECT u.password_hash
+                FROM users u
+                INNER JOIN user_roles r ON CAST(r.user_id AS TEXT) = CAST(u.id AS TEXT)
+                WHERE LOWER(u.email) = :email
+                  AND u.is_active = TRUE
+                  AND r.role IN ('enterprise_admin', 'super_admin')
+                LIMIT 1
+            """), {'email': email})).mappings().first()
+            if not row:
+                from shared.errors import InvalidInputError
+                raise InvalidInputError('Invalid credentials.')
+            stored_hash = str(row['password_hash'])
+            import bcrypt
+            loop = asyncio.get_event_loop()
+            try:
+                match = await loop.run_in_executor(
+                    None,
+                    functools.partial(bcrypt.checkpw, password.encode(), stored_hash.encode())
+                )
+            except Exception:
+                match = False
+            if not match:
+                from shared.errors import InvalidInputError
+                raise InvalidInputError('Invalid credentials.')
+            # Credentials verified — disable maintenance
+            await db.execute(_text("""
+                INSERT INTO platform_config (key, value, updated_at)
+                VALUES ('maintenance_enabled', '0', NOW())
+                ON CONFLICT (key) DO UPDATE SET value = '0', updated_at = NOW()
+            """))
+            await db.commit()
+    except Exception as exc:
+        if 'Invalid credentials' in str(exc):
+            raise
+        import logging
+        logging.getLogger(__name__).error(f'emergency_disable_error: {exc}')
+        from shared.errors import ExternalServiceError
+        raise ExternalServiceError('Could not verify credentials. Please try again.')
+    return SuccessResponse(message='Maintenance mode disabled.', data={'disabled': True})
