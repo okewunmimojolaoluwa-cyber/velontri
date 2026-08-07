@@ -365,16 +365,30 @@ async def get_subscription_tier_internal(user_id: uuid.UUID, service: UserServic
 @router.get('/users/admin/list', response_model=SuccessResponse, summary='Admin: list all users with search and filter')
 async def admin_list_users(request: Request, service: UserService=Depends(_build_service), payload: dict=Depends(get_current_user_payload), search: str | None=Query(default=None), kyc_verified: bool | None=Query(default=None), page: int=Query(default=1, ge=1), page_size: int=Query(default=20, ge=1, le=100)) -> SuccessResponse:
     from shared.errors import paginated_meta
+    caller_roles = set(payload.get('roles', []))
+    is_moderator = 'moderator' in caller_roles and not {'enterprise_admin', 'super_admin'}.intersection(caller_roles)
     offset = (page - 1) * page_size
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            exclude_admin = """
-                AND CAST(u.id AS TEXT) NOT IN (
-                    SELECT CAST(user_id AS TEXT) FROM user_roles
-                    WHERE role IN ('enterprise_admin', 'super_admin')
-                )
-            """
+            # Moderators: cannot see admins OR other moderators — only regular users
+            # Admins: cannot see other admins (own account is visible but handled client-side)
+            if is_moderator:
+                exclude_staff = """
+                    AND CAST(u.id AS TEXT) NOT IN (
+                        SELECT CAST(user_id AS TEXT) FROM user_roles
+                        WHERE role IN ('enterprise_admin', 'super_admin', 'moderator')
+                    )
+                """
+            else:
+                exclude_staff = """
+                    AND CAST(u.id AS TEXT) NOT IN (
+                        SELECT CAST(user_id AS TEXT) FROM user_roles
+                        WHERE role IN ('enterprise_admin', 'super_admin')
+                    )
+                """
+            # legacy alias kept for backwards compat
+            exclude_admin = exclude_staff
             if search:
                 s = f'%{search}%'
                 rows = (await db.execute(_text(f"""

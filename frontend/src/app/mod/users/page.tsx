@@ -53,7 +53,7 @@ function MessageModal({ user, onClose }: { user: AdminUser; onClose: () => void 
             <textarea
               value={content}
               onChange={e => { setContent(e.target.value); setErr(''); }}
-              placeholder="Write your message to this userâ€¦"
+              placeholder="Write your message to this user…"
               rows={4}
               className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[14px] text-slate-800
                 placeholder-slate-400 focus:border-amber-400 focus:outline-none
@@ -68,7 +68,7 @@ function MessageModal({ user, onClose }: { user: AdminUser; onClose: () => void 
             <div className="flex gap-2">
               <button onClick={() => content.trim() && send()} disabled={isPending || !content.trim()}
                 className="flex-1 h-10 rounded-xl bg-amber-500 text-[13px] font-bold text-white hover:bg-amber-600 transition-colors disabled:opacity-50">
-                {isPending ? 'Sendingâ€¦' : 'Send Message'}
+                {isPending ? 'Sending…' : 'Send Message'}
               </button>
               <button onClick={onClose} className="h-10 rounded-xl border border-slate-200 px-4 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
                 Cancel
