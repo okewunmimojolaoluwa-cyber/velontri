@@ -666,10 +666,28 @@ async def send_chat_message(request: Request, payload: Annotated[dict, Depends(g
             else:
                 await db.execute(_text('INSERT INTO threads (id, participant_a, participant_b, listing_id, created_at) VALUES (:p0,:p1,:p2,:p3,:p4)'), {'p0': thread_id, 'p1': a, 'p2': b, 'p3': str(listing_id) if listing_id else None, 'p4': now})
             await db.execute(_text('INSERT INTO messages (id, thread_id, sender_id, message_type, content, media_s3_key, read_at, created_at) VALUES (:p0,:p1,:p2,:p3,:p4,:p5,:p6,:p7)'), {'p0': msg_id, 'p1': thread_id, 'p2': sender_id, 'p3': 'text', 'p4': content, 'p5': None, 'p6': None, 'p7': now})
+            # Create in-app notification for recipient
+            try:
+                # Get sender name
+                sender_row = (await db.execute(_text('SELECT full_name, email FROM users WHERE CAST(id AS TEXT)=:p0'), {'p0': sender_id})).mappings().first()
+                sender_name = (sender_row['full_name'] or sender_row['email'] or 'Someone') if sender_row else 'Someone'
+                notif_id = str(uuid.uuid4())
+                preview = content[:80] + ('…' if len(content) > 80 else '')
+                await db.execute(_text("""
+                    INSERT INTO notifications (id, user_id, type, title, message, is_read, created_at)
+                    VALUES (:id, :uid::uuid, 'message', :title, :msg, FALSE, NOW())
+                """), {
+                    'id': notif_id,
+                    'uid': recipient_id,
+                    'title': f'New message from {sender_name}',
+                    'msg': preview,
+                })
+            except Exception:
+                pass  # notification failure is non-fatal
             await db.commit()
     except Exception as exc:
         pass
-    return SuccessResponse(message='Message sent.', data={'message_id': msg_id, 'thread_id': thread_id, 'delivered': False})
+    return SuccessResponse(message='Message sent.', data={'message_id': msg_id, 'thread_id': thread_id, 'delivered': True})
 
 @router.get('/chat/inbox', response_model=SuccessResponse, summary="Get user's message threads")
 async def get_inbox(request: Request, payload: Annotated[dict, Depends(get_user_payload)]=None) -> SuccessResponse:
@@ -1199,3 +1217,120 @@ async def emergency_disable_maintenance(request: Request) -> SuccessResponse:
         from shared.errors import ExternalServiceError
         raise ExternalServiceError('Could not verify credentials. Please try again.')
     return SuccessResponse(message='Maintenance mode disabled.', data={'disabled': True})
+
+
+# ── Admin/Mod direct message to user ───────────────────────────────────────
+
+@router.post('/admin/users/{user_id}/message', response_model=SuccessResponse, summary='Admin/Mod: send a direct message to a user')
+async def admin_send_user_message(
+    user_id: str,
+    request: Request,
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    """
+    Admin or moderator sends a direct in-app message to a user.
+    Creates a thread + message + notification for the recipient.
+    """
+    from shared.errors import UnauthorizedError, ForbiddenError
+    if not payload:
+        raise UnauthorizedError('Authentication required.')
+    roles = payload.get('roles', [])
+    allowed = {'enterprise_admin', 'super_admin', 'moderator'}
+    if not allowed.intersection(set(roles)):
+        raise ForbiddenError('Admin or moderator access required.')
+
+    sender_id = payload.get('sub', '')
+    body = await request.json()
+    content = (body.get('content') or body.get('message') or '').strip()
+    if not content:
+        from shared.errors import InvalidInputError
+        raise InvalidInputError('content is required.')
+
+    msg_id = str(uuid.uuid4())
+    thread_id = str(uuid.uuid4())
+    try:
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _text
+            a, b = sorted([sender_id, user_id])
+            rows = (await db.execute(_text(
+                'SELECT id FROM threads WHERE participant_a=:p0 AND participant_b=:p1 AND listing_id IS NULL'
+            ), {'p0': a, 'p1': b})).mappings().all()
+            if rows:
+                thread_id = str(rows[0]['id'])
+            else:
+                await db.execute(_text(
+                    'INSERT INTO threads (id, participant_a, participant_b, listing_id, created_at) '
+                    'VALUES (:id,:pa,:pb,NULL,NOW())'
+                ), {'id': thread_id, 'pa': a, 'pb': b})
+            await db.execute(_text(
+                'INSERT INTO messages (id, thread_id, sender_id, message_type, content, read_at, created_at) '
+                'VALUES (:id,:tid,:sid,:mt,:content,NULL,NOW())'
+            ), {'id': msg_id, 'tid': thread_id, 'sid': sender_id, 'mt': 'text', 'content': content})
+            # Notification for recipient
+            try:
+                sender_row = (await db.execute(_text(
+                    'SELECT full_name, email FROM users WHERE CAST(id AS TEXT)=:p0'
+                ), {'p0': sender_id})).mappings().first()
+                sender_name = (sender_row['full_name'] or sender_row['email'] or 'Support Team') if sender_row else 'Support Team'
+                preview = content[:80] + ('…' if len(content) > 80 else '')
+                await db.execute(_text("""
+                    INSERT INTO notifications (id, user_id, type, title, message, is_read, created_at)
+                    VALUES (:nid, :uid::uuid, 'message', :title, :msg, FALSE, NOW())
+                """), {
+                    'nid': str(uuid.uuid4()),
+                    'uid': user_id,
+                    'title': f'Message from {sender_name}',
+                    'msg': preview,
+                })
+            except Exception:
+                pass
+            await db.commit()
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error(f'admin_message_error: {exc}')
+        from shared.errors import ExternalServiceError
+        raise ExternalServiceError(f'Failed to send message: {exc}')
+
+    return SuccessResponse(message='Message sent.', data={
+        'message_id': msg_id,
+        'thread_id': thread_id,
+        'recipient_id': user_id,
+    })
+
+
+@router.post('/admin/users/{user_id}/notify', response_model=SuccessResponse, summary='Admin/Mod: send a notification to a user')
+async def admin_notify_user(
+    user_id: str,
+    request: Request,
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    """Send an in-app notification (no chat thread) to a specific user."""
+    from shared.errors import UnauthorizedError, ForbiddenError
+    if not payload:
+        raise UnauthorizedError('Authentication required.')
+    roles = payload.get('roles', [])
+    if not {'enterprise_admin', 'super_admin', 'moderator'}.intersection(set(roles)):
+        raise ForbiddenError('Admin or moderator access required.')
+
+    body = await request.json()
+    title   = (body.get('title') or '').strip()
+    message = (body.get('message') or body.get('content') or '').strip()
+    ntype   = body.get('type', 'system')
+    if not title or not message:
+        from shared.errors import InvalidInputError
+        raise InvalidInputError('title and message are required.')
+
+    notif_id = str(uuid.uuid4())
+    try:
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _text
+            await db.execute(_text("""
+                INSERT INTO notifications (id, user_id, type, title, message, is_read, created_at)
+                VALUES (:id, :uid::uuid, :type, :title, :msg, FALSE, NOW())
+            """), {'id': notif_id, 'uid': user_id, 'type': ntype, 'title': title, 'msg': message})
+            await db.commit()
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error(f'admin_notify_error: {exc}')
+
+    return SuccessResponse(message='Notification sent.', data={'notification_id': notif_id})

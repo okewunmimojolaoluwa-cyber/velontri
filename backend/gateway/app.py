@@ -238,7 +238,6 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
             await _conn.execute(_text(
                 "CREATE INDEX IF NOT EXISTS ix_listing_media_listing_id ON listing_media(listing_id)"
             ))
-            # Ensure listings.image_url column exists (may be missing on older schemas)
             await _conn.execute(_text("""
                 DO $$ BEGIN
                     IF NOT EXISTS (
@@ -248,6 +247,72 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
                         ALTER TABLE listings ADD COLUMN image_url TEXT;
                     END IF;
                 END $$
+            """))
+            # ── Chat ──────────────────────────────────────────────────────
+            await _conn.execute(_text("""
+                CREATE TABLE IF NOT EXISTS threads (
+                    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    participant_a TEXT NOT NULL,
+                    participant_b TEXT NOT NULL,
+                    listing_id    TEXT,
+                    created_at    TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await _conn.execute(_text(
+                "CREATE INDEX IF NOT EXISTS ix_threads_a ON threads(participant_a)"
+            ))
+            await _conn.execute(_text(
+                "CREATE INDEX IF NOT EXISTS ix_threads_b ON threads(participant_b)"
+            ))
+            await _conn.execute(_text("""
+                CREATE TABLE IF NOT EXISTS messages (
+                    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    thread_id    UUID NOT NULL,
+                    sender_id    TEXT NOT NULL,
+                    message_type VARCHAR(20) NOT NULL DEFAULT 'text',
+                    content      TEXT NOT NULL,
+                    media_s3_key TEXT,
+                    read_at      TIMESTAMPTZ,
+                    created_at   TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await _conn.execute(_text(
+                "CREATE INDEX IF NOT EXISTS ix_messages_thread ON messages(thread_id)"
+            ))
+            # ── Notifications ─────────────────────────────────────────────
+            await _conn.execute(_text("""
+                CREATE TABLE IF NOT EXISTS notifications (
+                    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    user_id    UUID NOT NULL,
+                    type       VARCHAR(50) NOT NULL DEFAULT 'system',
+                    title      TEXT NOT NULL,
+                    message    TEXT NOT NULL,
+                    data       JSONB,
+                    is_read    BOOLEAN NOT NULL DEFAULT FALSE,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await _conn.execute(_text(
+                "CREATE INDEX IF NOT EXISTS ix_notifications_user ON notifications(user_id)"
+            ))
+            # ── Platform config & notifications ───────────────────────────
+            await _conn.execute(_text("""
+                CREATE TABLE IF NOT EXISTS platform_config (
+                    key        TEXT PRIMARY KEY,
+                    value      TEXT NOT NULL,
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await _conn.execute(_text("""
+                CREATE TABLE IF NOT EXISTS platform_notifications (
+                    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    title           TEXT NOT NULL,
+                    content         TEXT NOT NULL,
+                    target_audience TEXT NOT NULL DEFAULT 'all',
+                    is_active       BOOLEAN NOT NULL DEFAULT TRUE,
+                    created_by      TEXT,
+                    created_at      TIMESTAMPTZ DEFAULT NOW()
+                )
             """))
         logger.info("db_schema_ensured")
     except Exception as _te:
