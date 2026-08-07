@@ -224,6 +224,7 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
 
     # ── Ensure critical tables exist (idempotent DDL) ─────────────────────
     try:
+        from sqlalchemy import text as _text  # required in this scope
         async with engine.begin() as _conn:
             await _conn.execute(_text("""
                 CREATE TABLE IF NOT EXISTS listing_media (
