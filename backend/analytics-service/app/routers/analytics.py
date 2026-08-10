@@ -946,22 +946,223 @@ async def admin_audit_logs(request: Request, type: str='all', page: int=1, page_
 
 # ── Moderator API endpoints ─────────────────────────────────────────────────
 
-@router.get('/mod/disputes', response_model=SuccessResponse, summary='Moderator: list disputes')
+@router.get('/mod/disputes', response_model=SuccessResponse, summary='Admin/Mod: list disputes')
 async def mod_disputes(
     request: Request,
     status: str = Query(default='open'),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=100),
     payload: Annotated[dict, Depends(get_user_payload)] = None,
 ) -> SuccessResponse:
+    """Returns all disputes from user_disputes table, filtered by status."""
     from shared.errors import paginated_meta
-    return SuccessResponse(message='0 dispute(s).', data=[], meta=paginated_meta(1, 50, 0))
+    try:
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _text
+            where = "" if status == 'all' else "WHERE d.status = :status"
+            args: dict = {} if status == 'all' else {'status': status}
+            count_row = (await db.execute(_text(
+                f"SELECT COUNT(*) AS cnt FROM user_disputes d {where}"
+            ), args)).mappings().first()
+            total = count_row['cnt'] if count_row else 0
 
-@router.post('/mod/disputes/{dispute_id}/resolve', response_model=SuccessResponse, summary='Moderator: resolve a dispute')
-async def mod_resolve_dispute(dispute_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+            args2 = {**args, 'lim': page_size, 'off': (page - 1) * page_size}
+            rows = (await db.execute(_text(f"""
+                SELECT d.id, d.raised_by, d.against_user, d.listing_id,
+                       d.listing_title, d.reason, d.description, d.status,
+                       d.resolution_note, d.created_at, d.updated_at,
+                       u.full_name AS reporter_name, u.email AS reporter_email
+                FROM user_disputes d
+                LEFT JOIN users u ON CAST(u.id AS TEXT) = CAST(d.raised_by AS TEXT)
+                {where}
+                ORDER BY d.created_at DESC
+                LIMIT :lim OFFSET :off
+            """), args2)).mappings().all()
+
+            data = [{
+                'id': str(r['id']),
+                'raised_by': str(r['raised_by']),
+                'reporter_name': r['reporter_name'] or 'User',
+                'reporter_email': r['reporter_email'] or '',
+                'against_user': str(r['against_user']) if r['against_user'] else None,
+                'listing_id': str(r['listing_id']) if r['listing_id'] else None,
+                'listing_title': r['listing_title'] or '',
+                'reason': r['reason'],
+                'description': r['description'] or '',
+                'status': r['status'],
+                'resolution_note': r['resolution_note'] or '',
+                'created_at': str(r['created_at']),
+                'updated_at': str(r['updated_at']),
+            } for r in rows]
+
+        return SuccessResponse(
+            message=f'{total} dispute(s).', data=data,
+            meta=paginated_meta(page, page_size, total)
+        )
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error(f'mod_disputes_error: {exc}')
+        return SuccessResponse(message='0 dispute(s).', data=[], meta=paginated_meta(page, page_size, 0))
+
+
+@router.post('/mod/disputes/{dispute_id}/resolve', response_model=SuccessResponse, summary='Admin/Mod: resolve a dispute')
+async def mod_resolve_dispute(
+    dispute_id: str,
+    request: Request,
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    """Mark a dispute as resolved."""
+    resolver_id = payload.get('sub', '') if payload else ''
+    body = {}
+    try:
+        body = await request.json()
+    except Exception:
+        pass
+    note = body.get('resolution_note') or body.get('note') or ''
+    try:
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _text
+            await db.execute(_text("""
+                UPDATE user_disputes
+                SET status='resolved', resolved_by=:resolver, resolution_note=:note, updated_at=NOW()
+                WHERE CAST(id AS TEXT) = :did
+            """), {'resolver': resolver_id, 'note': note, 'did': dispute_id})
+            await db.commit()
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning(f'resolve_dispute_error: {exc}')
     return SuccessResponse(message='Dispute resolved.', data={'dispute_id': dispute_id})
 
-@router.post('/mod/disputes/{dispute_id}/escalate', response_model=SuccessResponse, summary='Moderator: escalate a dispute')
-async def mod_escalate_dispute(dispute_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
+
+@router.post('/mod/disputes/{dispute_id}/escalate', response_model=SuccessResponse, summary='Mod: escalate a dispute to admin')
+async def mod_escalate_dispute(
+    dispute_id: str,
+    request: Request,
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    """Change dispute status to under_review (escalated to admin)."""
+    try:
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _text
+            await db.execute(_text("""
+                UPDATE user_disputes
+                SET status='under_review', updated_at=NOW()
+                WHERE CAST(id AS TEXT) = :did AND status = 'open'
+            """), {'did': dispute_id})
+            await db.commit()
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning(f'escalate_dispute_error: {exc}')
     return SuccessResponse(message='Dispute escalated.', data={'dispute_id': dispute_id})
+
+
+@router.post('/disputes', response_model=SuccessResponse, summary='User: raise a dispute')
+async def raise_dispute(
+    request: Request,
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    """Any authenticated user can raise a dispute about a listing or transaction."""
+    from shared.errors import UnauthorizedError, InvalidInputError
+    if not payload:
+        raise UnauthorizedError('Authentication required.')
+    user_id = payload.get('sub', '')
+    body = await request.json()
+    reason = (body.get('reason') or '').strip()
+    description = (body.get('description') or '').strip()
+    listing_id = body.get('listing_id')
+    listing_title = (body.get('listing_title') or '').strip()
+    against_user = body.get('against_user')
+    if not reason:
+        raise InvalidInputError('reason is required.')
+    import uuid as _uuid
+    new_id = str(_uuid.uuid4())
+    try:
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _text
+            await db.execute(_text("""
+                INSERT INTO user_disputes
+                    (id, raised_by, against_user, listing_id, listing_title, reason, description, status, created_at, updated_at)
+                VALUES
+                    (:id, :raised_by, :against_user, :listing_id, :listing_title, :reason, :description, 'open', NOW(), NOW())
+            """), {
+                'id': new_id,
+                'raised_by': user_id,
+                'against_user': against_user,
+                'listing_id': listing_id,
+                'listing_title': listing_title,
+                'reason': reason,
+                'description': description,
+            })
+            # Notify moderators
+            mod_ids = (await db.execute(_text("""
+                SELECT CAST(user_id AS TEXT) AS uid FROM user_roles
+                WHERE role IN ('moderator', 'enterprise_admin', 'super_admin')
+                LIMIT 5
+            """))).mappings().all()
+            notif_uid = user_id
+            try:
+                for mod in mod_ids:
+                    await db.execute(_text("""
+                        INSERT INTO notifications (id, user_id, type, title, message, is_read, created_at)
+                        VALUES (:nid, :uid::uuid, 'dispute', :title, :msg, FALSE, NOW())
+                    """), {
+                        'nid': str(_uuid.uuid4()),
+                        'uid': mod['uid'],
+                        'title': 'New Dispute Raised',
+                        'msg': f'A new dispute has been filed: {reason[:80]}',
+                    })
+            except Exception:
+                pass
+            await db.commit()
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error(f'raise_dispute_error: {exc}')
+        from shared.errors import ExternalServiceError
+        raise ExternalServiceError(f'Failed to submit dispute: {exc}')
+    return SuccessResponse(message='Dispute submitted successfully.', data={'id': new_id, 'status': 'open'})
+
+
+@router.get('/disputes/mine', response_model=SuccessResponse, summary='User: get own disputes')
+async def my_disputes(
+    request: Request,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=50),
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    """Returns disputes raised by the current user."""
+    from shared.errors import UnauthorizedError, paginated_meta
+    if not payload:
+        raise UnauthorizedError('Authentication required.')
+    user_id = payload.get('sub', '')
+    try:
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _text
+            total_row = (await db.execute(_text(
+                "SELECT COUNT(*) AS cnt FROM user_disputes WHERE CAST(raised_by AS TEXT)=:uid"
+            ), {'uid': user_id})).mappings().first()
+            total = total_row['cnt'] if total_row else 0
+            rows = (await db.execute(_text("""
+                SELECT id, listing_id, listing_title, reason, description,
+                       status, resolution_note, created_at, updated_at
+                FROM user_disputes
+                WHERE CAST(raised_by AS TEXT) = :uid
+                ORDER BY created_at DESC
+                LIMIT :lim OFFSET :off
+            """), {'uid': user_id, 'lim': page_size, 'off': (page - 1) * page_size})).mappings().all()
+            data = [{
+                'id': str(r['id']),
+                'listing_id': str(r['listing_id']) if r['listing_id'] else None,
+                'listing_title': r['listing_title'] or '',
+                'reason': r['reason'],
+                'description': r['description'] or '',
+                'status': r['status'],
+                'resolution_note': r['resolution_note'] or '',
+                'created_at': str(r['created_at']),
+            } for r in rows]
+        return SuccessResponse(message=f'{total} dispute(s).', data=data, meta=paginated_meta(page, page_size, total))
+    except Exception:
+        return SuccessResponse(message='0 dispute(s).', data=[], meta=paginated_meta(page, page_size, 0))
+
 
 @router.get('/mod/reports', response_model=SuccessResponse, summary='Moderator: list reports')
 async def mod_reports(

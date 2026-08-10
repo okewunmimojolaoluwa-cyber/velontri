@@ -333,6 +333,30 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
                     created_at      TIMESTAMPTZ DEFAULT NOW()
                 )
             """))
+            # ── Disputes (standalone, not tied to payment escrow) ─────────────
+            await _conn.execute(_text("""
+                CREATE TABLE IF NOT EXISTS user_disputes (
+                    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    raised_by       UUID NOT NULL,
+                    against_user    UUID,
+                    listing_id      UUID,
+                    listing_title   TEXT,
+                    reason          TEXT NOT NULL,
+                    description     TEXT,
+                    status          TEXT NOT NULL DEFAULT 'open'
+                        CHECK (status IN ('open','under_review','resolved','dismissed')),
+                    resolved_by     UUID,
+                    resolution_note TEXT,
+                    created_at      TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at      TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await _conn.execute(_text(
+                "CREATE INDEX IF NOT EXISTS ix_user_disputes_raised_by ON user_disputes(raised_by)"
+            ))
+            await _conn.execute(_text(
+                "CREATE INDEX IF NOT EXISTS ix_user_disputes_status ON user_disputes(status)"
+            ))
         logger.info("db_schema_ensured")
     except Exception as _te:
         logger.warning(f"db_schema_ensure_failed: {_te}")
