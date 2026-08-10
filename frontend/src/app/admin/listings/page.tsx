@@ -23,7 +23,7 @@ export default function AdminListingsPage() {
   const [search, setSearch] = useState('');
   const [committed, setCommitted] = useState('');
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin', 'listings', filter, committed],
     queryFn: () => apiClient.get<ApiResponse<Listing[]>>('/listings/admin/list', {
       params: { status: filter === 'all' ? undefined : filter, search: committed || undefined, page_size: 50 },
@@ -33,9 +33,13 @@ export default function AdminListingsPage() {
   const { mutate: moderate } = useMutation({
     mutationFn: ({ id, action }: { id: string; action: 'approve' | 'reject' }) =>
       apiClient.post(`/listings/admin/${id}/${action}`, {}),
-    onSettled: () => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'listings'] });
       qc.invalidateQueries({ queryKey: ['listings'] });
+    },
+    onError: (e: any) => {
+      const msg = e?.response?.data?.error?.message || e?.message || 'Failed to update listing.';
+      alert(msg);
     },
   });
 
@@ -83,7 +87,12 @@ export default function AdminListingsPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          {isLoading ? (
+          {isError ? (
+            <div className="p-8 text-center">
+              <p className="text-[14px] font-semibold text-red-700 mb-2">Failed to load listings</p>
+              <button onClick={() => refetch()} className="text-[13px] font-semibold text-red-600 hover:underline">Try again</button>
+            </div>
+          ) : isLoading ? (
             <div className="p-6 space-y-3">
               {[...Array(8)].map((_, i) => <div key={i} className="h-14 rounded-xl bg-slate-100 animate-pulse" />)}
             </div>

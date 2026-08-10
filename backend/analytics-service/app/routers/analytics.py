@@ -943,64 +943,6 @@ async def admin_audit_logs(request: Request, type: str='all', page: int=1, page_
     return SuccessResponse(message=f'{total} audit log(s).', data=logs, meta=paginated_meta(page, page_size, total))
 
 
-@router.get('/mod/disputes', response_model=SuccessResponse, summary='Moderator: list disputes')
-async def mod_disputes(status: str = Query(default='open'), payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
-    return SuccessResponse(message='0 dispute(s).', data=[], meta={'total': 0, 'page': 1, 'page_size': 50, 'total_pages': 1, 'has_prev': False, 'has_next': False})
-
-@router.post('/mod/disputes/{dispute_id}/resolve', response_model=SuccessResponse, summary='Moderator: resolve a dispute')
-async def mod_resolve_dispute(dispute_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
-    return SuccessResponse(message='Dispute resolved.', data={'dispute_id': dispute_id})
-
-@router.post('/mod/disputes/{dispute_id}/escalate', response_model=SuccessResponse, summary='Moderator: escalate a dispute')
-async def mod_escalate_dispute(dispute_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
-    return SuccessResponse(message='Dispute escalated.', data={'dispute_id': dispute_id})
-
-@router.get('/mod/reports', response_model=SuccessResponse, summary='Moderator: list reports')
-async def mod_reports(status: str = Query(default='open'), payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
-    return SuccessResponse(message='0 report(s).', data=[], meta={'total': 0, 'page': 1, 'page_size': 50, 'total_pages': 1, 'has_prev': False, 'has_next': False})
-
-@router.post('/mod/reports/{report_id}/resolve', response_model=SuccessResponse, summary='Moderator: resolve a report')
-async def mod_resolve_report(report_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
-    return SuccessResponse(message='Report resolved.', data={'report_id': report_id})
-
-@router.post('/mod/reports/{report_id}/dismiss', response_model=SuccessResponse, summary='Moderator: dismiss a report')
-async def mod_dismiss_report(report_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
-    return SuccessResponse(message='Report dismissed.', data={'report_id': report_id})
-
-@router.get('/mod/reviews', response_model=SuccessResponse, summary='Moderator: list flagged reviews')
-async def mod_reviews(status: str = Query(default='flagged'), payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
-    return SuccessResponse(message='0 review(s).', data=[], meta={'total': 0, 'page': 1, 'page_size': 50, 'total_pages': 1, 'has_prev': False, 'has_next': False})
-
-@router.post('/mod/reviews/{review_id}/approve', response_model=SuccessResponse, summary='Moderator: approve a review')
-async def mod_approve_review(review_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
-    return SuccessResponse(message='Review approved.', data={'review_id': review_id})
-
-@router.post('/mod/reviews/{review_id}/remove', response_model=SuccessResponse, summary='Moderator: remove a review')
-async def mod_remove_review(review_id: str, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
-    return SuccessResponse(message='Review removed.', data={'review_id': review_id})
-
-@router.get('/mod/tickets', response_model=SuccessResponse, summary='Moderator: list support tickets')
-async def mod_tickets(status: str = Query(default='open'), payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
-    return SuccessResponse(message='0 ticket(s).', data=[], meta={'total': 0, 'page': 1, 'page_size': 50, 'total_pages': 1, 'has_prev': False, 'has_next': False})
-
-@router.put('/mod/tickets/{ticket_id}', response_model=SuccessResponse, summary='Moderator: update ticket status')
-async def mod_update_ticket(ticket_id: str, request: Request, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
-    body = await request.json()
-    return SuccessResponse(message='Ticket updated.', data={'ticket_id': ticket_id, 'status': body.get('status')})
-
-@router.get('/mod/logs', response_model=SuccessResponse, summary='Moderator: list moderation logs')
-async def mod_logs(type: str = Query(default='all'), payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
-    return SuccessResponse(message='0 log(s).', data=[], meta={'total': 0, 'page': 1, 'page_size': 50, 'total_pages': 1, 'has_prev': False, 'has_next': False})
-
-@router.get('/mod/notifications', response_model=SuccessResponse, summary='Moderator: list sent notifications')
-async def mod_notifications_list(payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
-    return SuccessResponse(message='0 notification(s).', data=[])
-
-@router.post('/mod/notifications', response_model=SuccessResponse, summary='Moderator: send a notification')
-async def mod_send_notification(request: Request, payload: Annotated[dict, Depends(get_user_payload)] = None) -> SuccessResponse:
-    body = await request.json()
-    return SuccessResponse(message='Notification queued.', data={'id': str(uuid.uuid4()), 'title': body.get('title'), 'sent': True})
-
 
 # ── Moderator API endpoints ─────────────────────────────────────────────────
 

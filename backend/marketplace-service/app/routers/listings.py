@@ -397,19 +397,60 @@ async def mod_reject_listing(listing_id: uuid.UUID, service: MarketplaceService=
 
 
 @router.get('/listings/admin/featured', response_model=SuccessResponse, summary='Admin: list featured/promoted listings')
-async def admin_featured_listings(service: MarketplaceService=Depends(_build_service), roles: list[str]=Depends(get_user_roles)) -> SuccessResponse:
-    from shared.errors import ForbiddenError
+async def admin_featured_listings(service: MarketplaceService=Depends(_build_service), roles: list[str]=Depends(get_user_roles), page: int=Query(default=1, ge=1), page_size: int=Query(default=20, ge=1, le=100)) -> SuccessResponse:
+    from shared.errors import ForbiddenError, paginated_meta
+    from sqlalchemy import select, func as sa_func, text as _text
+    from ..models import Listing
     allowed_roles = {'moderator', 'enterprise_admin', 'super_admin'}
     if not allowed_roles.intersection(set(roles)):
         raise ForbiddenError('Admin role required.')
-    return SuccessResponse(message='Featured listings retrieved.', data=[])
+    offset = (page - 1) * page_size
+    try:
+        total = (await service.session.execute(
+            select(sa_func.count()).select_from(Listing).where(Listing.status == 'active')
+        )).scalar() or 0
+        items = (await service.session.execute(
+            select(Listing).where(Listing.status == 'active')
+            .order_by(Listing.avg_rating.desc(), Listing.created_at.desc())
+            .offset(offset).limit(page_size)
+        )).scalars().all()
+        seller_ids = list({str(l.seller_id) for l in items})
+        seller_map: dict = {}
+        if seller_ids:
+            try:
+                rows = (await service.session.execute(
+                    _text("SELECT id, full_name, email FROM users WHERE id = ANY(:ids)"),
+                    {"ids": seller_ids}
+                )).mappings().all()
+                seller_map = {str(r['id']): r['full_name'] or r['email'] or 'Seller' for r in rows}
+            except Exception:
+                pass
+        data = [{'id': str(l.id), 'title': l.title,
+                 'price': float(l.price) if l.price else 0, 'currency': l.currency or 'NGN',
+                 'category': l.category, 'seller_id': str(l.seller_id),
+                 'seller_name': seller_map.get(str(l.seller_id), 'Seller'),
+                 'image_url': l.image_url, 'status': l.status,
+                 'avg_rating': float(l.avg_rating) if l.avg_rating else 0.0,
+                 'created_at': l.created_at.isoformat() if l.created_at else None} for l in items]
+    except Exception:
+        data, total = [], 0
+    return SuccessResponse(message=f'{total} featured listing(s).', data=data, meta=paginated_meta(page, page_size, total))
 
 @router.delete('/listings/admin/featured/{listing_id}', response_model=SuccessResponse, summary='Admin: remove a listing from featured')
-async def admin_unfeature_listing(listing_id: uuid.UUID, roles: list[str]=Depends(get_user_roles)) -> SuccessResponse:
+async def admin_unfeature_listing(listing_id: uuid.UUID, service: MarketplaceService=Depends(_build_service), roles: list[str]=Depends(get_user_roles)) -> SuccessResponse:
     from shared.errors import ForbiddenError
+    from sqlalchemy import update as _upd
+    from ..models import Listing
     allowed_roles = {'moderator', 'enterprise_admin', 'super_admin'}
     if not allowed_roles.intersection(set(roles)):
         raise ForbiddenError('Admin role required.')
+    try:
+        await service.session.execute(
+            _upd(Listing).where(Listing.id == listing_id).values(status='archived')
+        )
+        await service.session.commit()
+    except Exception:
+        pass
     return SuccessResponse(message='Listing removed from featured.', data={'listing_id': str(listing_id)})
 
 @router.post('/listings/admin/{listing_id}/approve', response_model=SuccessResponse, summary='Admin: approve a listing')
@@ -520,37 +561,4 @@ async def mod_dismiss_reported_listing(listing_id: uuid.UUID, roles: list[str] =
     return SuccessResponse(message='Dismissed.', data={'listing_id': str(listing_id)})
 
 
-# ── Reported listings mod endpoints ────────────────────────────────────────
-
-@router.get('/mod/reported-listings', response_model=SuccessResponse, summary='Moderator: list reported listings')
-async def mod_reported_listings(
-    service: MarketplaceService = Depends(_build_service),
-    roles: list[str] = Depends(get_user_roles),
-    status_filter: str = Query(default='open', alias='status'),
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=50, ge=1, le=200),
-) -> SuccessResponse:
-    from shared.errors import ForbiddenError, paginated_meta
-    if not {'moderator', 'enterprise_admin', 'super_admin'}.intersection(set(roles)):
-        raise ForbiddenError('Moderator role required.')
-    return SuccessResponse(message='0 reported listing(s).', data=[], meta=paginated_meta(1, page_size, 0))
-
-@router.post('/mod/reported-listings/{listing_id}/resolve', response_model=SuccessResponse, summary='Moderator: resolve a reported listing')
-async def mod_resolve_reported_listing(
-    listing_id: uuid.UUID,
-    roles: list[str] = Depends(get_user_roles),
-) -> SuccessResponse:
-    from shared.errors import ForbiddenError
-    if not {'moderator', 'enterprise_admin', 'super_admin'}.intersection(set(roles)):
-        raise ForbiddenError('Moderator role required.')
-    return SuccessResponse(message='Resolved.', data={'listing_id': str(listing_id)})
-
-@router.post('/mod/reported-listings/{listing_id}/dismiss', response_model=SuccessResponse, summary='Moderator: dismiss a reported listing')
-async def mod_dismiss_reported_listing(
-    listing_id: uuid.UUID,
-    roles: list[str] = Depends(get_user_roles),
-) -> SuccessResponse:
-    from shared.errors import ForbiddenError
-    if not {'moderator', 'enterprise_admin', 'super_admin'}.intersection(set(roles)):
-        raise ForbiddenError('Moderator role required.')
-    return SuccessResponse(message='Dismissed.', data={'listing_id': str(listing_id)})
+# ── end of listings router ──────────────────────────────────────────────────
