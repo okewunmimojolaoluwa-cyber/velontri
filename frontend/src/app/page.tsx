@@ -128,6 +128,14 @@ export default function HomePage() {
   // Helper: is section visible (default true if not configured)
   const isVisible = (id: string) => sectionVis[id] !== false;
 
+  /* Fetch ALL active listings — shown first on every visit, no auth needed */
+  const { data: allData, isLoading: allLoading } = useQuery({
+    queryKey: listingKeys.list({ page: 1, page_size: 12 }),
+    queryFn: () => listingsApi.browse({ page: 1, page_size: 12 }),
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+  });
+
   /* Fetch real listings for each section — no stale time so they load fresh */
   const { data: vehiclesData, isLoading: vehiclesLoading } = useQuery({
     queryKey: listingKeys.list({ listing_type: 'vehicle', page: 1, page_size: 8 }),
@@ -153,6 +161,7 @@ export default function HomePage() {
   const vehicles = Array.isArray(vehiclesData?.data) ? vehiclesData.data : [];
   const electronics = Array.isArray(electronicsData?.data) ? electronicsData.data : [];
   const properties = Array.isArray(propertyData?.data) ? propertyData.data : [];
+  const allListings = Array.isArray(allData?.data) ? allData.data : [];
 
   /* close drawer on resize ≥ 768 px */
   useEffect(() => {
@@ -454,6 +463,121 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          LATEST LISTINGS — all active, shown first on every visit
+      ══════════════════════════════════════════ */}
+      <section className="border-b border-slate-200 bg-white py-12 sm:py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-7 flex items-end justify-between">
+            <div>
+              <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                <TrendingUp size={11} className="text-indigo-600" />
+                {allLoading ? 'Loading…' : `${allData?.meta?.total ?? allListings.length} Active Listings`}
+              </div>
+              <h2 className="font-black leading-tight text-slate-900"
+                style={{ fontSize: 'clamp(1.4rem,2.5vw,2rem)', letterSpacing: '-0.03em' }}>
+                Latest Listings
+              </h2>
+            </div>
+            <Link href={ROUTES.listings}
+              className="flex items-center gap-1 text-[13px] font-semibold text-indigo-600
+                no-underline transition-all hover:gap-2">
+              Browse all <ChevronRight size={14} />
+            </Link>
+          </div>
+
+          {allLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)}
+            </div>
+          ) : allListings.length === 0 ? (
+            <div className="rounded-2xl border-2 border-dashed border-slate-200 py-16 text-center">
+              <p className="text-[15px] font-semibold text-slate-400 mb-3">No listings yet — be the first!</p>
+              <Link href={ROUTES.register}
+                className="inline-flex items-center gap-2 h-10 rounded-xl bg-indigo-600 px-6
+                  text-[13px] font-bold text-white no-underline hover:bg-indigo-700 transition-colors">
+                Post a listing free
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {allListings.map((listing) => {
+                const typeEmoji: Record<string, string> = {
+                  vehicle: '🚗', property: '🏠', electronics: '📱',
+                  fashion: '👗', job: '💼', service: '🔧', physical: '📦',
+                };
+                const emoji = typeEmoji[listing.listing_type?.toLowerCase() ?? ''] ?? '📦';
+                return (
+                  <Link
+                    key={listing.id}
+                    href={`/listings/${listing.id}`}
+                    className="group block overflow-hidden rounded-2xl border border-slate-200
+                      bg-white shadow-sm no-underline transition-all duration-200
+                      hover:-translate-y-1 hover:shadow-[0_12px_32px_-6px_rgba(0,0,0,0.13)]"
+                  >
+                    {/* Image */}
+                    <div className="relative overflow-hidden bg-slate-100" style={{ aspectRatio: '4/3' }}>
+                      {listing.image_url ? (
+                        <img
+                          src={listing.image_url}
+                          alt={listing.title}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-slate-50">
+                          <span className="text-5xl select-none">{emoji}</span>
+                        </div>
+                      )}
+                      {listing.condition && (
+                        <span className="absolute top-2 left-2 rounded-full bg-indigo-600 px-2.5 py-1
+                          text-[9px] font-black uppercase tracking-wide text-white z-10 capitalize">
+                          {listing.condition === 'new' ? 'Brand New' : listing.condition}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Body */}
+                    <div className="p-3.5">
+                      <p className="text-[13px] font-bold leading-snug text-slate-900 line-clamp-2 mb-2 min-h-[2.4rem]">
+                        {listing.title}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-[15px] font-black tracking-tight text-indigo-600">
+                          {fmtPrice(listing.price, listing.currency)}
+                        </p>
+                        {listing.city && (
+                          <span className="flex items-center gap-1 text-[10px] text-slate-400">
+                            <MapPin size={9} />{listing.city}
+                          </span>
+                        )}
+                      </div>
+                      {listing.category && (
+                        <p className="mt-1.5 text-[10px] font-semibold text-slate-400 capitalize">
+                          {listing.listing_type ?? listing.category}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
+          {/* "See all" link if there are more */}
+          {!allLoading && (allData?.meta?.total ?? 0) > 12 && (
+            <div className="mt-8 text-center">
+              <Link href={ROUTES.listings}
+                className="inline-flex items-center gap-2 h-11 rounded-xl border-2 border-indigo-200
+                  bg-indigo-50 px-8 text-[14px] font-bold text-indigo-600 no-underline
+                  hover:bg-indigo-100 hover:border-indigo-300 transition-all">
+                View all {allData?.meta?.total?.toLocaleString()} listings <ChevronRight size={16} />
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 
