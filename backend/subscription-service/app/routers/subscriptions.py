@@ -215,6 +215,31 @@ async def paystack_verify(request: Request, payload: Annotated[dict, Depends(get
     except Exception as _e:
         import logging as _log2
         _log2.getLogger(__name__).warning(f'payment_record_skipped: {_e}')
+    # ── Auto-verify seller on any paid subscription ─────────────────────────
+    # A user who pays for starter/business/enterprise is a verified seller.
+    try:
+        async with request.app.state.session_factory() as _vdb:
+            from sqlalchemy import text as _vtext
+            import uuid as _uv
+            # Grant 'seller' role if not already present
+            existing_role = (await _vdb.execute(_vtext(
+                "SELECT id FROM user_roles WHERE CAST(user_id AS TEXT)=:uid AND role='seller'"
+            ), {'uid': str(user_id)})).fetchone()
+            if not existing_role:
+                await _vdb.execute(_vtext(
+                    "INSERT INTO user_roles (id, user_id, role, granted_at) VALUES (:rid, :uid, 'seller', NOW())"
+                ), {'rid': str(_uv.uuid4()), 'uid': str(user_id)})
+            # Set trust_badge = 'verified' in user_profiles
+            await _vdb.execute(_vtext("""
+                INSERT INTO user_profiles (id, user_id, trust_badge, updated_at)
+                VALUES (gen_random_uuid(), :uid, 'verified', NOW())
+                ON CONFLICT (user_id) DO UPDATE SET trust_badge='verified', updated_at=NOW()
+            """), {'uid': str(user_id)})
+            await _vdb.commit()
+    except Exception as _ve:
+        import logging as _vlog
+        _vlog.getLogger(__name__).warning(f'auto_verify_seller_failed: {_ve}')
+
     return SuccessResponse(message=f'Subscription activated: {plan_id}', data={'plan': plan_id, 'tier': sub.tier, 'is_active': sub.is_active, 'reference': reference})
 
 @router.post('/subscriptions/paystack/webhook', response_model=SuccessResponse, summary='Paystack webhook — activates subscription on charge.success', include_in_schema=False)
