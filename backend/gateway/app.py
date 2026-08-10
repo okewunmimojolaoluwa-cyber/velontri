@@ -141,62 +141,80 @@ def _collect_routers():
 # ── Lifespan ───────────────────────────────────────────────────────────────────
 
 async def _auto_seed_admin(session_factory: Any) -> None:
-    """Idempotently create the super-admin account on every startup."""
+    """
+    Idempotently ensure exactly ONE super-admin account exists.
+
+    Strategy:
+    1. Look for an existing enterprise_admin in user_roles — if one exists,
+       do NOT touch their email or create a second account.
+    2. Only create a fresh admin account if there is truly no enterprise_admin
+       in the database at all (e.g., first-ever deploy).
+
+    This means changing the admin email via the dashboard is permanent —
+    the seed will find the existing admin by role and skip creation.
+    """
     import logging
     import uuid as _uuid
     import bcrypt
     from sqlalchemy import text as _text
 
     _log = logging.getLogger("velontri.seed")
-    email = "owner@velontri.com"
-    phone = "+2348000000000"
-    password = "Owner123!"
-    name = "Velontri Owner"
+
+    # Fallback credentials — only used on first-ever deploy (no admin exists yet)
+    fallback_email    = "owner@velontri.com"
+    fallback_phone    = "+2348000000000"
+    fallback_password = "Owner123!"
+    fallback_name     = "Velontri Owner"
 
     try:
-        salt = bcrypt.gensalt()
-        pw_hash = bcrypt.hashpw(password.encode(), salt).decode()
-
         async with session_factory() as sess:
-            res = await sess.execute(_text("SELECT id FROM users WHERE email = :email"), {"email": email})
-            row = res.fetchone()
-            if row:
-                uid = row[0]
+            # ── Step 1: find existing enterprise_admin by role (not by email) ──
+            existing = (await sess.execute(_text("""
+                SELECT u.id, u.email
+                FROM users u
+                INNER JOIN user_roles r ON CAST(r.user_id AS TEXT) = CAST(u.id AS TEXT)
+                WHERE r.role = 'enterprise_admin'
+                  AND u.is_active = TRUE
+                ORDER BY u.created_at ASC
+                LIMIT 1
+            """))).fetchone()
+
+            if existing:
+                # Admin already exists — do NOT create a second one.
+                # Just make sure the account is unlocked and active.
+                uid = str(existing[0])
+                current_email = existing[1]
                 await sess.execute(
-                    _text("UPDATE users SET password_hash=:ph, is_active=true, is_locked=false, failed_attempts=0, phone_verified=true WHERE id=:uid"),
-                    {"ph": pw_hash, "uid": uid}
-                )
-                
-                # Check role
-                res_role = await sess.execute(
-                    _text("SELECT id FROM user_roles WHERE user_id=:uid AND role='enterprise_admin'"),
+                    _text("UPDATE users SET is_active=true, is_locked=false, failed_attempts=0 WHERE id=:uid"),
                     {"uid": uid}
                 )
-                if not res_role.fetchone():
-                    await sess.execute(
-                        _text("INSERT INTO user_roles (id, user_id, role, granted_at) VALUES (:rid, :uid, 'enterprise_admin', CURRENT_TIMESTAMP)"),
-                        {"rid": str(_uuid.uuid4()), "uid": uid}
-                    )
                 await sess.commit()
-                _log.info(f"auto_seed: admin refreshed id={uid} email={email}")
+                _log.info(f"auto_seed: existing admin kept id={uid} email={current_email}")
                 return
 
+            # ── Step 2: no admin exists — first deploy, create one ──────────
+            _log.info("auto_seed: no admin found, creating initial admin account")
+            salt = bcrypt.gensalt()
+            pw_hash = bcrypt.hashpw(fallback_password.encode(), salt).decode()
             uid = str(_uuid.uuid4())
             await sess.execute(
-                _text("""INSERT INTO users 
-                    (id, email, phone, phone_verified, password_hash, full_name, country_code, is_active, is_locked, failed_attempts) 
+                _text("""INSERT INTO users
+                    (id, email, phone, phone_verified, password_hash, full_name,
+                     country_code, is_active, is_locked, failed_attempts)
                     VALUES (:uid, :email, :phone, true, :ph, :name, 'NG', true, false, 0)"""),
-                {"uid": uid, "email": email, "phone": phone, "ph": pw_hash, "name": name}
+                {"uid": uid, "email": fallback_email, "phone": fallback_phone,
+                 "ph": pw_hash, "name": fallback_name}
             )
             await sess.execute(
                 _text("INSERT INTO user_roles (id, user_id, role, granted_at) VALUES (:rid, :uid, 'enterprise_admin', CURRENT_TIMESTAMP)"),
                 {"rid": str(_uuid.uuid4()), "uid": uid}
             )
             await sess.commit()
-            _log.info(f"auto_seed: admin created id={uid} email={email}")
+            _log.info(f"auto_seed: admin created id={uid} email={fallback_email}")
 
     except Exception as exc:
-        _log.warning(f"auto_seed_failed: {exc}")
+        import logging as _logging
+        _logging.getLogger("velontri.seed").warning(f"auto_seed_failed: {exc}")
 
 
 @asynccontextmanager
