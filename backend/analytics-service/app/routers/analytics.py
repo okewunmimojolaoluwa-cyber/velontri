@@ -772,30 +772,61 @@ async def admin_revenue_summary(request: Request, payload: Annotated[dict, Depen
 
 @router.get('/notifications', response_model=SuccessResponse, summary='Get in-app notifications for the authenticated user')
 async def get_notifications(request: Request, page: int=1, page_size: int=50, unread_only: bool=False, payload: Annotated[dict, Depends(get_user_payload)]=None) -> SuccessResponse:
-    """Returns in-app notifications from the notifications table."""
+    """Returns in-app notifications from the notifications table — with sender and resource info."""
     user_id = payload.get('sub') if payload else None
     if not user_id:
         from shared.errors import UnauthorizedError
         raise UnauthorizedError('Authentication required.')
     items = []
+    unread_count = 0
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            where = 'WHERE CAST(user_id AS TEXT) = :uid'
+            where = 'WHERE CAST(n.user_id AS TEXT) = :uid'
             args: dict = {'uid': user_id}
             if unread_only:
-                where += ' AND is_read = FALSE'
+                where += ' AND n.is_read = FALSE'
+            # Count unread
+            count_row = (await db.execute(_text(
+                f"SELECT COUNT(*) AS cnt FROM notifications n {where.replace('WHERE', 'WHERE')} AND n.is_read = FALSE"
+                if not unread_only else
+                f"SELECT COUNT(*) AS cnt FROM notifications n {where}"
+            ), args)).mappings().first()
+            unread_count = count_row['cnt'] if count_row else 0
+
             rows = (await db.execute(_text(f"""
-                    SELECT id, type, title, message, is_read, created_at
-                    FROM notifications
-                    {where}
-                    ORDER BY created_at DESC
-                    LIMIT :lim OFFSET :off
-                """), {**args, 'lim': page_size, 'off': (page - 1) * page_size})).mappings().all()
-            items = [{'id': r['id'], 'type': r['type'], 'title': r['title'], 'message': r['message'], 'is_read': bool(r['is_read']), 'created_at': str(r['created_at'])} for r in rows]
+                SELECT n.id, n.type, n.title, n.message, n.is_read, n.created_at,
+                       n.sender_user_id, n.sender_role, n.related_resource_type,
+                       n.related_resource_id, n.action_url,
+                       u.full_name AS sender_name, u.email AS sender_email
+                FROM notifications n
+                LEFT JOIN users u ON CAST(u.id AS TEXT) = CAST(n.sender_user_id AS TEXT)
+                {where}
+                ORDER BY n.created_at DESC
+                LIMIT :lim OFFSET :off
+            """), {**args, 'lim': page_size, 'off': (page - 1) * page_size})).mappings().all()
+
+            items = [{
+                'id': r['id'],
+                'type': r['type'],
+                'title': r['title'],
+                'message': r['message'],
+                'is_read': bool(r['is_read']),
+                'created_at': str(r['created_at']),
+                'sender_user_id': r['sender_user_id'],
+                'sender_role': r['sender_role'],
+                'sender_name': r['sender_name'],
+                'sender_email': r['sender_email'],
+                'related_resource_type': r['related_resource_type'],
+                'related_resource_id': r['related_resource_id'],
+                'action_url': r['action_url'],
+            } for r in rows]
     except Exception:
         pass
-    return SuccessResponse(message=f'{len(items)} notification(s).', data=items)
+    return SuccessResponse(
+        message=f'{len(items)} notification(s).',
+        data={'notifications': items, 'unread_count': unread_count}
+    )
 
 @router.post('/notifications/{notification_id}/read', response_model=SuccessResponse, summary='Mark a notification as read')
 async def mark_notification_read(notification_id: str, request: Request, payload: Annotated[dict, Depends(get_user_payload)]=None) -> SuccessResponse:
@@ -826,6 +857,143 @@ async def mark_all_read(request: Request, payload: Annotated[dict, Depends(get_u
     except Exception:
         pass
     return SuccessResponse(message='All notifications marked as read.', data={})
+
+
+@router.get('/notifications/sse', summary='SSE stream — real-time notification count for current user', include_in_schema=False)
+async def notifications_sse(request: Request, payload: Annotated[dict, Depends(get_user_payload)]=None):
+    """
+    Server-Sent Events endpoint. Pushes unread count every 10 seconds.
+    Falls back to polling on clients that don't support SSE.
+    """
+    import asyncio
+    from fastapi.responses import StreamingResponse
+    user_id = payload.get('sub') if payload else None
+    if not user_id:
+        from fastapi.responses import Response
+        return Response(status_code=401)
+
+    async def event_stream():
+        while True:
+            if await request.is_disconnected():
+                break
+            try:
+                async with request.app.state.session_factory() as db:
+                    from sqlalchemy import text as _text
+                    row = (await db.execute(_text(
+                        "SELECT COUNT(*) AS cnt FROM notifications WHERE CAST(user_id AS TEXT)=:uid AND is_read=FALSE"
+                    ), {'uid': user_id})).mappings().first()
+                    count = row['cnt'] if row else 0
+                import json
+                yield f"data: {json.dumps({'unread': count})}\n\n"
+            except Exception:
+                yield "data: {}\n\n"
+            await asyncio.sleep(10)
+
+    return StreamingResponse(
+        event_stream(),
+        media_type='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'X-Accel-Buffering': 'no',
+        },
+    )
+
+
+# ── Moderation Log ──────────────────────────────────────────────────────────
+
+@router.get('/admin/moderation-log', response_model=SuccessResponse, summary='Admin: full moderation history')
+async def admin_moderation_log(
+    request: Request,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=200),
+    moderator_id: str | None = Query(default=None),
+    action: str | None = Query(default=None),
+    resource_id: str | None = Query(default=None),
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    """Super Admin: view complete moderation history with moderator attribution."""
+    from shared.errors import ForbiddenError, paginated_meta
+    roles = payload.get('roles', []) if payload else []
+    if not {'enterprise_admin', 'super_admin'}.intersection(set(roles)):
+        raise ForbiddenError('Super admin access required.')
+    try:
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _text
+            where_parts = []
+            args: dict = {}
+            if moderator_id:
+                where_parts.append('moderator_id = :mod_id')
+                args['mod_id'] = moderator_id
+            if action:
+                where_parts.append('action ILIKE :action')
+                args['action'] = f'%{action}%'
+            if resource_id:
+                where_parts.append('resource_id = :res_id')
+                args['res_id'] = resource_id
+            where = 'WHERE ' + ' AND '.join(where_parts) if where_parts else ''
+            count_row = (await db.execute(_text(
+                f'SELECT COUNT(*) AS cnt FROM moderation_log {where}'
+            ), args)).mappings().first()
+            total = count_row['cnt'] if count_row else 0
+            rows = (await db.execute(_text(f"""
+                SELECT id, moderator_id, moderator_name, moderator_role,
+                       action, resource_type, resource_id, resource_title,
+                       previous_state, new_state, reason, detail, created_at
+                FROM moderation_log
+                {where}
+                ORDER BY created_at DESC
+                LIMIT :lim OFFSET :off
+            """), {**args, 'lim': page_size, 'off': (page - 1) * page_size})).mappings().all()
+            data = [{
+                'id': str(r['id']),
+                'moderator_id': r['moderator_id'],
+                'moderator_name': r['moderator_name'],
+                'moderator_role': r['moderator_role'],
+                'action': r['action'],
+                'resource_type': r['resource_type'],
+                'resource_id': r['resource_id'],
+                'resource_title': r['resource_title'] or '',
+                'previous_state': r['previous_state'] or '',
+                'new_state': r['new_state'] or '',
+                'reason': r['reason'] or '',
+                'detail': r['detail'] or '',
+                'created_at': str(r['created_at']),
+            } for r in rows]
+        return SuccessResponse(
+            message=f'{total} moderation log(s).',
+            data=data,
+            meta=paginated_meta(page, page_size, total),
+        )
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error(f'moderation_log_error: {exc}')
+        return SuccessResponse(message='0 moderation log(s).', data=[], meta=paginated_meta(page, page_size, 0))
+
+
+@router.get('/admin/moderation-log/moderators', response_model=SuccessResponse, summary='Admin: list moderators who have taken actions')
+async def admin_moderation_moderators(
+    request: Request,
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    """Returns unique moderators with action counts for filter dropdowns."""
+    from shared.errors import ForbiddenError
+    roles = payload.get('roles', []) if payload else []
+    if not {'enterprise_admin', 'super_admin'}.intersection(set(roles)):
+        raise ForbiddenError('Super admin access required.')
+    try:
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _text
+            rows = (await db.execute(_text("""
+                SELECT moderator_id, moderator_name, moderator_role, COUNT(*) AS action_count
+                FROM moderation_log
+                GROUP BY moderator_id, moderator_name, moderator_role
+                ORDER BY action_count DESC
+            """))).mappings().all()
+            data = [{'moderator_id': r['moderator_id'], 'moderator_name': r['moderator_name'],
+                     'moderator_role': r['moderator_role'], 'action_count': r['action_count']} for r in rows]
+        return SuccessResponse(message=f'{len(data)} moderator(s).', data=data)
+    except Exception:
+        return SuccessResponse(message='0 moderators.', data=[])
 
 @router.get('/admin/maintenance', response_model=SuccessResponse, summary='Get current maintenance mode status')
 async def get_maintenance(request: Request, payload: Annotated[dict, Depends(get_user_payload)]=None) -> SuccessResponse:

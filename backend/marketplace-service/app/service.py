@@ -348,6 +348,8 @@ class MarketplaceService:
         approved: bool,
         rejection_reason: str | None = None,
         moderator_notes: str | None = None,
+        moderator_id: str | None = None,
+        moderator_name: str | None = None,
     ) -> None:
         listing = await repo.get_listing(self.session, listing_id)
         if listing is None:
@@ -399,6 +401,9 @@ class MarketplaceService:
                 ),
                 notification_type="listing_approved",
                 listing_id=str(listing_id),
+                sender_id=moderator_id,
+                sender_role=moderator_name,
+                action_url=f"/listings/{listing_id}",
             )
         else:
             await repo.update_listing_status(self.session, listing_id, "rejected")
@@ -416,16 +421,20 @@ class MarketplaceService:
                 logger.warning("rejection_reason_store_failed", listing_id=str(listing_id), exc_info=True)
             # Notify seller — listing rejected
             reason_text = rejection_reason or "Does not meet our listing guidelines."
+            mod_display = moderator_name or "A Velontri moderator"
             await self._notify_seller(
                 seller_id=str(listing.seller_id),
-                title="❌ Listing Rejected",
+                title="❌ Listing Needs Attention",
                 message=(
-                    f"Your listing \"{listing.title}\" was not approved. "
-                    f"Reason: {reason_text}. "
-                    "You can edit your listing and resubmit for review."
+                    f"Your listing \"{listing.title}\" was not approved.\n"
+                    f"Reason: {reason_text}\n"
+                    f"You can edit your listing and resubmit for review."
                 ),
                 notification_type="listing_rejected",
                 listing_id=str(listing_id),
+                sender_id=moderator_id,
+                sender_role=mod_display,
+                action_url=f"/dashboard/listings",
             )
 
         await self.redis.delete(RedisKeys.listing_cache(str(listing_id)))
@@ -440,8 +449,11 @@ class MarketplaceService:
         message: str,
         notification_type: str,
         listing_id: str,
+        sender_id: str | None = None,
+        sender_role: str | None = None,
+        action_url: str | None = None,
     ) -> None:
-        """Create an in-app notification record for the seller."""
+        """Create an in-app notification record for the seller with full attribution."""
         import json as _json
         from sqlalchemy import text as _text
         try:
@@ -451,15 +463,17 @@ class MarketplaceService:
                 "message": message,
                 "listing_id": listing_id,
             })
-            # Insert into notifications table — include both old (user_id, title, message)
-            # and new (recipient_user_id, content) columns for full schema compatibility.
             await self.session.execute(
                 _text(
                     "INSERT INTO notifications "
                     "(id, user_id, recipient_user_id, type, channel, notification_type, "
-                    " title, message, content, status, is_read, attempts, created_at) "
+                    " title, message, content, status, is_read, attempts, "
+                    " sender_user_id, sender_role, related_resource_type, related_resource_id, action_url, "
+                    " created_at) "
                     "VALUES (:id, :uid, :uid, 'system', 'in_app', :ntype, "
-                    "        :title, :message, :content, 'sent', FALSE, 1, NOW())"
+                    "        :title, :message, :content, 'sent', FALSE, 1, "
+                    "        :sender_id, :sender_role, 'listing', :listing_id, :action_url, "
+                    "        NOW())"
                 ),
                 {
                     "id": notif_id,
@@ -468,6 +482,10 @@ class MarketplaceService:
                     "title": title,
                     "message": message,
                     "content": content,
+                    "sender_id": sender_id,
+                    "sender_role": sender_role,
+                    "listing_id": listing_id,
+                    "action_url": action_url or f"/dashboard/listings",
                 },
             )
             await self.session.commit()

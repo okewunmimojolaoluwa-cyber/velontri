@@ -135,12 +135,89 @@ async def publish_listing(listing_id: uuid.UUID, service: MarketplaceService=Dep
     return SuccessResponse(data={'message': 'Listing submitted for review.'})
 
 @router.patch('/listings/{listing_id}/status', response_model=SuccessResponse, summary='Approve or reject a listing (moderator only)')
-async def moderate_listing(listing_id: uuid.UUID, approved: bool=Query(...), rejection_reason: str | None=Query(default=None), service: MarketplaceService=Depends(_build_service), roles: list[str]=Depends(get_user_roles)) -> SuccessResponse:
+async def moderate_listing(listing_id: uuid.UUID, request: Request, approved: bool=Query(...), rejection_reason: str | None=Query(default=None), service: MarketplaceService=Depends(_build_service), roles: list[str]=Depends(get_user_roles), payload: dict=Depends(get_current_user_payload)) -> SuccessResponse:
     from shared.errors import ForbiddenError
-    if 'moderator' not in roles and 'enterprise_admin' not in roles:
+    if 'moderator' not in roles and 'enterprise_admin' not in roles and 'super_admin' not in roles:
         raise ForbiddenError('Moderator role required.')
-    await service.moderate_listing(listing_id, approved, rejection_reason)
-    return SuccessResponse(data={'message': 'Listing status updated.'})
+    # Get moderator identity from JWT — never trust frontend
+    mod_id = payload.get('sub', '')
+    mod_roles = payload.get('roles', [])
+    mod_role = 'enterprise_admin' if 'enterprise_admin' in mod_roles else ('super_admin' if 'super_admin' in mod_roles else 'moderator')
+    # Fetch moderator name from DB
+    mod_name = 'Moderator'
+    try:
+        async with request.app.state.session_factory() as _db:
+            from sqlalchemy import text as _text
+            row = (await _db.execute(_text(
+                'SELECT full_name, email FROM users WHERE CAST(id AS TEXT)=:uid'
+            ), {'uid': mod_id})).mappings().first()
+            if row:
+                mod_name = row['full_name'] or row['email'] or 'Moderator'
+    except Exception:
+        pass
+    # Get listing details for the log
+    listing = await service.get_listing(listing_id)
+    prev_state = listing.status if listing else 'unknown'
+    new_state = 'active' if approved else 'rejected'
+    await service.moderate_listing(listing_id, approved, rejection_reason, moderator_id=mod_id, moderator_name=mod_name)
+    # Write to moderation_log
+    try:
+        async with request.app.state.session_factory() as _db:
+            from sqlalchemy import text as _text
+            import uuid as _uuid
+            await _db.execute(_text("""
+                INSERT INTO moderation_log
+                    (id, moderator_id, moderator_name, moderator_role, action,
+                     resource_type, resource_id, resource_title, previous_state,
+                     new_state, reason, detail, ip_address, created_at)
+                VALUES
+                    (:id, :mod_id, :mod_name, :mod_role, :action,
+                     'listing', :res_id, :title, :prev, :new, :reason, :detail, :ip, NOW())
+            """), {
+                'id': str(_uuid.uuid4()),
+                'mod_id': mod_id,
+                'mod_name': mod_name,
+                'mod_role': mod_role,
+                'action': 'LISTING_APPROVED' if approved else 'LISTING_REJECTED',
+                'res_id': str(listing_id),
+                'title': listing.title if listing else '',
+                'prev': prev_state,
+                'new': new_state,
+                'reason': rejection_reason or '',
+                'detail': f"{'Approved' if approved else 'Rejected'} by {mod_name}" + (f": {rejection_reason}" if rejection_reason else ""),
+                'ip': request.headers.get('x-forwarded-for', request.client.host if request.client else ''),
+            })
+            # Also store moderator info on the listing row
+            await _db.execute(_text("""
+                UPDATE listings SET moderated_by=:mod_id, moderator_name=:mod_name,
+                    rejection_reason=:reason, moderated_at=NOW()
+                WHERE CAST(id AS TEXT)=:lid
+            """), {
+                'mod_id': mod_id,
+                'mod_name': mod_name,
+                'reason': rejection_reason or '',
+                'lid': str(listing_id),
+            })
+            # Audit log entry
+            await _db.execute(_text("""
+                INSERT INTO audit_log (id, actor_id, actor_email, actor_name, category,
+                    action, resource, resource_id, status, detail, created_at)
+                VALUES (:id, :actor_id, :ae, :an, 'admin', :action, 'listings', :res_id, 'success', :detail, NOW())
+                ON CONFLICT (id) DO NOTHING
+            """), {
+                'id': str(_uuid.uuid4()),
+                'actor_id': mod_id,
+                'ae': payload.get('email', ''),
+                'an': mod_name,
+                'action': 'listing.approve' if approved else 'listing.reject',
+                'res_id': str(listing_id),
+                'detail': f"{'Approved' if approved else 'Rejected'} listing: {listing.title if listing else listing_id}" + (f" — {rejection_reason}" if rejection_reason else ""),
+            })
+            await _db.commit()
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning(f'moderation_log_write_failed: {exc}')
+    return SuccessResponse(data={'message': 'Listing status updated.', 'moderator': mod_name, 'action': new_state})
 
 @router.post('/listings/{listing_id}/property', response_model=SuccessResponse, status_code=status.HTTP_201_CREATED, summary='Add property details to a listing')
 async def add_property_details(listing_id: uuid.UUID, body: PropertyDetailRequest, service: MarketplaceService=Depends(_build_service), current_user_id: uuid.UUID=Depends(get_current_user_id)) -> SuccessResponse:
@@ -380,20 +457,79 @@ async def mod_listings(service: MarketplaceService=Depends(_build_service), role
     return SuccessResponse(message=f'{total} listing(s).', data=data, meta=paginated_meta(page, page_size, total))
 
 @router.post('/mod/listings/{listing_id}/approve', response_model=SuccessResponse, summary='Moderator: approve a listing')
-async def mod_approve_listing(listing_id: uuid.UUID, service: MarketplaceService=Depends(_build_service), roles: list[str]=Depends(get_user_roles)) -> SuccessResponse:
+async def mod_approve_listing(listing_id: uuid.UUID, request: Request, service: MarketplaceService=Depends(_build_service), roles: list[str]=Depends(get_user_roles), payload: dict=Depends(get_current_user_payload)) -> SuccessResponse:
     from shared.errors import ForbiddenError
     if not {'moderator', 'enterprise_admin', 'super_admin'}.intersection(set(roles)):
         raise ForbiddenError('Moderator or Admin role required.')
-    await service.moderate_listing(listing_id, approved=True, rejection_reason=None)
-    return SuccessResponse(message='Listing approved and is now live.', data={'listing_id': str(listing_id)})
+    mod_id = payload.get('sub', '')
+    mod_name = 'Moderator'
+    try:
+        async with request.app.state.session_factory() as _db:
+            from sqlalchemy import text as _text
+            row = (await _db.execute(_text('SELECT full_name, email FROM users WHERE CAST(id AS TEXT)=:uid'), {'uid': mod_id})).mappings().first()
+            if row: mod_name = row['full_name'] or row['email'] or 'Moderator'
+    except Exception: pass
+    listing = await service.get_listing(listing_id)
+    prev_state = listing.status if listing else 'unknown'
+    await service.moderate_listing(listing_id, approved=True, moderator_id=mod_id, moderator_name=mod_name)
+    try:
+        async with request.app.state.session_factory() as _db:
+            from sqlalchemy import text as _text
+            import uuid as _uuid
+            await _db.execute(_text("""
+                INSERT INTO moderation_log (id, moderator_id, moderator_name, moderator_role, action,
+                    resource_type, resource_id, resource_title, previous_state, new_state, reason, created_at)
+                VALUES (:id, :mid, :mname, :mrole, 'LISTING_APPROVED', 'listing', :rid, :title, :prev, 'active', '', NOW())
+            """), {'id': str(_uuid.uuid4()), 'mid': mod_id, 'mname': mod_name,
+                   'mrole': 'enterprise_admin' if 'enterprise_admin' in roles else 'moderator',
+                   'rid': str(listing_id), 'title': listing.title if listing else '', 'prev': prev_state})
+            await _db.execute(_text("UPDATE listings SET moderated_by=:mid, moderator_name=:mname, moderated_at=NOW() WHERE CAST(id AS TEXT)=:lid"),
+                               {'mid': mod_id, 'mname': mod_name, 'lid': str(listing_id)})
+            await _db.commit()
+    except Exception as exc:
+        import logging; logging.getLogger(__name__).warning(f'mod_approve_log_failed: {exc}')
+    return SuccessResponse(message='Listing approved.', data={'listing_id': str(listing_id), 'moderator': mod_name})
 
 @router.post('/mod/listings/{listing_id}/reject', response_model=SuccessResponse, summary='Moderator: reject a listing')
-async def mod_reject_listing(listing_id: uuid.UUID, service: MarketplaceService=Depends(_build_service), roles: list[str]=Depends(get_user_roles), reason: str | None=Query(default=None)) -> SuccessResponse:
+async def mod_reject_listing(listing_id: uuid.UUID, request: Request, service: MarketplaceService=Depends(_build_service), roles: list[str]=Depends(get_user_roles), payload: dict=Depends(get_current_user_payload), reason: str | None=Query(default=None)) -> SuccessResponse:
     from shared.errors import ForbiddenError
     if not {'moderator', 'enterprise_admin', 'super_admin'}.intersection(set(roles)):
         raise ForbiddenError('Moderator or Admin role required.')
-    await service.moderate_listing(listing_id, approved=False, rejection_reason=reason)
-    return SuccessResponse(message='Listing rejected.', data={'listing_id': str(listing_id)})
+    # Also accept reason from body
+    body = {}
+    try:
+        body = await request.json()
+    except Exception:
+        pass
+    rejection_reason = reason or body.get('reason') or body.get('rejection_reason') or 'Does not meet listing guidelines.'
+    mod_id = payload.get('sub', '')
+    mod_name = 'Moderator'
+    try:
+        async with request.app.state.session_factory() as _db:
+            from sqlalchemy import text as _text
+            row = (await _db.execute(_text('SELECT full_name, email FROM users WHERE CAST(id AS TEXT)=:uid'), {'uid': mod_id})).mappings().first()
+            if row: mod_name = row['full_name'] or row['email'] or 'Moderator'
+    except Exception: pass
+    listing = await service.get_listing(listing_id)
+    prev_state = listing.status if listing else 'unknown'
+    await service.moderate_listing(listing_id, approved=False, rejection_reason=rejection_reason, moderator_id=mod_id, moderator_name=mod_name)
+    try:
+        async with request.app.state.session_factory() as _db:
+            from sqlalchemy import text as _text
+            import uuid as _uuid
+            await _db.execute(_text("""
+                INSERT INTO moderation_log (id, moderator_id, moderator_name, moderator_role, action,
+                    resource_type, resource_id, resource_title, previous_state, new_state, reason, created_at)
+                VALUES (:id, :mid, :mname, :mrole, 'LISTING_REJECTED', 'listing', :rid, :title, :prev, 'rejected', :reason, NOW())
+            """), {'id': str(_uuid.uuid4()), 'mid': mod_id, 'mname': mod_name,
+                   'mrole': 'enterprise_admin' if 'enterprise_admin' in roles else 'moderator',
+                   'rid': str(listing_id), 'title': listing.title if listing else '', 'prev': prev_state, 'reason': rejection_reason})
+            await _db.execute(_text("UPDATE listings SET moderated_by=:mid, moderator_name=:mname, rejection_reason=:reason, moderated_at=NOW() WHERE CAST(id AS TEXT)=:lid"),
+                               {'mid': mod_id, 'mname': mod_name, 'reason': rejection_reason, 'lid': str(listing_id)})
+            await _db.commit()
+    except Exception as exc:
+        import logging; logging.getLogger(__name__).warning(f'mod_reject_log_failed: {exc}')
+    return SuccessResponse(message='Listing rejected.', data={'listing_id': str(listing_id), 'moderator': mod_name, 'reason': rejection_reason})
 
 
 @router.get('/listings/admin/featured', response_model=SuccessResponse, summary='Admin: list featured/promoted listings')

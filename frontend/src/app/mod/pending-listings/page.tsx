@@ -1,25 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { EmptyState } from '@/components/shared/empty-state';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 import {
-  CheckCircle,
-  XCircle,
-  Clock,
-  Eye,
-  ChevronDown,
-  ChevronUp,
-  AlertCircle,
-  Tag,
-  MapPin,
-  User,
-  Calendar,
+  CheckCircle, XCircle, Eye, ChevronDown, ChevronUp,
+  AlertCircle, Tag, MapPin, User, Calendar,
 } from 'lucide-react';
 
 interface PendingListing {
@@ -27,7 +15,6 @@ interface PendingListing {
   title: string;
   description: string;
   category: string;
-  subcategory?: string;
   listing_type: string;
   condition?: string;
   location: string;
@@ -37,114 +24,94 @@ interface PendingListing {
   currency: string;
   seller_name: string;
   seller_email: string;
-  seller_id: string;
-  status: 'pending_review' | 'active' | 'rejected' | 'pending' | 'approved';
+  status: string;
   image_url?: string;
   created_at: string;
 }
 
-type FilterType = 'all' | 'pending' | 'approved' | 'rejected';
+const REJECTION_REASONS = [
+  'Wrong category',
+  'Duplicate listing',
+  'Prohibited item',
+  'Misleading information',
+  'Poor quality images',
+  'Incomplete information',
+  'Incorrect price',
+  'Suspected scam',
+  'Inappropriate content',
+  'Other',
+];
 
 export default function ModPendingListingsPage() {
   const { session } = useAuth();
-  const queryClient = useQueryClient();
-  const [filter, setFilter] = useState<FilterType>('pending');
+  const qc = useQueryClient();
+  const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [rejectModal, setRejectModal] = useState<{ id: string; title: string } | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
+  const [selectedReason, setSelectedReason] = useState('');
+  const [otherReason, setOtherReason] = useState('');
 
   const { data, isLoading } = useQuery({
     queryKey: ['mod-pending-listings', filter],
     queryFn: () =>
       apiClient
         .get<ApiResponse<PendingListing[]>>(`/mod/listings?status=${filter}`)
-        .then((r) => r.data),
+        .then(r => r.data),
     enabled: session?.isAuthenticated,
-    refetchInterval: 30_000, // poll every 30s
+    refetchInterval: 30_000,
   });
 
   const approveMutation = useMutation({
-    mutationFn: (id: string) => apiClient.post(`/mod/listings/${id}/approve`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['mod-pending-listings'] });
-    },
-    onError: (err: any) => {
-      alert(err?.message || 'Failed to approve listing. Please try again.');
-    },
+    mutationFn: (id: string) => apiClient.post(`/mod/listings/${id}/approve`, {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['mod-pending-listings'] }),
+    onError: (err: any) => alert(err?.response?.data?.error?.message || err?.message || 'Failed to approve.'),
   });
 
   const rejectMutation = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-      apiClient.post(`/mod/listings/${id}/reject?reason=${encodeURIComponent(reason)}`),
+      apiClient.post(`/mod/listings/${id}/reject`, { reason }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['mod-pending-listings'] });
+      qc.invalidateQueries({ queryKey: ['mod-pending-listings'] });
       setRejectModal(null);
-      setRejectReason('');
+      setSelectedReason('');
+      setOtherReason('');
     },
-    onError: (err: any) => {
-      alert(err?.message || 'Failed to reject listing. Please try again.');
-    },
+    onError: (err: any) => alert(err?.response?.data?.error?.message || err?.message || 'Failed to reject.'),
   });
 
-  const listings = data?.data || [];
+  const listings: PendingListing[] = Array.isArray(data?.data) ? data.data : [];
+  const pendingCount = listings.filter(l => l.status === 'pending_review' || l.status === 'pending').length;
 
-  const pendingCount = listings.filter(
-    (l) => l.status === 'pending_review' || l.status === 'pending',
-  ).length;
-
-  const statusLabel = (status: string) => {
-    if (status === 'pending_review' || status === 'pending') return 'Pending Review';
-    if (status === 'active' || status === 'approved') return 'Approved';
-    if (status === 'rejected') return 'Rejected';
-    return status;
-  };
-
-  const statusColor = (status: string) => {
-    if (status === 'pending_review' || status === 'pending')
-      return 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300';
-    if (status === 'active' || status === 'approved')
-      return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300';
-    return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300';
-  };
-
-  const filterButtons: { label: string; value: FilterType }[] = [
-    { label: 'Pending', value: 'pending' },
-    { label: 'Approved', value: 'approved' },
-    { label: 'Rejected', value: 'rejected' },
-    { label: 'All', value: 'all' },
-  ];
+  const effectiveReason = selectedReason === 'Other' ? otherReason.trim() : selectedReason;
+  const canSubmitReject = selectedReason && (selectedReason !== 'Other' || otherReason.trim().length >= 5);
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
+    <div className="space-y-6">
+      <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Listing Moderation</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Review, approve, and reject seller listings before they go live.
+          <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight">Listing Moderation</h1>
+          <p className="text-[13px] text-slate-400 mt-0.5">
+            Review, approve and reject seller listings before they go live.
           </p>
         </div>
         {pendingCount > 0 && filter === 'pending' && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1 text-sm font-semibold text-white">
-            <AlertCircle className="h-4 w-4" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1 text-[12px] font-bold text-white">
+            <AlertCircle className="h-3.5 w-3.5" />
             {pendingCount} awaiting review
           </span>
         )}
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700 pb-0">
-        {filterButtons.map(({ label, value }) => (
-          <button
-            key={value}
-            onClick={() => setFilter(value)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              filter === value
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-            }`}
-          >
-            {label}
+      <div className="flex gap-1.5 flex-wrap">
+        {(['pending', 'approved', 'rejected', 'all'] as const).map(v => (
+          <button key={v} onClick={() => setFilter(v)}
+            className={`h-9 rounded-xl border px-4 text-[13px] font-semibold capitalize transition-colors ${
+              filter === v
+                ? 'bg-indigo-600 text-white border-indigo-600'
+                : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}>
+            {v === 'pending' ? 'Pending Review' : v}
           </button>
         ))}
       </div>
@@ -152,150 +119,98 @@ export default function ModPendingListingsPage() {
       {/* Content */}
       {isLoading ? (
         <div className="space-y-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-40 w-full rounded-xl" />
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-40 rounded-2xl bg-slate-100 animate-pulse" />
           ))}
         </div>
       ) : listings.length === 0 ? (
-        <EmptyState
-          title="No listings found"
-          description={
-            filter === 'pending'
-              ? 'No listings are currently awaiting review.'
-              : `No ${filter} listings found.`
-          }
-        />
+        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-20 text-center">
+          <CheckCircle className="h-12 w-12 text-slate-200 mb-3" />
+          <p className="text-[15px] font-semibold text-slate-900">
+            {filter === 'pending' ? 'No listings awaiting review' : `No ${filter} listings`}
+          </p>
+        </div>
       ) : (
         <div className="space-y-4">
-          {listings.map((listing) => {
+          {listings.map(listing => {
             const isExpanded = expandedId === listing.id;
             const isPending = listing.status === 'pending_review' || listing.status === 'pending';
             return (
-              <div
-                key={listing.id}
-                className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm"
-              >
+              <div key={listing.id}
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 {/* Card header */}
                 <div className="p-5 flex items-start gap-4">
-                  {/* Thumbnail */}
-                  <div className="h-20 w-20 flex-shrink-0 rounded-lg bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                  <div className="h-20 w-20 flex-shrink-0 rounded-xl bg-slate-100 overflow-hidden">
                     {listing.image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={listing.image_url}
-                        alt={listing.title}
-                        className="h-full w-full object-cover"
-                      />
+                      <img src={listing.image_url} alt={listing.title} className="h-full w-full object-cover" />
                     ) : (
-                      <div className="flex h-full items-center justify-center text-gray-400 text-xs text-center px-2">
-                        No image
-                      </div>
+                      <div className="flex h-full items-center justify-center text-slate-400 text-xs text-center px-2">No image</div>
                     )}
                   </div>
-
-                  {/* Meta */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                        {listing.title}
-                      </h3>
-                      <span
-                        className={`flex-shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor(listing.status)}`}
-                      >
-                        {statusLabel(listing.status)}
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <h3 className="font-bold text-slate-900 truncate text-[15px]">{listing.title}</h3>
+                      <span className={`flex-shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold capitalize ${
+                        isPending ? 'bg-amber-100 text-amber-800' :
+                        listing.status === 'active' || listing.status === 'approved' ? 'bg-emerald-100 text-emerald-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {isPending ? 'Pending Review' : listing.status}
                       </span>
                     </div>
-
-                    <div className="mt-1 flex flex-wrap gap-3 text-sm text-gray-500 dark:text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <Tag className="h-3.5 w-3.5" />
-                        {listing.category}
-                        {listing.listing_type && ` · ${listing.listing_type}`}
-                      </span>
+                    <div className="mt-1.5 flex flex-wrap gap-3 text-[12px] text-slate-500">
+                      <span className="flex items-center gap-1"><Tag className="h-3 w-3" />{listing.category} · {listing.listing_type}</span>
                       {(listing.city || listing.country) && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3.5 w-3.5" />
-                          {listing.location || [listing.city, listing.country].filter(Boolean).join(', ')}
-                        </span>
+                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{[listing.city, listing.country].filter(Boolean).join(', ')}</span>
                       )}
-                      <span className="font-medium text-gray-700 dark:text-gray-300">
-                        {listing.currency} {listing.price.toLocaleString()}
-                      </span>
+                      <span className="font-semibold text-slate-700">{listing.currency} {listing.price?.toLocaleString()}</span>
                     </div>
-
-                    <div className="mt-1 flex flex-wrap gap-3 text-xs text-gray-400 dark:text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        {listing.seller_name}
-                        {listing.seller_email && ` (${listing.seller_email})`}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {new Date(listing.created_at).toLocaleDateString('en-GB', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
-                      </span>
+                    <div className="mt-1 flex flex-wrap gap-3 text-[11px] text-slate-400">
+                      <span className="flex items-center gap-1"><User className="h-3 w-3" />{listing.seller_name}{listing.seller_email && ` · ${listing.seller_email}`}</span>
+                      <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{new Date(listing.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Expanded description */}
                 {isExpanded && (
-                  <div className="px-5 pb-4 border-t border-gray-100 dark:border-gray-700 pt-4">
-                    <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
-                      {listing.description || 'No description provided.'}
+                  <div className="px-5 pb-4 border-t border-slate-100 pt-4">
+                    <p className="text-[13px] text-slate-600 whitespace-pre-wrap">
+                      {listing.description || 'No description.'}
                     </p>
                     {listing.condition && (
-                      <p className="mt-2 text-xs text-gray-500">
-                        Condition: <span className="font-medium capitalize">{listing.condition}</span>
-                      </p>
+                      <p className="mt-2 text-[12px] text-slate-500">Condition: <span className="font-semibold capitalize">{listing.condition}</span></p>
                     )}
                   </div>
                 )}
 
                 {/* Action bar */}
-                <div className="px-5 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex items-center gap-2">
+                <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center gap-2 flex-wrap">
                   {isPending && (
                     <>
-                      <Button
-                        size="sm"
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+                      <button
                         onClick={() => approveMutation.mutate(listing.id)}
                         disabled={approveMutation.isPending}
+                        className="flex items-center gap-1.5 h-9 rounded-xl bg-emerald-600 px-4 text-[12px] font-bold text-white hover:bg-emerald-700 transition-colors disabled:opacity-50"
                       >
-                        <CheckCircle className="h-4 w-4" />
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20 gap-1.5"
-                        onClick={() =>
-                          setRejectModal({ id: listing.id, title: listing.title })
-                        }
+                        <CheckCircle className="h-3.5 w-3.5" /> Approve
+                      </button>
+                      <button
+                        onClick={() => setRejectModal({ id: listing.id, title: listing.title })}
                         disabled={rejectMutation.isPending}
+                        className="flex items-center gap-1.5 h-9 rounded-xl border border-red-200 bg-red-50 px-4 text-[12px] font-bold text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50"
                       >
-                        <XCircle className="h-4 w-4" />
-                        Reject
-                      </Button>
+                        <XCircle className="h-3.5 w-3.5" /> Reject
+                      </button>
                     </>
                   )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="ml-auto gap-1"
+                  <button
                     onClick={() => setExpandedId(isExpanded ? null : listing.id)}
+                    className="flex items-center gap-1 ml-auto h-9 rounded-xl border border-slate-200 px-3 text-[12px] font-semibold text-slate-600 hover:bg-white transition-colors"
                   >
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-3.5 w-3.5" />
                     {isExpanded ? 'Hide' : 'Details'}
-                    {isExpanded ? (
-                      <ChevronUp className="h-3.5 w-3.5" />
-                    ) : (
-                      <ChevronDown className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
+                    {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  </button>
                 </div>
               </div>
             );
@@ -303,47 +218,80 @@ export default function ModPendingListingsPage() {
         </div>
       )}
 
-      {/* Reject Modal */}
+      {/* Reject Modal — predefined reasons */}
       {rejectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-              Reject Listing
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h2 className="text-[18px] font-black text-slate-900 mb-1">Reject Listing</h2>
+            <p className="text-[13px] text-slate-500 mb-5">
               &ldquo;{rejectModal.title}&rdquo;
             </p>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Rejection Reason <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-              rows={4}
-              placeholder="e.g. Item description is misleading, prohibited item category, inappropriate images..."
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-            />
-            <div className="mt-4 flex gap-3 justify-end">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setRejectModal(null);
-                  setRejectReason('');
-                }}
+
+            <div className="mb-4">
+              <label className="block text-[13px] font-bold text-slate-700 mb-2">
+                Select reason <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {REJECTION_REASONS.map(r => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => { setSelectedReason(r); if (r !== 'Other') setOtherReason(''); }}
+                    className={`rounded-xl border px-3 py-2 text-[12px] font-medium text-left transition-all ${
+                      selectedReason === r
+                        ? 'border-red-400 bg-red-50 text-red-700'
+                        : 'border-slate-200 text-slate-600 hover:border-slate-300 bg-white'
+                    }`}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {selectedReason === 'Other' && (
+              <div className="mb-4">
+                <label className="block text-[13px] font-bold text-slate-700 mb-1.5">
+                  Explain the reason <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={otherReason}
+                  onChange={e => setOtherReason(e.target.value)}
+                  placeholder="Describe why this listing is being rejected…"
+                  rows={3}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-[13px]
+                    text-slate-900 placeholder-slate-400 outline-none focus:border-red-400 resize-none transition-all"
+                />
+                {otherReason.length > 0 && otherReason.trim().length < 5 && (
+                  <p className="text-[11px] text-red-500 mt-1">Please provide at least 5 characters.</p>
+                )}
+              </div>
+            )}
+
+            {selectedReason && selectedReason !== 'Other' && (
+              <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                <p className="text-[12px] font-semibold text-amber-800 mb-0.5">Rejection reason to be sent to seller:</p>
+                <p className="text-[13px] text-amber-700">{selectedReason}</p>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => { setRejectModal(null); setSelectedReason(''); setOtherReason(''); }}
                 disabled={rejectMutation.isPending}
+                className="flex-1 h-10 rounded-xl border border-slate-200 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
               >
                 Cancel
-              </Button>
-              <Button
-                className="bg-red-600 hover:bg-red-700 text-white"
-                onClick={() => {
-                  if (!rejectReason.trim()) return;
-                  rejectMutation.mutate({ id: rejectModal.id, reason: rejectReason });
-                }}
-                disabled={!rejectReason.trim() || rejectMutation.isPending}
+              </button>
+              <button
+                type="button"
+                disabled={!canSubmitReject || rejectMutation.isPending}
+                onClick={() => rejectMutation.mutate({ id: rejectModal.id, reason: effectiveReason })}
+                className="flex-1 h-10 rounded-xl bg-red-600 text-[13px] font-bold text-white hover:bg-red-700 transition-colors disabled:opacity-50"
               >
-                {rejectMutation.isPending ? 'Rejecting...' : 'Reject Listing'}
-              </Button>
+                {rejectMutation.isPending ? 'Rejecting…' : 'Reject Listing'}
+              </button>
             </div>
           </div>
         </div>

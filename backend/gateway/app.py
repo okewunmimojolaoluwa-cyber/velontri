@@ -357,6 +357,71 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
             await _conn.execute(_text(
                 "CREATE INDEX IF NOT EXISTS ix_user_disputes_status ON user_disputes(status)"
             ))
+            # ── Upgrade notifications — add sender/resource columns ───────────
+            for col_def in [
+                ("sender_user_id",      "TEXT"),
+                ("sender_role",         "TEXT"),
+                ("related_resource_type","TEXT"),
+                ("related_resource_id", "TEXT"),
+                ("action_url",          "TEXT"),
+            ]:
+                await _conn.execute(_text(f"""
+                    DO $$ BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM information_schema.columns
+                            WHERE table_name='notifications' AND column_name='{col_def[0]}'
+                        ) THEN
+                            ALTER TABLE notifications ADD COLUMN {col_def[0]} {col_def[1]};
+                        END IF;
+                    END $$
+                """))
+            # ── Upgrade listings — add moderation columns ─────────────────────
+            for col_def in [
+                ("moderated_by",    "TEXT"),
+                ("moderator_name",  "TEXT"),
+                ("rejection_reason","TEXT"),
+                ("moderated_at",    "TIMESTAMPTZ"),
+                ("whatsapp_number", "TEXT"),
+                ("contact_phone",   "TEXT"),
+            ]:
+                await _conn.execute(_text(f"""
+                    DO $$ BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM information_schema.columns
+                            WHERE table_name='listings' AND column_name='{col_def[0]}'
+                        ) THEN
+                            ALTER TABLE listings ADD COLUMN {col_def[0]} {col_def[1]};
+                        END IF;
+                    END $$
+                """))
+            # ── Moderation log table ──────────────────────────────────────────
+            await _conn.execute(_text("""
+                CREATE TABLE IF NOT EXISTS moderation_log (
+                    id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    moderator_id      TEXT NOT NULL,
+                    moderator_name    TEXT NOT NULL,
+                    moderator_role    TEXT NOT NULL DEFAULT 'moderator',
+                    action            TEXT NOT NULL,
+                    resource_type     TEXT NOT NULL DEFAULT 'listing',
+                    resource_id       TEXT NOT NULL,
+                    resource_title    TEXT,
+                    previous_state    TEXT,
+                    new_state         TEXT,
+                    reason            TEXT,
+                    detail            TEXT,
+                    ip_address        TEXT,
+                    created_at        TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await _conn.execute(_text(
+                "CREATE INDEX IF NOT EXISTS ix_moderation_log_moderator ON moderation_log(moderator_id)"
+            ))
+            await _conn.execute(_text(
+                "CREATE INDEX IF NOT EXISTS ix_moderation_log_created ON moderation_log(created_at DESC)"
+            ))
+            await _conn.execute(_text(
+                "CREATE INDEX IF NOT EXISTS ix_moderation_log_resource ON moderation_log(resource_id)"
+            ))
         logger.info("db_schema_ensured")
     except Exception as _te:
         logger.warning(f"db_schema_ensure_failed: {_te}")

@@ -121,6 +121,7 @@ const ADMIN_NAV: NavGroup[] = [
   {
     label: 'REVIEWS & REPORTS',
     items: [
+      { icon: Shield,          label: 'Moderation Activity', href: '/admin/moderation' },
       { icon: Star,            label: 'Reviews',             href: ROUTES.admin.reviews },
       { icon: TrendingUp,      label: 'Reports',             href: ROUTES.admin.businessReports },
       { icon: AlertTriangle,   label: 'Disputes',            href: ROUTES.admin.disputes },
@@ -162,6 +163,7 @@ const ADMIN_NAV: NavGroup[] = [
   {
     label: 'AUDIT',
     items: [
+      { icon: Shield,          label: 'Moderation Activity', href: '/admin/moderation' },
       { icon: ClipboardList,   label: 'Audit Logs',          href: ROUTES.admin.audit },
     ],
   },
