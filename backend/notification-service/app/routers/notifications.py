@@ -4,6 +4,7 @@ import json
 import uuid
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, Query, Request
+from pydantic import BaseModel
 from sqlalchemy import and_, select, text as _text
 from shared.errors import SuccessResponse
 from shared.jwt_utils import verify_token
@@ -15,6 +16,11 @@ router = APIRouter(tags=["Notifications"])
 
 # Internal endpoint for Auth Service SMS OTPs
 internal_router = APIRouter(prefix="/internal", tags=["Internal"])
+
+class AdminPushRequest(BaseModel):
+    title: str
+    body: str
+    audience: str
 
 
 def _settings() -> NotificationSettings:
@@ -175,4 +181,29 @@ async def send_sms_internal(
     body = await request.json()
     from ..channels import send_sms
     success, reason = await send_sms(body.get("phone", ""), body.get("message", ""), settings.AFRICASTALKING_API_KEY, settings.AFRICASTALKING_USERNAME, settings.AFRICASTALKING_SENDER_ID)
+    return SuccessResponse(data={"success": success, "reason": reason})
+
+
+@router.post("/notification/admin/push", response_model=SuccessResponse, summary="Send admin push notification")
+async def send_admin_push(
+    request: Request,
+    req_body: AdminPushRequest,
+) -> SuccessResponse:
+    from shared.jwt_utils import verify_token as _vt
+    from ..channels import send_push
+    settings = get_settings()
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header.removeprefix("Bearer ").strip()
+    try:
+        payload = _vt(settings.JWT_PUBLIC_KEY_PATH, token)
+    except Exception:
+        from shared.errors import ForbiddenError
+        raise ForbiddenError("Invalid or missing token.")
+
+    success, reason = await send_push(
+        user_id=req_body.audience,
+        title=req_body.title,
+        body=req_body.body,
+        fcm_key=settings.FCM_SERVER_KEY
+    )
     return SuccessResponse(data={"success": success, "reason": reason})
