@@ -287,7 +287,8 @@ class AuthService:
         if totp_record and totp_record.enabled:
             session_id = secrets.token_urlsafe(32)
             session_key = f'auth:2fa_session:{session_id}'
-            await self.redis.setex(session_key, 300, str(user.id))
+            if self.redis:
+                await self.redis.setex(session_key, 300, str(user.id))
             logger.info('2fa_required', user_id=str(user.id))
             return LoginResponse(requires_2fa=True, two_fa_session_id=session_id, message='2FA verification required.')
         tokens = await self._issue_token_pair(user, device_fingerprint)
@@ -326,7 +327,7 @@ class AuthService:
     async def verify_2fa(self, two_fa_session_id: str, otp_code: str, ip_address: str | None) -> TokenPair:
         """Validate 2FA and issue tokens."""
         session_key = f'auth:2fa_session:{two_fa_session_id}'
-        user_id_str: str | None = await self.redis.get(session_key)
+        user_id_str: str | None = await self.redis.get(session_key) if self.redis else None
         if not user_id_str:
             raise TokenInvalidError('2FA session has expired or is invalid. Please log in again.')
         user_id = uuid.UUID(user_id_str)
@@ -349,7 +350,8 @@ class AuthService:
             raise OTPInvalidError('Invalid 2FA code.')
         if totp_record and (not totp_record.enabled):
             await repo.upsert_totp_secret(self.session, user_id, totp_record.secret_encrypted, enabled=True)
-        await self.redis.delete(session_key)
+        if self.redis:
+            await self.redis.delete(session_key)
         tokens = await self._issue_token_pair(user, device_fingerprint='2fa_verified')
         logger.info('2fa_verified', user_id=str(user_id))
         return tokens
@@ -443,7 +445,7 @@ class AuthService:
         """Validate reset token and update the password. Revokes all refresh tokens."""
         token_hash = hash_reset_token(raw_token)
         key = RedisKeys.reset_token(token_hash)
-        user_id_str: str | None = await self.redis.get(key)
+        user_id_str: str | None = await self.redis.get(key) if self.redis else None
         if not user_id_str:
             raise TokenInvalidError('Password reset link is invalid or has expired.')
         user_id = uuid.UUID(user_id_str)
@@ -451,7 +453,8 @@ class AuthService:
         await repo.update_password(self.session, user_id, new_hash)
         await repo.revoke_all_refresh_tokens(self.session, user_id)
         await repo.create_audit_log(self.session, user_id, 'password_reset', ip_address)
-        await self.redis.delete(key)
+        if self.redis:
+            await self.redis.delete(key)
         logger.info('password_reset_complete_legacy', user_id=str(user_id))
 
     # ── Change password (dashboard) ───────────────────────────────────────────

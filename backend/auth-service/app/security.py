@@ -181,40 +181,41 @@ async def check_rate_limit(
     """
     Sliding window rate limiter for auth endpoints.
     Raises HTTP 429 (via VelontriError subclass) if the limit is exceeded.
-
-    Uses a Redis sorted set keyed by IP — members are request timestamps,
-    score is the Unix timestamp.
     """
-    from shared.errors import VelontriError, ErrorCode
-    from fastapi import status
+    if redis is None:
+        return
 
-    key = RedisKeys.rate_limit_auth(ip)
-    now = time.time()
-    window_start = now - window_seconds
+    try:
+        from shared.errors import VelontriError, ErrorCode
+        from fastapi import status
 
-    pipe = redis.pipeline()
-    # Remove entries outside the window
-    pipe.zremrangebyscore(key, "-inf", window_start)
-    # Count remaining entries in window
-    pipe.zcard(key)
-    # Add current request
-    pipe.zadd(key, {str(uuid.uuid4()): now})
-    # Set expiry so the key self-cleans
-    pipe.expire(key, window_seconds)
-    results = await pipe.execute()
+        key = RedisKeys.rate_limit_auth(ip)
+        now = time.time()
+        window_start = now - window_seconds
 
-    current_count: int = results[1]
+        pipe = redis.pipeline()
+        pipe.zremrangebyscore(key, "-inf", window_start)
+        pipe.zcard(key)
+        pipe.zadd(key, {str(uuid.uuid4()): now})
+        pipe.expire(key, window_seconds)
+        results = await pipe.execute()
 
-    if current_count >= max_requests:
-        logger.warning("rate_limit_exceeded", ip=ip, count=current_count)
+        current_count: int = results[1]
 
-        class RateLimitError(VelontriError):
-            http_status = status.HTTP_429_TOO_MANY_REQUESTS
-            error_code = ErrorCode.QUOTA_EXCEEDED
+        if current_count >= max_requests:
+            logger.warning("rate_limit_exceeded", ip=ip, count=current_count)
 
-        raise RateLimitError(
-            f"Too many requests. Maximum {max_requests} per {window_seconds}s."
-        )
+            class RateLimitError(VelontriError):
+                http_status = status.HTTP_429_TOO_MANY_REQUESTS
+                error_code = ErrorCode.QUOTA_EXCEEDED
+
+            raise RateLimitError(
+                f"Too many requests. Maximum {max_requests} per {window_seconds}s."
+            )
+    except Exception as exc:
+        if "RateLimitError" in type(exc).__name__:
+            raise
+        logger.warning("rate_limit_redis_failed", error=str(exc))
 
 
 # ── Account lockout ───────────────────────────────────────────────────────────
@@ -230,38 +231,56 @@ async def record_failed_attempt(
     Returns the new failure count.
     If count reaches max_attempts, also sets the lockout key.
     """
-    counter_key = f"auth:failed:{user_id}"
-    count = await redis.incr(counter_key)
-    # Keep the counter alive for the lockout window
-    await redis.expire(counter_key, lockout_ttl)
+    if redis is None:
+        return 0
+    try:
+        counter_key = f"auth:failed:{user_id}"
+        count = await redis.incr(counter_key)
+        await redis.expire(counter_key, lockout_ttl)
 
-    if count >= max_attempts:
-        lockout_key = RedisKeys.lockout(user_id)
-        await redis.setex(lockout_key, lockout_ttl, "locked")
-        logger.warning(
-            "account_locked",
-            user_id=user_id,
-            failed_attempts=count,
-        )
-
-    return count
+        if count >= max_attempts:
+            lockout_key = RedisKeys.lockout(user_id)
+            await redis.setex(lockout_key, lockout_ttl, "locked")
+            logger.warning(
+                "account_locked",
+                user_id=user_id,
+                failed_attempts=count,
+            )
+        return count
+    except Exception as exc:
+        logger.warning("record_failed_attempt_redis_failed", error=str(exc))
+        return 0
 
 
 async def clear_failed_attempts(redis: Redis, user_id: str) -> None:
     """Clear the failed attempt counter on successful login."""
-    await redis.delete(f"auth:failed:{user_id}")
+    if redis is None:
+        return
+    try:
+        await redis.delete(f"auth:failed:{user_id}")
+    except Exception as exc:
+        logger.warning("clear_failed_attempts_redis_failed", error=str(exc))
 
 
 async def is_account_locked(redis: Redis, user_id: str) -> bool:
     """Return True if the lockout key is set for this user."""
-    key = RedisKeys.lockout(user_id)
-    return await redis.exists(key) == 1
+    if redis is None:
+        return False
+    try:
+        key = RedisKeys.lockout(user_id)
+        return await redis.exists(key) == 1
+    except Exception as exc:
+        logger.warning("is_account_locked_redis_failed", error=str(exc))
+        return False
 
 
 async def assert_not_locked(redis: Redis, user_id: str) -> None:
     """Raise AccountLockedError if the account is currently locked."""
+    if redis is None:
+        return
     if await is_account_locked(redis, user_id):
         raise AccountLockedError(
             "Account is temporarily locked due to multiple failed login attempts. "
             "Please try again in 15 minutes or reset your password."
         )
+

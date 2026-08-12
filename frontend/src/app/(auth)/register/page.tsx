@@ -123,13 +123,15 @@ export default function RegisterPage() {
         `/verify-phone?user_id=${encodeURIComponent(userId)}&email=${encodeURIComponent(email)}`
       );
     } catch (err: any) {
-      const serverMsg = err?.response?.data?.error?.message || err?.response?.data?.detail || err?.message;
+      const apiMsg = err?.response?.data?.error?.message || err?.response?.data?.detail;
       if (err instanceof VelontriApiError) {
         setError(err.code === 'ALREADY_EXISTS' ? 'An account with this email or phone already exists.' : err.message);
-      } else if (serverMsg) {
-        setError(serverMsg.includes('already exists') ? 'An account with this email or phone already exists.' : serverMsg);
+      } else if (apiMsg) {
+        setError(apiMsg.includes('already exists') ? 'An account with this email or phone already exists.' : apiMsg);
+      } else if (err?.message === 'Network Error' || !err?.response) {
+        setError('Network connection error. Please ensure the server is running and try again.');
       } else {
-        setError('Registration failed. Please try again.');
+        setError(err?.message || 'Registration failed. Please try again.');
       }
     } finally { setLoading(false); }
   }
