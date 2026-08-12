@@ -116,9 +116,12 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const res = await authApi.register({ ...form, phone: normPhone, country_code: form.country_code.toUpperCase() });
-      const email = res.data?.email || form.email;
-      // Bypass OTP verification: user is already active. Redirect to login directly.
-      router.push(`${ROUTES.login}?email=${encodeURIComponent(email)}`);
+      const userId = res.data?.user_id;
+      const email  = res.data?.email || form.email;
+      // Registration creates an inactive user — redirect to email OTP verification
+      router.push(
+        `/verify-phone?user_id=${encodeURIComponent(userId)}&email=${encodeURIComponent(email)}`
+      );
     } catch (err) {
       if (err instanceof VelontriApiError) {
         setError(err.code === 'ALREADY_EXISTS' ? 'An account with this email or phone already exists.' : err.message);

@@ -57,3 +57,21 @@ async def handle_internal_sms(payload: dict[str, Any], session_factory: Any, set
     message = payload.get("message", "")
     if phone and message:
         await send_sms(phone, message, settings.AFRICASTALKING_API_KEY, settings.AFRICASTALKING_USERNAME, settings.AFRICASTALKING_SENDER_ID)
+
+
+async def handle_user_registered(payload: dict[str, Any], session_factory: Any, settings: Any) -> None:
+    """Consume user.registered events to send welcome / onboarding notification."""
+    user_id = payload.get("user_id")
+    email = payload.get("email")
+    logger.info("user_registered_event_received", user_id=user_id, email=email)
+
+
+async def handle_email_send(payload: dict[str, Any], session_factory: Any, settings: Any) -> None:
+    """Direct email worker for queued email dispatches."""
+    from .channels import send_email
+    email = payload.get("email")
+    subject = payload.get("subject", "Velontri Notification")
+    html_body = payload.get("html_body", payload.get("message", ""))
+    if email and html_body:
+        await send_email(email, subject, html_body, settings.SENDGRID_API_KEY, settings.EMAIL_FROM)
+

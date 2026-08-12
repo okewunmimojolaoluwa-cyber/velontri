@@ -1,86 +1,39 @@
 'use client';
 
-import { Suspense } from 'react';
-import { useState, useEffect, useRef } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle, Mail, RefreshCw } from 'lucide-react';
 import { useVerifyPhone, useResendOtp } from '@/features/auth/hooks';
+import { OTPInput } from '@/components/auth/otp-input';
 import { ROUTES } from '@/config/routes';
-import { VelontriLogo } from '@/components/ui/velontri-logo';
 
 const RESEND_COUNTDOWN = 60;
 
-/* ── Individual OTP digit input ──────────────────────────────── */
-function OtpInput({
-  value, index, total, onChange, onKeyDown,
-  inputRef,
-}: {
-  value: string; index: number; total: number;
-  onChange: (index: number, val: string) => void;
-  onKeyDown: (index: number, e: React.KeyboardEvent) => void;
-  inputRef: (el: HTMLInputElement | null) => void;
-}) {
-  return (
-    <input
-      ref={inputRef}
-      type="text"
-      inputMode="numeric"
-      pattern="[0-9]*"
-      maxLength={1}
-      value={value}
-      onChange={e => {
-        const v = e.target.value.replace(/\D/g, '');
-        onChange(index, v);
-      }}
-      onKeyDown={e => onKeyDown(index, e)}
-      onFocus={e => e.target.select()}
-      className="h-14 w-12 rounded-xl border-2 bg-slate-50 text-center text-[22px] font-black
-        text-slate-900 transition-all outline-none
-        focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/15
-        border-slate-200"
-      aria-label={`Digit ${index + 1} of ${total}`}
-    />
-  );
-}
-
-/* ── Main page ───────────────────────────────────────────────── */
 function VerifyEmailInner() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const userId = searchParams.get('user_id') ?? '';
   const email  = searchParams.get('email') ? decodeURIComponent(searchParams.get('email')!) : '';
 
-  const [digits,    setDigits]    = useState<string[]>(Array(6).fill(''));
+  const [otpValue,  setOtpValue]  = useState('');
   const [error,     setError]     = useState('');
   const [success,   setSuccess]   = useState(false);
   const [countdown, setCountdown] = useState(RESEND_COUNTDOWN);
   const [canResend, setCanResend] = useState(false);
-  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const verifyPhone = useVerifyPhone();
   const resendOtp   = useResendOtp();
 
-  // Focus first input on mount
-  useEffect(() => { inputRefs.current[0]?.focus(); }, []);
-
-  // Resend countdown
+  // Countdown
   useEffect(() => {
     if (countdown <= 0) { setCanResend(true); return; }
     const t = setInterval(() => setCountdown(c => c - 1), 1000);
     return () => clearInterval(t);
   }, [countdown]);
 
-  // Auto-submit when all 6 digits are filled
-  const otp = digits.join('');
-  useEffect(() => {
-    if (otp.length === 6 && !verifyPhone.isPending && !success) {
-      handleVerify(otp);
-    }
-  }, [otp]);
-
   function handleVerify(code: string) {
-    if (!userId) return;
+    if (!userId || verifyPhone.isPending || success) return;
     setError('');
     verifyPhone.mutate({ userId, otp: code }, {
       onSuccess: () => {
@@ -89,63 +42,20 @@ function VerifyEmailInner() {
         setTimeout(() => router.push('/dashboard'), 1600);
       },
       onError: (err: any) => {
-        setError(err.message || 'Incorrect code. Please try again.');
-        setDigits(Array(6).fill(''));
-        setTimeout(() => inputRefs.current[0]?.focus(), 50);
+        setError(err?.response?.data?.error?.message || err?.message || 'Incorrect code. Please try again.');
+        setOtpValue('');
       },
     });
-  }
-
-  function handleChange(index: number, val: string) {
-    if (!val) {
-      const next = [...digits];
-      next[index] = '';
-      setDigits(next);
-      return;
-    }
-    // Handle paste of multiple digits
-    if (val.length > 1) {
-      const pasted = val.replace(/\D/g, '').slice(0, 6);
-      const next = Array(6).fill('');
-      for (let i = 0; i < pasted.length && i + index < 6; i++) {
-        next[i + index] = pasted[i];
-      }
-      setDigits(next);
-      const nextFocus = Math.min(index + pasted.length, 5);
-      setTimeout(() => inputRefs.current[nextFocus]?.focus(), 10);
-      return;
-    }
-    const next = [...digits];
-    next[index] = val;
-    setDigits(next);
-    if (val && index < 5) {
-      setTimeout(() => inputRefs.current[index + 1]?.focus(), 10);
-    }
-  }
-
-  function handleKeyDown(index: number, e: React.KeyboardEvent) {
-    if (e.key === 'Backspace') {
-      if (digits[index]) {
-        const next = [...digits];
-        next[index] = '';
-        setDigits(next);
-      } else if (index > 0) {
-        inputRefs.current[index - 1]?.focus();
-      }
-    }
-    if (e.key === 'ArrowLeft' && index > 0) inputRefs.current[index - 1]?.focus();
-    if (e.key === 'ArrowRight' && index < 5) inputRefs.current[index + 1]?.focus();
   }
 
   function handleResend() {
     setCanResend(false);
     setCountdown(RESEND_COUNTDOWN);
     setError('');
-    setDigits(Array(6).fill(''));
+    setOtpValue('');
     resendOtp.mutate(userId, {
-      onError: (err: any) => setError(err.message || 'Failed to resend. Please try again.'),
+      onError: (err: any) => setError(err?.response?.data?.error?.message || err?.message || 'Failed to resend. Please try again.'),
     });
-    setTimeout(() => inputRefs.current[0]?.focus(), 50);
   }
 
   if (!userId) {
@@ -184,24 +94,18 @@ function VerifyEmailInner() {
             <CheckCircle className="h-8 w-8 text-emerald-600" />
           </div>
           <p className="text-[17px] font-black text-slate-900">Email verified!</p>
-          <p className="text-[14px] text-slate-500">Signing you in…</p>
+          <p className="text-[14px] text-slate-500">Taking you to your dashboard…</p>
         </div>
       ) : (
         <>
-          {/* OTP input boxes */}
-          <div className="flex items-center justify-center gap-2.5">
-            {digits.map((d, i) => (
-              <OtpInput
-                key={i}
-                value={d}
-                index={i}
-                total={6}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                inputRef={el => { inputRefs.current[i] = el; }}
-              />
-            ))}
-          </div>
+          {/* OTP Input — uses shared component */}
+          <OTPInput
+            value={otpValue}
+            onChange={setOtpValue}
+            onComplete={handleVerify}
+            disabled={verifyPhone.isPending}
+            theme="light"
+          />
 
           {/* Error */}
           {error && (

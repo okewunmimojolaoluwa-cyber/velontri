@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Lock, Eye, EyeOff, Shield, CheckCircle, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/features/auth/auth-provider';
+import { OTPInput } from '@/components/auth/otp-input';
 import { authApi } from '@/lib/api/endpoints';
 
 const RESEND_COUNTDOWN = 60;
@@ -29,30 +30,6 @@ function PwStrength({ pw }: { pw: string }) {
   );
 }
 
-/* ── OTP input box ──────────────────────────────────────────── */
-function OtpBox({
-  value, index, onChange, onKeyDown, inputRef,
-}: {
-  value: string; index: number;
-  onChange: (i: number, v: string) => void;
-  onKeyDown: (i: number, e: React.KeyboardEvent) => void;
-  inputRef: (el: HTMLInputElement | null) => void;
-}) {
-  return (
-    <input
-      ref={inputRef}
-      type="text" inputMode="numeric" pattern="[0-9]*"
-      maxLength={1} value={value}
-      onChange={e => onChange(index, e.target.value.replace(/\D/g, ''))}
-      onKeyDown={e => onKeyDown(index, e)}
-      onFocus={e => e.target.select()}
-      className="h-12 w-10 rounded-xl border-2 bg-slate-900 text-center text-[20px] font-black
-        text-white outline-none border-slate-700
-        focus:border-violet-500 focus:bg-slate-800 focus:ring-4 focus:ring-violet-500/20 transition-all"
-      aria-label={`Digit ${index + 1} of 6`}
-    />
-  );
-}
 
 export default function UserSecurityPage() {
   const { session } = useAuth();
@@ -300,16 +277,17 @@ export default function UserSecurityPage() {
                 Enter the 6-digit code sent to your registered email.
               </p>
 
-              <div className="flex items-center justify-center gap-2">
-                {digits.map((d, i) => (
-                  <OtpBox
-                    key={i} value={d} index={i}
-                    onChange={handleOtpChange}
-                    onKeyDown={handleOtpKeyDown}
-                    inputRef={el => { inputRefs.current[i] = el; }}
-                  />
-                ))}
-              </div>
+              <OTPInput
+                value={otp}
+                onChange={val => {
+                  const arr = Array(6).fill('');
+                  val.split('').forEach((char, idx) => { if (idx < 6) arr[idx] = char; });
+                  setDigits(arr);
+                }}
+                onComplete={handleStep2}
+                theme="dark"
+                disabled={isLoadingStep2}
+              />
 
               <button
                 onClick={handleStep2}

@@ -674,19 +674,23 @@ async def send_chat_message(request: Request, payload: Annotated[dict, Depends(g
                 notif_id = str(uuid.uuid4())
                 preview = content[:80] + ('…' if len(content) > 80 else '')
                 await db.execute(_text("""
-                    INSERT INTO notifications (id, user_id, type, title, message, is_read, created_at)
-                    VALUES (:id, :uid::uuid, 'message', :title, :msg, FALSE, NOW())
+                    INSERT INTO notifications (id, user_id, type, title, message, is_read,
+                                              sender_user_id, action_url, created_at)
+                    VALUES (:id, :uid, 'message', :title, :msg, FALSE, :sender_id, '/dashboard/messages', NOW())
                 """), {
                     'id': notif_id,
                     'uid': recipient_id,
                     'title': f'New message from {sender_name}',
                     'msg': preview,
+                    'sender_id': sender_id,
                 })
-            except Exception:
-                pass  # notification failure is non-fatal
+            except Exception as _ne:
+                import logging
+                logging.getLogger(__name__).warning(f'chat_notification_error: {_ne}')
             await db.commit()
     except Exception as exc:
-        pass
+        import logging
+        logging.getLogger(__name__).error(f'send_chat_message_error: {exc}')
     return SuccessResponse(message='Message sent.', data={'message_id': msg_id, 'thread_id': thread_id, 'delivered': True})
 
 @router.get('/chat/inbox', response_model=SuccessResponse, summary="Get user's message threads")
@@ -1276,15 +1280,16 @@ async def raise_dispute(
                 for mod in mod_ids:
                     await db.execute(_text("""
                         INSERT INTO notifications (id, user_id, type, title, message, is_read, created_at)
-                        VALUES (:nid, :uid::uuid, 'dispute', :title, :msg, FALSE, NOW())
+                        VALUES (:nid, :uid, 'dispute', :title, :msg, FALSE, NOW())
                     """), {
                         'nid': str(_uuid.uuid4()),
                         'uid': mod['uid'],
                         'title': 'New Dispute Raised',
                         'msg': f'A new dispute has been filed: {reason[:80]}',
                     })
-            except Exception:
-                pass
+            except Exception as _de:
+                import logging
+                logging.getLogger(__name__).warning(f'dispute_notify_error: {_de}')
             await db.commit()
     except Exception as exc:
         import logging
