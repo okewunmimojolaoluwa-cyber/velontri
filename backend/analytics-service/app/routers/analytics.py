@@ -782,22 +782,25 @@ async def get_notifications(request: Request, page: int=1, page_size: int=50, un
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
+            # Count unread (always, regardless of filter)
+            count_row = (await db.execute(_text(
+                "SELECT COUNT(*) AS cnt FROM notifications WHERE CAST(user_id AS TEXT) = :uid AND is_read = FALSE"
+            ), {'uid': user_id})).mappings().first()
+            unread_count = int(count_row['cnt']) if count_row else 0
+
+            # Build main query with optional unread filter
             where = 'WHERE CAST(n.user_id AS TEXT) = :uid'
             args: dict = {'uid': user_id}
             if unread_only:
                 where += ' AND n.is_read = FALSE'
-            # Count unread
-            count_row = (await db.execute(_text(
-                f"SELECT COUNT(*) AS cnt FROM notifications n {where.replace('WHERE', 'WHERE')} AND n.is_read = FALSE"
-                if not unread_only else
-                f"SELECT COUNT(*) AS cnt FROM notifications n {where}"
-            ), args)).mappings().first()
-            unread_count = count_row['cnt'] if count_row else 0
 
             rows = (await db.execute(_text(f"""
                 SELECT n.id, n.type, n.title, n.message, n.is_read, n.created_at,
-                       n.sender_user_id, n.sender_role, n.related_resource_type,
-                       n.related_resource_id, n.action_url,
+                       COALESCE(n.sender_user_id, '') AS sender_user_id,
+                       COALESCE(n.sender_role, '') AS sender_role,
+                       COALESCE(n.related_resource_type, '') AS related_resource_type,
+                       COALESCE(n.related_resource_id, '') AS related_resource_id,
+                       COALESCE(n.action_url, '') AS action_url,
                        u.full_name AS sender_name, u.email AS sender_email
                 FROM notifications n
                 LEFT JOIN users u ON CAST(u.id AS TEXT) = CAST(n.sender_user_id AS TEXT)
@@ -807,22 +810,23 @@ async def get_notifications(request: Request, page: int=1, page_size: int=50, un
             """), {**args, 'lim': page_size, 'off': (page - 1) * page_size})).mappings().all()
 
             items = [{
-                'id': r['id'],
-                'type': r['type'],
-                'title': r['title'],
-                'message': r['message'],
+                'id': str(r['id']),
+                'type': str(r['type'] or 'system'),
+                'title': str(r['title'] or ''),
+                'message': str(r['message'] or ''),
                 'is_read': bool(r['is_read']),
                 'created_at': str(r['created_at']),
-                'sender_user_id': r['sender_user_id'],
-                'sender_role': r['sender_role'],
-                'sender_name': r['sender_name'],
-                'sender_email': r['sender_email'],
-                'related_resource_type': r['related_resource_type'],
-                'related_resource_id': r['related_resource_id'],
-                'action_url': r['action_url'],
+                'sender_user_id': r['sender_user_id'] or None,
+                'sender_role': r['sender_role'] or None,
+                'sender_name': r['sender_name'] or None,
+                'sender_email': r['sender_email'] or None,
+                'related_resource_type': r['related_resource_type'] or None,
+                'related_resource_id': r['related_resource_id'] or None,
+                'action_url': r['action_url'] or None,
             } for r in rows]
-    except Exception:
-        pass
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error(f'get_notifications_error: {exc}')
     return SuccessResponse(
         message=f'{len(items)} notification(s).',
         data={'notifications': items, 'unread_count': unread_count}

@@ -17,6 +17,7 @@ import { authApi } from '@/lib/api/endpoints/auth';
 import { UserBottomNav } from './user-bottom-nav';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { VelontriLogo } from '@/components/ui/velontri-logo';
+import { useUnreadCount } from '@/lib/hooks/use-notifications';
 
 /* ── Navigation structure — one item per destination ─────────────── */
 const NAV = [
@@ -103,6 +104,7 @@ export function UserShell({ children }: { children: ReactNode }) {
   const { session, logout: authLogout } = useAuth();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const unreadCount = useUnreadCount();
 
   useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
@@ -231,10 +233,16 @@ export function UserShell({ children }: { children: ReactNode }) {
               <ThemeToggle variant="icon" />
               <Link
                 href={ROUTES.user.notifications}
-                className="flex h-8 w-8 items-center justify-center rounded-lg
-                  text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors relative"
+                className="relative flex h-8 w-8 items-center justify-center rounded-lg
+                  text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
               >
                 <Bell className="h-4 w-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center
+                    rounded-full bg-red-500 text-[9px] font-black text-white leading-none">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
               </Link>
               <Link
                 href={ROUTES.user.create}

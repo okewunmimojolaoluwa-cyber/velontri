@@ -214,16 +214,20 @@ async def _apply_pg_migrations(engine) -> None:
         """,
         "CREATE INDEX IF NOT EXISTS ix_refresh_tokens_user_id ON refresh_tokens(user_id)",
         """
-        CREATE TABLE IF NOT EXISTS otps (
+        CREATE TABLE IF NOT EXISTS otp_codes (
             id         UUID PRIMARY KEY,
-            user_id    UUID NOT NULL,
+            user_id    UUID,
+            email      TEXT NOT NULL,
             purpose    TEXT NOT NULL,
-            code_hash  TEXT NOT NULL,
+            otp_hash   TEXT NOT NULL,
             expires_at TIMESTAMPTZ NOT NULL,
-            used       BOOLEAN NOT NULL DEFAULT FALSE
+            used       BOOLEAN NOT NULL DEFAULT FALSE,
+            attempts   INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
         """,
-        "CREATE INDEX IF NOT EXISTS ix_otps_user_id_purpose ON otps(user_id, purpose)",
+        "CREATE INDEX IF NOT EXISTS ix_otp_codes_email_purpose ON otp_codes(email, purpose)",
+        "CREATE INDEX IF NOT EXISTS ix_otp_codes_user_id_purpose ON otp_codes(user_id, purpose)",
         """
         CREATE TABLE IF NOT EXISTS totp_secrets (
             user_id          UUID PRIMARY KEY,
