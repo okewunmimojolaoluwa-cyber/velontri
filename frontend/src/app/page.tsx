@@ -363,19 +363,28 @@ export default function HomePage() {
                 </Link>
               </div>
 
-              {/* Category pills */}
+              {/* Category pills — navigate to filtered listings */}
               <div className="mb-8 flex flex-wrap gap-2">
-                {['All','Vehicles','Property','Electronics','Fashion','Jobs'].map((c) => (
-                  <button key={c} onClick={() => setCat(c)}
-                    className="cursor-pointer rounded-full border px-3.5 py-1.5 text-[12px]
-                      font-semibold transition-all"
+                {[
+                  { label: 'All',          href: '/listings' },
+                  { label: 'Vehicles',     href: '/listings?listing_type=vehicle' },
+                  { label: 'Property',     href: '/listings?listing_type=property' },
+                  { label: 'Electronics',  href: '/listings?category=Electronics' },
+                  { label: 'Fashion',      href: '/listings?category=Fashion' },
+                  { label: 'Jobs',         href: '/listings?listing_type=job' },
+                ].map(({ label, href }) => (
+                  <Link
+                    key={label}
+                    href={href}
+                    onClick={() => setCat(label)}
+                    className="cursor-pointer rounded-full border px-3.5 py-1.5 text-[12px] font-semibold transition-all no-underline"
                     style={{
-                      background:   cat === c ? '#4F46E5' : '#F8FAFC',
-                      borderColor:  cat === c ? '#4F46E5' : '#E2E8F0',
-                      color:        cat === c ? '#fff'    : '#475569',
+                      background:  cat === label ? '#4F46E5' : '#F8FAFC',
+                      borderColor: cat === label ? '#4F46E5' : '#E2E8F0',
+                      color:       cat === label ? '#fff'    : '#475569',
                     }}>
-                    {c}
-                  </button>
+                    {label}
+                  </Link>
                 ))}
               </div>
 
