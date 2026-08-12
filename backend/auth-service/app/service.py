@@ -723,8 +723,12 @@ class AuthService:
         from email.mime.multipart import MIMEMultipart
         from email.mime.text import MIMEText
         first_name = full_name.split()[0] if full_name else 'there'
-        gmail_user = (self.settings.GMAIL_USER or '').strip()
-        gmail_pass = (self.settings.GMAIL_APP_PASSWORD or '').strip()
+        import os
+        gmail_user = (self.settings.GMAIL_USER or os.environ.get('GMAIL_USER', '')).strip()
+        gmail_pass = (self.settings.GMAIL_APP_PASSWORD or os.environ.get('GMAIL_APP_PASSWORD', '')).strip()
+        gmail_refresh = (self.settings.GMAIL_REFRESH_TOKEN or os.environ.get('GMAIL_REFRESH_TOKEN', '')).strip()
+        client_id = (self.settings.GOOGLE_CLIENT_ID or os.environ.get('GOOGLE_CLIENT_ID', '')).strip()
+        client_secret = (self.settings.GOOGLE_CLIENT_SECRET or os.environ.get('GOOGLE_CLIENT_SECRET', '')).strip()
         resend_key = (self.settings.RESEND_API_KEY or '').strip()
         sendgrid_key = (self.settings.SENDGRID_API_KEY or '').strip()
         from_name = self.settings.EMAIL_FROM_NAME or 'Velontri'
@@ -736,8 +740,8 @@ class AuthService:
             'If you did not request this, please ignore this email.\n\n-- The Velontri Team'
         )
         html_body = self._build_otp_email_html(first_name=first_name, otp=otp, ttl_minutes=ttl_minutes)
-        gmail_refresh = self.settings.GMAIL_REFRESH_TOKEN
-        if gmail_user and (gmail_refresh or gmail_pass):
+
+        if gmail_user and gmail_refresh:
             try:
                 msg = MIMEMultipart('alternative')
                 msg['Subject'] = subject
@@ -745,44 +749,51 @@ class AuthService:
                 msg['To'] = email
                 msg.attach(MIMEText(plain_body, 'plain'))
                 msg.attach(MIMEText(html_body, 'html'))
-                if gmail_refresh and self.settings.GOOGLE_CLIENT_ID and self.settings.GOOGLE_CLIENT_SECRET:
-                    import base64
-                    raw_msg = base64.urlsafe_b64encode(msg.as_bytes()).decode()
-                    async with httpx.AsyncClient(timeout=10.0) as client:
-                        token_resp = await client.post(
-                            'https://oauth2.googleapis.com/token',
-                            data={
-                                'client_id': self.settings.GOOGLE_CLIENT_ID,
-                                'client_secret': self.settings.GOOGLE_CLIENT_SECRET,
-                                'refresh_token': gmail_refresh,
-                                'grant_type': 'refresh_token',
-                            },
-                        )
-                        token_resp.raise_for_status()
-                        access_token = token_resp.json()['access_token']
-                        send_resp = await client.post(
-                            'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
-                            headers={'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'},
-                            json={'raw': raw_msg},
-                        )
-                        send_resp.raise_for_status()
-                    logger.info('email_otp_sent_gmail_http', email=email)
-                    return
-                elif gmail_pass:
-                    ctx = ssl.create_default_context()
-
-                    def _send_smtp():
-                        with smtplib.SMTP('smtp.gmail.com', 587, timeout=10.0) as srv:
-                            srv.starttls(context=ctx)
-                            srv.login(gmail_user, gmail_pass)
-                            srv.sendmail(gmail_user, email, msg.as_string())
-
-                    loop = asyncio.get_event_loop()
-                    await asyncio.wait_for(loop.run_in_executor(None, _send_smtp), timeout=15.0)
-                    logger.info('email_otp_sent_gmail_smtp', email=email)
-                    return
+                import base64
+                raw_msg = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    token_resp = await client.post(
+                        'https://oauth2.googleapis.com/token',
+                        data={
+                            'client_id': client_id,
+                            'client_secret': client_secret,
+                            'refresh_token': gmail_refresh,
+                            'grant_type': 'refresh_token',
+                        },
+                    )
+                    token_resp.raise_for_status()
+                    access_token = token_resp.json()['access_token']
+                    send_resp = await client.post(
+                        'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
+                        headers={'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'},
+                        json={'raw': raw_msg},
+                    )
+                    send_resp.raise_for_status()
+                logger.info('email_otp_sent_gmail_http', email=email)
+                return
             except Exception as exc:
-                logger.warning('email_otp_gmail_failed', email=email, error=str(exc))
+                logger.warning('email_otp_gmail_http_failed', email=email, error=str(exc))
+
+        if gmail_user and gmail_pass:
+            try:
+                msg = MIMEMultipart('alternative')
+                msg['Subject'] = subject
+                msg['From'] = f'{from_name} <{gmail_user}>'
+                msg['To'] = email
+                msg.attach(MIMEText(plain_body, 'plain'))
+                msg.attach(MIMEText(html_body, 'html'))
+                ctx = ssl.create_default_context()
+                def _send_smtp():
+                    with smtplib.SMTP('smtp.gmail.com', 587, timeout=10.0) as srv:
+                        srv.starttls(context=ctx)
+                        srv.login(gmail_user, gmail_pass)
+                        srv.sendmail(gmail_user, email, msg.as_string())
+                loop = asyncio.get_event_loop()
+                await asyncio.wait_for(loop.run_in_executor(None, _send_smtp), timeout=15.0)
+                logger.info('email_otp_sent_gmail_smtp', email=email)
+                return
+            except Exception as exc:
+                logger.warning('email_otp_gmail_smtp_failed', email=email, error=str(exc))
         if resend_key:
             try:
                 async with httpx.AsyncClient(timeout=10.0) as client:
@@ -932,13 +943,16 @@ class AuthService:
         # Direct send using available provider
         resend_key = (self.settings.RESEND_API_KEY or '').strip()
         sendgrid_key = (self.settings.SENDGRID_API_KEY or '').strip()
-        gmail_user = (self.settings.GMAIL_USER or '').strip()
-        gmail_pass = (self.settings.GMAIL_APP_PASSWORD or '').strip()
-        gmail_refresh = self.settings.GMAIL_REFRESH_TOKEN
+        import os
+        gmail_user = (self.settings.GMAIL_USER or os.environ.get('GMAIL_USER', '')).strip()
+        gmail_pass = (self.settings.GMAIL_APP_PASSWORD or os.environ.get('GMAIL_APP_PASSWORD', '')).strip()
+        gmail_refresh = (self.settings.GMAIL_REFRESH_TOKEN or os.environ.get('GMAIL_REFRESH_TOKEN', '')).strip()
+        client_id = (self.settings.GOOGLE_CLIENT_ID or os.environ.get('GOOGLE_CLIENT_ID', '')).strip()
+        client_secret = (self.settings.GOOGLE_CLIENT_SECRET or os.environ.get('GOOGLE_CLIENT_SECRET', '')).strip()
         from_name = self.settings.EMAIL_FROM_NAME or 'Velontri'
-        try:
-            if gmail_user and (gmail_refresh or gmail_pass):
-                import smtplib, ssl, asyncio
+
+        if gmail_user and gmail_refresh:
+            try:
                 from email.mime.multipart import MIMEMultipart
                 from email.mime.text import MIMEText
                 msg = MIMEMultipart('alternative')
@@ -947,32 +961,29 @@ class AuthService:
                 msg['To'] = email
                 msg.attach(MIMEText(plain_body, 'plain'))
                 msg.attach(MIMEText(html_body, 'html'))
-                if gmail_refresh and self.settings.GOOGLE_CLIENT_ID and self.settings.GOOGLE_CLIENT_SECRET:
-                    import base64
-                    raw_msg = base64.urlsafe_b64encode(msg.as_bytes()).decode()
-                    async with httpx.AsyncClient(timeout=10.0) as client:
-                        token_resp = await client.post(
-                            'https://oauth2.googleapis.com/token',
-                            data={
-                                'client_id': self.settings.GOOGLE_CLIENT_ID,
-                                'client_secret': self.settings.GOOGLE_CLIENT_SECRET,
-                                'refresh_token': gmail_refresh,
-                                'grant_type': 'refresh_token',
-                            },
-                        )
-                        token_resp.raise_for_status()
-                        at = token_resp.json()['access_token']
-                        sr = await client.post(
-                            'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
-                            headers={'Authorization': f'Bearer {at}', 'Content-Type': 'application/json'},
-                            json={'raw': raw_msg},
-                        )
-                        sr.raise_for_status()
-                    return
-                elif gmail_pass:
-                    ctx = ssl.create_default_context()
-                    def _smtp():
-                        with smtplib.SMTP('smtp.gmail.com', 587, timeout=10.0) as srv:
+                import base64
+                raw_msg = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    token_resp = await client.post(
+                        'https://oauth2.googleapis.com/token',
+                        data={
+                            'client_id': client_id,
+                            'client_secret': client_secret,
+                            'refresh_token': gmail_refresh,
+                            'grant_type': 'refresh_token',
+                        },
+                    )
+                    token_resp.raise_for_status()
+                    at = token_resp.json()['access_token']
+                    sr = await client.post(
+                        'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
+                        headers={'Authorization': f'Bearer {at}', 'Content-Type': 'application/json'},
+                        json={'raw': raw_msg},
+                    )
+                    sr.raise_for_status()
+                return
+            except Exception:
+                pass
                             srv.starttls(context=ctx)
                             srv.login(gmail_user, gmail_pass)
                             srv.sendmail(gmail_user, email, msg.as_string())
