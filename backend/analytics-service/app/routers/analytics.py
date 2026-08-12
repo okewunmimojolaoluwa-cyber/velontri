@@ -1541,6 +1541,73 @@ async def emergency_disable_maintenance(request: Request) -> SuccessResponse:
 
 # ── Admin/Mod direct message to user ───────────────────────────────────────
 
+@router.post('/admin/users/broadcast', response_model=SuccessResponse, summary='Admin: broadcast message/notification to all users or all moderators')
+async def admin_broadcast(
+    request: Request,
+    payload: Annotated[dict, Depends(get_user_payload)] = None,
+) -> SuccessResponse:
+    """
+    Sends a notification to all users or all moderators.
+    Body: { title, content, target: 'all' | 'moderators' }
+    """
+    from shared.errors import UnauthorizedError, ForbiddenError
+    if not payload:
+        raise UnauthorizedError('Authentication required.')
+    roles = payload.get('roles', [])
+    if not {'enterprise_admin', 'super_admin'}.intersection(set(roles)):
+        raise ForbiddenError('Super admin access required.')
+    sender_id = payload.get('sub', '')
+    body = await request.json()
+    title   = (body.get('title') or 'Message from Velontri Admin').strip()
+    content = (body.get('content') or '').strip()
+    target  = body.get('target', 'all')
+    if not content:
+        from shared.errors import InvalidInputError
+        raise InvalidInputError('content is required.')
+    sent_count = 0
+    try:
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _text
+            import uuid as _uuid
+            # Get sender name
+            sender_row = (await db.execute(_text(
+                'SELECT full_name, email FROM users WHERE CAST(id AS TEXT)=:uid'
+            ), {'uid': sender_id})).mappings().first()
+            sender_name = (sender_row['full_name'] or sender_row['email'] or 'Admin') if sender_row else 'Admin'
+            # Get recipient IDs
+            if target == 'moderators':
+                recipients = (await db.execute(_text(
+                    "SELECT CAST(user_id AS TEXT) AS uid FROM user_roles WHERE role IN ('moderator')"
+                ))).mappings().all()
+            else:
+                recipients = (await db.execute(_text(
+                    "SELECT CAST(id AS TEXT) AS uid FROM users WHERE is_active=TRUE LIMIT 500"
+                ))).mappings().all()
+            for r in recipients:
+                uid = r['uid']
+                await db.execute(_text("""
+                    INSERT INTO notifications
+                        (id, user_id, type, title, message, is_read, sender_user_id, sender_role, action_url, created_at)
+                    VALUES
+                        (:nid, :uid, 'system', :title, :msg, FALSE, :sender_id, 'Admin', '/dashboard/messages', NOW())
+                """), {
+                    'nid': str(_uuid.uuid4()), 'uid': uid,
+                    'title': title, 'msg': content,
+                    'sender_id': sender_id,
+                })
+                sent_count += 1
+            await db.commit()
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error(f'broadcast_error: {exc}')
+        from shared.errors import ExternalServiceError
+        raise ExternalServiceError(f'Broadcast failed: {exc}')
+    return SuccessResponse(
+        message=f'Broadcast sent to {sent_count} recipients.',
+        data={'sent_count': sent_count, 'target': target}
+    )
+
+
 @router.post('/admin/users/{user_id}/message', response_model=SuccessResponse, summary='Admin/Mod: send a direct message to a user')
 async def admin_send_user_message(
     user_id: str,

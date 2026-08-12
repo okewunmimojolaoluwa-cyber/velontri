@@ -131,6 +131,7 @@ const ADMIN_NAV: NavGroup[] = [
   {
     label: 'NOTIFICATIONS',
     items: [
+      { icon: MessageCircle,   label: 'Messages',        href: '/admin/messages' },
       { icon: Mail,            label: 'Email Campaigns',     href: ROUTES.admin.emailCampaigns },
       { icon: MessageSquare,   label: 'SMS Campaigns',       href: ROUTES.admin.smsCampaigns },
       { icon: Smartphone,      label: 'Push Notifications',  href: ROUTES.admin.pushNotifications },
