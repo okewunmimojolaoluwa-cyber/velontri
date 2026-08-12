@@ -125,7 +125,8 @@ def _collect_routers():
             collected.append((router, tag))
             logger.info("router_ok", service=svc_dir)
         except Exception as exc:
-            logger.warning("router_fail", service=svc_dir, error=str(exc))
+            import traceback
+            logger.warning("router_fail", service=svc_dir, error=str(exc), traceback=traceback.format_exc())
 
     # Also mount the user-service internal_router so auth can fetch roles
     try:
@@ -133,7 +134,8 @@ def _collect_routers():
         collected.append((internal_router, "🔧 Internal"))
         logger.info("router_ok", service="user-service-internal")
     except Exception as exc:
-        logger.warning("router_fail", service="user-service-internal", error=str(exc))
+        import traceback
+        logger.warning("router_fail", service="user-service-internal", error=str(exc), traceback=traceback.format_exc())
 
     return collected
 
@@ -566,6 +568,7 @@ def create_app() -> FastAPI:
 
     for router, tag in _collect_routers():
         app.include_router(router, prefix="/api/v1")
+        app.include_router(router)  # also mount without prefix for flexibility
 
     @app.get("/", include_in_schema=False)
     async def root():

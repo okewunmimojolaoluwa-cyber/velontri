@@ -59,6 +59,7 @@ class AuthSettings(BaseServiceSettings):
 
     # TOTP encryption key (for encrypting stored TOTP secrets)
     TOTP_ENCRYPTION_KEY: str = Field(
+        default="YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE=",
         description="32-byte Fernet key for TOTP secret encryption at rest"
     )
 
