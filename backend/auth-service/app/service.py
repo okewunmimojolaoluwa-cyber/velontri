@@ -637,7 +637,10 @@ class AuthService:
             purpose=purpose, otp_hash=otp_hash, expires_at=expires_at,
         )
         ttl_minutes = max(1, self.settings.OTP_TTL_SECONDS // 60)
-        await self._send_email_otp(email=email, full_name=full_name, otp=otp, ttl_minutes=ttl_minutes)
+        import asyncio
+        asyncio.create_task(
+            self._send_email_otp(email=email, full_name=full_name, otp=otp, ttl_minutes=ttl_minutes)
+        )
 
     async def _issue_token_pair(self, user: User, device_fingerprint: str) -> TokenPair:
         """Issue an access + refresh token pair for a user."""
