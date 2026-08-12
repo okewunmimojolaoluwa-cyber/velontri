@@ -329,26 +329,38 @@ OTP_RATE_LIMIT_SECONDS = 60  # minimum seconds between OTP requests
 async def _ensure_otp_codes_table(session: AsyncSession) -> None:
     """Create otp_codes table on-demand if it does not exist yet."""
     from sqlalchemy import text as _text
-    sql = """
-    CREATE TABLE IF NOT EXISTS otp_codes (
-        id         UUID PRIMARY KEY,
-        user_id    UUID,
-        email      TEXT NOT NULL,
-        purpose    TEXT NOT NULL,
-        otp_hash   TEXT NOT NULL,
-        expires_at TIMESTAMPTZ NOT NULL,
-        used       BOOLEAN NOT NULL DEFAULT FALSE,
-        attempts   INTEGER NOT NULL DEFAULT 0,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-    CREATE INDEX IF NOT EXISTS ix_otp_codes_email_purpose ON otp_codes(email, purpose);
-    CREATE INDEX IF NOT EXISTS ix_otp_codes_user_id_purpose ON otp_codes(user_id, purpose);
-    """
     try:
-        await session.execute(_text(sql))
-        await session.commit()
-    except Exception as exc:
-        logger.warning("ensure_otp_codes_table_failed", error=str(exc))
+        await session.rollback()
+    except Exception:
+        pass
+
+    stmts = [
+        """
+        CREATE TABLE IF NOT EXISTS otp_codes (
+            id         UUID PRIMARY KEY,
+            user_id    UUID,
+            email      TEXT NOT NULL,
+            purpose    TEXT NOT NULL,
+            otp_hash   TEXT NOT NULL,
+            expires_at TIMESTAMPTZ NOT NULL,
+            used       BOOLEAN NOT NULL DEFAULT FALSE,
+            attempts   INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_otp_codes_email_purpose ON otp_codes(email, purpose)",
+        "CREATE INDEX IF NOT EXISTS ix_otp_codes_user_id_purpose ON otp_codes(user_id, purpose)",
+    ]
+    for stmt in stmts:
+        try:
+            await session.execute(_text(stmt))
+            await session.commit()
+        except Exception as exc:
+            try:
+                await session.rollback()
+            except Exception:
+                pass
+            logger.warning("ensure_otp_codes_table_failed", error=str(exc))
 
 
 async def create_otp(
@@ -380,6 +392,10 @@ async def create_otp(
             .values(used=True)
         )
     except Exception:
+        try:
+            await session.rollback()
+        except Exception:
+            pass
         # Table might be missing on current DB instance — create it on the fly
         await _ensure_otp_codes_table(session)
         try:
@@ -410,7 +426,12 @@ async def create_otp(
     try:
         await session.flush()
     except Exception:
+        try:
+            await session.rollback()
+        except Exception:
+            pass
         await _ensure_otp_codes_table(session)
+        session.add(otp)
         await session.flush()
     return otp
 
