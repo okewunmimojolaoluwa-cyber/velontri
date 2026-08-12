@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Lock, Eye, EyeOff, Shield, CheckCircle, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { OTPInput } from '@/components/auth/otp-input';
@@ -30,7 +30,6 @@ function PwStrength({ pw }: { pw: string }) {
   );
 }
 
-
 export default function UserSecurityPage() {
   const { session } = useAuth();
   const [step, setStep] = useState<Step>('password');
@@ -49,7 +48,7 @@ export default function UserSecurityPage() {
   const [countdown, setCountdown] = useState(RESEND_COUNTDOWN);
   const [canResend, setCanResend] = useState(false);
   const [isLoadingStep2, setIsLoadingStep2] = useState(false);
-  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
+ const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const [err, setErr] = useState('');
 
