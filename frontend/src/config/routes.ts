@@ -115,6 +115,7 @@ export const ROUTES = {
     exportReports: '/admin/reports/export',
     audit:       '/admin/audit',
     moderation:  '/admin/moderation',
+    messages:    '/admin/messages',
     settings:    '/admin/settings',
     platformSettings: '/admin/settings/platform',
     profile:     '/admin/profile',

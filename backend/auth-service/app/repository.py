@@ -348,7 +348,7 @@ async def create_otp(
             and_(
                 OTPCode.email == email_clean,
                 OTPCode.purpose == purpose,
-                OTPCode.used == False,  # noqa: E712
+                OTPCode.used.is_(False),
             )
         )
         .values(used=True)
@@ -382,7 +382,7 @@ async def get_valid_otp_by_email(
             and_(
                 OTPCode.email == email_clean,
                 OTPCode.purpose == purpose,
-                OTPCode.used == False,  # noqa: E712
+                OTPCode.used.is_(False),
                 OTPCode.expires_at > now,
                 OTPCode.attempts < MAX_OTP_ATTEMPTS,
             )
@@ -406,7 +406,7 @@ async def get_valid_otp(
             and_(
                 OTPCode.user_id == user_id,
                 OTPCode.purpose == purpose,
-                OTPCode.used == False,  # noqa: E712
+                OTPCode.used.is_(False),
                 OTPCode.expires_at > now,
                 OTPCode.attempts < MAX_OTP_ATTEMPTS,
             )
@@ -483,7 +483,7 @@ async def get_refresh_token_by_hash(
         select(RefreshToken).where(
             and_(
                 RefreshToken.token_hash == token_hash,
-                RefreshToken.revoked == False,  # noqa: E712
+                RefreshToken.revoked.is_(False),
                 RefreshToken.expires_at > datetime.now(tz=timezone.utc),
             )
         )
@@ -506,7 +506,7 @@ async def revoke_all_refresh_tokens(
     await session.execute(
         update(RefreshToken)
         .where(
-            and_(RefreshToken.user_id == user_id, RefreshToken.revoked == False)  # noqa: E712
+            and_(RefreshToken.user_id == user_id, RefreshToken.revoked.is_(False))
         )
         .values(revoked=True)
     )
