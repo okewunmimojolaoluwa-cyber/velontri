@@ -10,10 +10,10 @@ export function useVerifyPhone() {
   return useMutation({
     mutationFn: ({ userId, otp }: { userId: string; otp: string }) =>
       authApi.verifyPhone(userId, otp),
-    onSuccess: (res) => {
-      // After verification, tokens are returned
-      if (res.data.tokens) {
-        const tokens = res.data.tokens;
+    onSuccess: (res: any) => {
+      // Backend now returns tokens after successful email verification for auto-login
+      const tokens = res?.data?.tokens;
+      if (tokens?.access_token && tokens?.refresh_token) {
         setTokens(tokens.access_token, tokens.refresh_token);
         setSessionFromToken(tokens.access_token);
       }
@@ -28,7 +28,6 @@ export function useVerifyPhone() {
 
 export function useResendOtp() {
   return useMutation({
-    mutationFn: (userId: string) =>
-      authApi.verifyPhone(userId, '000000'), // Backend handles resend via special OTP
+    mutationFn: (userId: string) => authApi.resendOtp(userId),
   });
 }

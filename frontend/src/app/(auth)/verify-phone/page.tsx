@@ -85,7 +85,8 @@ function VerifyEmailInner() {
     verifyPhone.mutate({ userId, otp: code }, {
       onSuccess: () => {
         setSuccess(true);
-        setTimeout(() => router.push(`${ROUTES.login}?verified=1`), 1800);
+        // Auto-logged in — go directly to dashboard
+        setTimeout(() => router.push('/dashboard'), 1600);
       },
       onError: (err: any) => {
         setError(err.message || 'Incorrect code. Please try again.');

@@ -59,6 +59,7 @@ class ErrorCode(str, Enum):
     # Server errors
     INTERNAL_ERROR = "INTERNAL_ERROR"
     SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE"
+    RATE_LIMITED = "RATE_LIMITED"
 
 
 # ── Response envelope ─────────────────────────────────────────────────────────
@@ -211,6 +212,11 @@ class OTPExpiredError(VelontriError):
 class OTPInvalidError(VelontriError):
     http_status = status.HTTP_400_BAD_REQUEST
     error_code = ErrorCode.OTP_INVALID
+
+
+class RateLimitError(VelontriError):
+    http_status = status.HTTP_429_TOO_MANY_REQUESTS
+    error_code = ErrorCode.RATE_LIMITED
 
 
 # ── FastAPI exception handlers ────────────────────────────────────────────────

@@ -50,6 +50,45 @@ export const authApi = {
       .then((r) => r.data);
   },
 
+  resendOtp(userId: string) {
+    return apiClient
+      .post<ApiResponse<unknown>>('/auth/resend-otp', { user_id: userId })
+      .then((r) => r.data);
+  },
+
+  passwordResetRequest(email: string) {
+    return apiClient
+      .post<ApiResponse<unknown>>('/auth/password/reset-request', { email })
+      .then((r) => r.data);
+  },
+
+  passwordResetOtp(email: string, otp: string, newPassword: string) {
+    return apiClient
+      .post<ApiResponse<unknown>>('/auth/password/reset-otp', {
+        email,
+        otp,
+        new_password: newPassword,
+      })
+      .then((r) => r.data);
+  },
+
+  changePasswordRequest(currentPassword: string) {
+    return apiClient
+      .post<ApiResponse<unknown>>('/auth/password/change-request', {
+        current_password: currentPassword,
+      })
+      .then((r) => r.data);
+  },
+
+  changePasswordConfirm(otp: string, newPassword: string) {
+    return apiClient
+      .post<ApiResponse<unknown>>('/auth/password/change-confirm', {
+        otp,
+        new_password: newPassword,
+      })
+      .then((r) => r.data);
+  },
+
   login(data: LoginRequest) {
     return apiClient
       .post<ApiResponse<LoginResponse>>('/auth/login', {

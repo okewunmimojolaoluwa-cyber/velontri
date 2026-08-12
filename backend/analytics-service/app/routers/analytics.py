@@ -1581,24 +1581,33 @@ async def admin_send_user_message(
                 'INSERT INTO messages (id, thread_id, sender_id, message_type, content, read_at, created_at) '
                 'VALUES (:id,:tid,:sid,:mt,:content,NULL,NOW())'
             ), {'id': msg_id, 'tid': thread_id, 'sid': sender_id, 'mt': 'text', 'content': content})
-            # Notification for recipient
+            # Notification for recipient — with sender attribution
             try:
                 sender_row = (await db.execute(_text(
                     'SELECT full_name, email FROM users WHERE CAST(id AS TEXT)=:p0'
                 ), {'p0': sender_id})).mappings().first()
                 sender_name = (sender_row['full_name'] or sender_row['email'] or 'Support Team') if sender_row else 'Support Team'
+                sender_role_label = 'Admin' if 'enterprise_admin' in roles or 'super_admin' in roles else 'Moderator'
                 preview = content[:80] + ('…' if len(content) > 80 else '')
+                notif_id = str(uuid.uuid4())
                 await db.execute(_text("""
-                    INSERT INTO notifications (id, user_id, type, title, message, is_read, created_at)
-                    VALUES (:nid, :uid::uuid, 'message', :title, :msg, FALSE, NOW())
+                    INSERT INTO notifications
+                        (id, user_id, type, title, message, is_read,
+                         sender_user_id, sender_role, action_url, created_at)
+                    VALUES
+                        (:nid, :uid, 'message', :title, :msg, FALSE,
+                         :sender_id, :sender_role, '/dashboard/messages', NOW())
                 """), {
-                    'nid': str(uuid.uuid4()),
+                    'nid': notif_id,
                     'uid': user_id,
-                    'title': f'Message from {sender_name}',
+                    'title': f'Message from {sender_name} ({sender_role_label})',
                     'msg': preview,
+                    'sender_id': sender_id,
+                    'sender_role': sender_role_label,
                 })
-            except Exception:
-                pass
+            except Exception as _ne:
+                import logging
+                logging.getLogger(__name__).warning(f'admin_message_notification_error: {_ne}')
             await db.commit()
     except Exception as exc:
         import logging
@@ -1636,13 +1645,30 @@ async def admin_notify_user(
         raise InvalidInputError('title and message are required.')
 
     notif_id = str(uuid.uuid4())
+    sender_id = payload.get('sub', '')
+    roles_list = payload.get('roles', [])
+    sender_role_label = 'Admin' if ('enterprise_admin' in roles_list or 'super_admin' in roles_list) else 'Moderator'
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
+            # Get sender name
+            sender_row = (await db.execute(_text(
+                'SELECT full_name, email FROM users WHERE CAST(id AS TEXT)=:uid'
+            ), {'uid': sender_id})).mappings().first()
+            sender_name = (sender_row['full_name'] or sender_row['email'] or sender_role_label) if sender_row else sender_role_label
+            display_title = title if title else f'Message from {sender_name} ({sender_role_label})'
             await db.execute(_text("""
-                INSERT INTO notifications (id, user_id, type, title, message, is_read, created_at)
-                VALUES (:id, :uid::uuid, :type, :title, :msg, FALSE, NOW())
-            """), {'id': notif_id, 'uid': user_id, 'type': ntype, 'title': title, 'msg': message})
+                INSERT INTO notifications
+                    (id, user_id, type, title, message, is_read,
+                     sender_user_id, sender_role, action_url, created_at)
+                VALUES
+                    (:id, :uid, :type, :title, :msg, FALSE,
+                     :sender_id, :sender_role, '/dashboard/notifications', NOW())
+            """), {
+                'id': notif_id, 'uid': user_id, 'type': ntype,
+                'title': display_title, 'msg': message,
+                'sender_id': sender_id, 'sender_role': sender_role_label,
+            })
             await db.commit()
     except Exception as exc:
         import logging

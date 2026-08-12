@@ -29,6 +29,8 @@ from ..dependencies import (
     get_redis,
 )
 from ..schemas import (
+    ChangePasswordConfirmBody,
+    ChangePasswordRequestBody,
     DeviceListResponse,
     Enable2FARequest,
     Enable2FAResponse,
@@ -37,6 +39,7 @@ from ..schemas import (
     LoginResponse,
     OAuthLoginRequest,
     PasswordResetBody,
+    PasswordResetOtpBody,
     PasswordResetRequestBody,
     PasswordResetRequestResponse,
     PasswordResetResponse,
@@ -101,16 +104,19 @@ async def register(
     )
 
     return SuccessResponse(
-        data=RegisterResponse(user_id=user_id, email=str(body.email)).model_dump()
+        message="Registration successful. Please check your email for a 6-digit verification code.",
+        data=RegisterResponse(user_id=user_id, email=str(body.email)).model_dump(),
     )
 
 
+# ── Email/OTP Verification ────────────────────────────────────────────────────
+
 @router.post(
-    "/verify-phone",
+    "/verify-email",
     response_model=SuccessResponse,
-    summary="Verify phone number with OTP",
+    summary="Verify email address with OTP and auto-login",
 )
-async def verify_phone(
+async def verify_email(
     body: VerifyPhoneRequest,
     service: AuthService = Depends(_build_service),
     redis=Depends(get_redis),
@@ -122,9 +128,26 @@ async def verify_phone(
 
 
 @router.post(
+    "/verify-phone",
+    response_model=SuccessResponse,
+    summary="Verify email address with OTP (alias for /verify-email)",
+)
+async def verify_phone(
+    body: VerifyPhoneRequest,
+    service: AuthService = Depends(_build_service),
+    redis=Depends(get_redis),
+    ip: str | None = Depends(get_client_ip),
+) -> SuccessResponse:
+    """Backward-compatible alias — delegates to the same email-OTP logic."""
+    await check_rate_limit(redis, ip or "unknown")
+    result = await service.verify_phone(body.user_id, body.otp)
+    return SuccessResponse(data=result.model_dump())
+
+
+@router.post(
     "/resend-otp",
     response_model=SuccessResponse,
-    summary="Resend phone verification OTP",
+    summary="Resend email verification OTP (60s cooldown enforced)",
 )
 async def resend_otp(
     body: ResendOtpRequest,
@@ -176,8 +199,6 @@ async def oauth_login(
     ip: str | None = Depends(get_client_ip),
 ) -> SuccessResponse:
     await check_rate_limit(redis, ip or "unknown")
-    # OAuth implementation delegates to service layer
-    # which calls provider token verification
     result = await service.oauth_login(
         provider=body.provider,
         id_token=body.id_token,
@@ -265,12 +286,12 @@ async def verify_2fa(
     return SuccessResponse(data=tokens.model_dump())
 
 
-# ── Password reset ────────────────────────────────────────────────────────────
+# ── Password reset (OTP-based) ────────────────────────────────────────────────
 
 @router.post(
     "/password/reset-request",
     response_model=SuccessResponse,
-    summary="Request a password reset email",
+    summary="Request a password reset OTP via email",
 )
 async def password_reset_request(
     body: PasswordResetRequestBody,
@@ -280,16 +301,39 @@ async def password_reset_request(
 ) -> SuccessResponse:
     await check_rate_limit(redis, ip or "unknown")
     await service.request_password_reset(email=str(body.email))
-    # Always return success to prevent email enumeration
+    # Always return the same generic message — prevents email enumeration
     return SuccessResponse(
         data=PasswordResetRequestResponse().model_dump()
     )
 
 
 @router.post(
+    "/password/reset-otp",
+    response_model=SuccessResponse,
+    summary="Reset password using the 6-digit OTP from email",
+)
+async def password_reset_otp(
+    body: PasswordResetOtpBody,
+    service: AuthService = Depends(_build_service),
+    redis=Depends(get_redis),
+    ip: str | None = Depends(get_client_ip),
+) -> SuccessResponse:
+    """OTP-based password reset. Use this instead of /password/reset (legacy)."""
+    await check_rate_limit(redis, ip or "unknown")
+    await service.reset_password_otp(
+        email=str(body.email),
+        otp_code=body.otp,
+        new_password=body.new_password,
+        ip_address=ip,
+    )
+    return SuccessResponse(data=PasswordResetResponse().model_dump())
+
+
+@router.post(
     "/password/reset",
     response_model=SuccessResponse,
-    summary="Reset password using token from email",
+    summary="Reset password using legacy token from email link",
+    deprecated=True,
 )
 async def password_reset(
     body: PasswordResetBody,
@@ -297,6 +341,7 @@ async def password_reset(
     redis=Depends(get_redis),
     ip: str | None = Depends(get_client_ip),
 ) -> SuccessResponse:
+    """Legacy token-based reset. Prefer /password/reset-otp."""
     await check_rate_limit(redis, ip or "unknown")
     await service.reset_password(
         raw_token=body.token,
@@ -304,6 +349,50 @@ async def password_reset(
         ip_address=ip,
     )
     return SuccessResponse(data=PasswordResetResponse().model_dump())
+
+
+# ── Change password (dashboard) ───────────────────────────────────────────────
+
+@router.post(
+    "/password/change-request",
+    response_model=SuccessResponse,
+    summary="Step 1: verify current password and send OTP to email",
+)
+async def change_password_request(
+    body: ChangePasswordRequestBody,
+    service: AuthService = Depends(_build_service),
+    current_user_id: uuid.UUID = Depends(get_current_user_id),
+    redis=Depends(get_redis),
+    ip: str | None = Depends(get_client_ip),
+) -> SuccessResponse:
+    await check_rate_limit(redis, ip or "unknown")
+    result = await service.request_password_change(
+        user_id=current_user_id,
+        current_password=body.current_password,
+    )
+    return SuccessResponse(data=result.model_dump())
+
+
+@router.post(
+    "/password/change-confirm",
+    response_model=SuccessResponse,
+    summary="Step 2: verify OTP and set new password (revokes other sessions)",
+)
+async def change_password_confirm(
+    body: ChangePasswordConfirmBody,
+    service: AuthService = Depends(_build_service),
+    current_user_id: uuid.UUID = Depends(get_current_user_id),
+    redis=Depends(get_redis),
+    ip: str | None = Depends(get_client_ip),
+) -> SuccessResponse:
+    await check_rate_limit(redis, ip or "unknown")
+    result = await service.confirm_password_change(
+        user_id=current_user_id,
+        otp_code=body.otp,
+        new_password=body.new_password,
+        ip_address=ip,
+    )
+    return SuccessResponse(data=result.model_dump())
 
 
 # ── Devices ───────────────────────────────────────────────────────────────────

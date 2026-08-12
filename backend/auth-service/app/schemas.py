@@ -87,15 +87,25 @@ class RegisterResponse(BaseModel):
     message: str = "Registration successful. Please verify your email address."
 
 
-# ── Phone verification ────────────────────────────────────────────────────────
+# ── Email verification (unified OTP) ───────────────────────────────────────
 
-class VerifyPhoneRequest(BaseModel):
+class VerifyEmailRequest(BaseModel):
     user_id: uuid.UUID
     otp: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
 
 
+class VerifyEmailResponse(BaseModel):
+    message: str = "Email verified. Your account is now active."
+    tokens: "TokenPair | None" = None  # auto-login after verification
+
+
+# Keep backward-compat aliases for phone verify (redirects to email verify logic)
+VerifyPhoneRequest = VerifyEmailRequest
+
+
 class VerifyPhoneResponse(BaseModel):
-    message: str = "Phone verified. Your account is now active."
+    message: str = "Email verified. Your account is now active."
+    tokens: "TokenPair | None" = None
 
 
 class ResendOtpRequest(BaseModel):
@@ -103,7 +113,8 @@ class ResendOtpRequest(BaseModel):
 
 
 class ResendOtpResponse(BaseModel):
-    message: str = "A new verification code has been sent to your phone."
+    message: str = "A new verification code has been sent to your email."
+    resend_after_seconds: int = 60
 
 
 # ── Login ─────────────────────────────────────────────────────────────────────
@@ -191,9 +202,27 @@ class PasswordResetRequestBody(BaseModel):
 
 
 class PasswordResetRequestResponse(BaseModel):
-    message: str = "If this email exists, a reset link has been sent."
+    message: str = "If an account exists for this email, we've sent a verification code."
 
 
+# OTP-based password reset (replaces token-based)
+class PasswordResetOtpBody(BaseModel):
+    email: EmailStr
+    otp: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
+    new_password: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator("email", mode="after")
+    @classmethod
+    def normalise_email(cls, v: str) -> str:
+        return v.lower()
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, v: str) -> str:
+        return _validate_password(v)
+
+
+# Legacy token-based (keep for backward compat)
 class PasswordResetBody(BaseModel):
     token: str = Field(..., min_length=1)
     new_password: str = Field(..., min_length=8, max_length=128)
@@ -206,6 +235,33 @@ class PasswordResetBody(BaseModel):
 
 class PasswordResetResponse(BaseModel):
     message: str = "Password updated successfully. Please log in again."
+
+
+# ── Change password (dashboard) ─────────────────────────────────────────────────
+
+class ChangePasswordRequestBody(BaseModel):
+    """Step 1: verify current password and trigger OTP email."""
+    current_password: str = Field(..., min_length=1, max_length=128)
+
+
+class ChangePasswordRequestResponse(BaseModel):
+    message: str = "A verification code has been sent to your registered email."
+    resend_after_seconds: int = 60
+
+
+class ChangePasswordConfirmBody(BaseModel):
+    """Step 2: verify OTP and set new password."""
+    otp: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
+    new_password: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, v: str) -> str:
+        return _validate_password(v)
+
+
+class ChangePasswordConfirmResponse(BaseModel):
+    message: str = "Password changed successfully. All other sessions have been revoked."
 
 
 # ── Token introspection ───────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-﻿"""
+"""
 Auth Service SQLAlchemy ORM models.
 
 These map exactly to the schema defined in Design Â§2.1.
@@ -142,28 +142,30 @@ class LoginHistory(Base):
     )
 
 
-class OTP(Base):
-    __tablename__ = "otps"
+class OTPCode(Base):
+    __tablename__ = "otp_codes"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
     purpose: Mapped[str] = mapped_column(
         String(50), nullable=False
-    )  # phone_verify | 2fa | password_reset
-    code_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    )  # EMAIL_VERIFICATION | PASSWORD_RESET | CHANGE_PASSWORD | CHANGE_EMAIL | 2fa
+    otp_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
     used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    attempts: Mapped[int] = mapped_column(SmallInteger, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, nullable=False
+    )
 
     __table_args__ = (
-        Index("ix_otps_user_id_purpose", "user_id", "purpose"),
-        CheckConstraint(
-            "purpose IN ('phone_verify', '2fa', 'password_reset')",
-            name="ck_otps_purpose",
-        ),
+        Index("ix_otp_codes_email_purpose", "email", "purpose"),
+        Index("ix_otp_codes_user_id_purpose", "user_id", "purpose"),
     )
 
 
