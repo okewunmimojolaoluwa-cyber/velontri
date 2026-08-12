@@ -923,6 +923,7 @@ def create_app() -> FastAPI:
 
     for router, tag in _collect_routers():
         app.include_router(router, prefix="/api/v1")
+        app.include_router(router)
 
     @app.get("/", include_in_schema=False)
     async def root():
