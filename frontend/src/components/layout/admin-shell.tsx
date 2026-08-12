@@ -7,7 +7,7 @@ import {
   LayoutDashboard, DollarSign, Users, Store, Package,
   ListChecks, AlertTriangle,
   CreditCard, Crown, Megaphone, Image, FileText, Bell,
-  Mail, MessageSquare, MapPin, Settings, BarChart3,
+  Mail, MessageSquare, MessageCircle, MapPin, Settings, BarChart3,
   ClipboardList, LogOut, Menu, X, ChevronRight,
   TrendingUp, UserCog, Home, Car, Briefcase,
   Tag, Globe, Download, User, Star, Smartphone, Shield,

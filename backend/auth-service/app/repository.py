@@ -326,6 +326,31 @@ MAX_OTP_ATTEMPTS = 5
 OTP_RATE_LIMIT_SECONDS = 60  # minimum seconds between OTP requests
 
 
+async def _ensure_otp_codes_table(session: AsyncSession) -> None:
+    """Create otp_codes table on-demand if it does not exist yet."""
+    from sqlalchemy import text as _text
+    sql = """
+    CREATE TABLE IF NOT EXISTS otp_codes (
+        id         UUID PRIMARY KEY,
+        user_id    UUID,
+        email      TEXT NOT NULL,
+        purpose    TEXT NOT NULL,
+        otp_hash   TEXT NOT NULL,
+        expires_at TIMESTAMPTZ NOT NULL,
+        used       BOOLEAN NOT NULL DEFAULT FALSE,
+        attempts   INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS ix_otp_codes_email_purpose ON otp_codes(email, purpose);
+    CREATE INDEX IF NOT EXISTS ix_otp_codes_user_id_purpose ON otp_codes(user_id, purpose);
+    """
+    try:
+        await session.execute(_text(sql))
+        await session.commit()
+    except Exception as exc:
+        logger.warning("ensure_otp_codes_table_failed", error=str(exc))
+
+
 async def create_otp(
     session: AsyncSession,
     user_id: uuid.UUID | None,
@@ -341,18 +366,36 @@ async def create_otp(
     """
     email_clean = email.lower().strip()
 
-    # Soft-invalidate previous unused OTPs for same email+purpose
-    await session.execute(
-        update(OTPCode)
-        .where(
-            and_(
-                OTPCode.email == email_clean,
-                OTPCode.purpose == purpose,
-                OTPCode.used.is_(False),
+    try:
+        # Soft-invalidate previous unused OTPs for same email+purpose
+        await session.execute(
+            update(OTPCode)
+            .where(
+                and_(
+                    OTPCode.email == email_clean,
+                    OTPCode.purpose == purpose,
+                    OTPCode.used.is_(False),
+                )
             )
+            .values(used=True)
         )
-        .values(used=True)
-    )
+    except Exception:
+        # Table might be missing on current DB instance — create it on the fly
+        await _ensure_otp_codes_table(session)
+        try:
+            await session.execute(
+                update(OTPCode)
+                .where(
+                    and_(
+                        OTPCode.email == email_clean,
+                        OTPCode.purpose == purpose,
+                        OTPCode.used.is_(False),
+                    )
+                )
+                .values(used=True)
+            )
+        except Exception:
+            pass
 
     otp = OTPCode(
         user_id=user_id,
@@ -364,7 +407,11 @@ async def create_otp(
         attempts=0,
     )
     session.add(otp)
-    await session.flush()
+    try:
+        await session.flush()
+    except Exception:
+        await _ensure_otp_codes_table(session)
+        await session.flush()
     return otp
 
 
@@ -376,21 +423,25 @@ async def get_valid_otp_by_email(
     """Return the most recent unused, non-expired OTP for email+purpose."""
     now = datetime.now(tz=timezone.utc)
     email_clean = email.lower().strip()
-    result = await session.execute(
-        select(OTPCode)
-        .where(
-            and_(
-                OTPCode.email == email_clean,
-                OTPCode.purpose == purpose,
-                OTPCode.used.is_(False),
-                OTPCode.expires_at > now,
-                OTPCode.attempts < MAX_OTP_ATTEMPTS,
+    try:
+        result = await session.execute(
+            select(OTPCode)
+            .where(
+                and_(
+                    OTPCode.email == email_clean,
+                    OTPCode.purpose == purpose,
+                    OTPCode.used.is_(False),
+                    OTPCode.expires_at > now,
+                    OTPCode.attempts < MAX_OTP_ATTEMPTS,
+                )
             )
+            .order_by(OTPCode.expires_at.desc())
+            .limit(1)
         )
-        .order_by(OTPCode.expires_at.desc())
-        .limit(1)
-    )
-    return result.scalars().first()
+        return result.scalars().first()
+    except Exception:
+        await _ensure_otp_codes_table(session)
+        return None
 
 
 async def get_valid_otp(
@@ -400,39 +451,49 @@ async def get_valid_otp(
 ) -> OTPCode | None:
     """Return the most recent unused, non-expired OTP for user_id+purpose."""
     now = datetime.now(tz=timezone.utc)
-    result = await session.execute(
-        select(OTPCode)
-        .where(
-            and_(
-                OTPCode.user_id == user_id,
-                OTPCode.purpose == purpose,
-                OTPCode.used.is_(False),
-                OTPCode.expires_at > now,
-                OTPCode.attempts < MAX_OTP_ATTEMPTS,
+    try:
+        result = await session.execute(
+            select(OTPCode)
+            .where(
+                and_(
+                    OTPCode.user_id == user_id,
+                    OTPCode.purpose == purpose,
+                    OTPCode.used.is_(False),
+                    OTPCode.expires_at > now,
+                    OTPCode.attempts < MAX_OTP_ATTEMPTS,
+                )
             )
+            .order_by(OTPCode.expires_at.desc())
+            .limit(1)
         )
-        .order_by(OTPCode.expires_at.desc())
-        .limit(1)
-    )
-    return result.scalars().first()
+        return result.scalars().first()
+    except Exception:
+        await _ensure_otp_codes_table(session)
+        return None
 
 
 async def increment_otp_attempts(session: AsyncSession, otp_id: uuid.UUID) -> int:
     """Atomically increment attempts counter. Returns the new count."""
-    result = await session.execute(
-        update(OTPCode)
-        .where(OTPCode.id == otp_id)
-        .values(attempts=OTPCode.attempts + 1)
-        .returning(OTPCode.attempts)
-    )
-    row = result.fetchone()
-    return row[0] if row else 0
+    try:
+        result = await session.execute(
+            update(OTPCode)
+            .where(OTPCode.id == otp_id)
+            .values(attempts=OTPCode.attempts + 1)
+            .returning(OTPCode.attempts)
+        )
+        row = result.fetchone()
+        return row[0] if row else 0
+    except Exception:
+        return 0
 
 
 async def mark_otp_used(session: AsyncSession, otp_id: uuid.UUID) -> None:
-    await session.execute(
-        update(OTPCode).where(OTPCode.id == otp_id).values(used=True)
-    )
+    try:
+        await session.execute(
+            update(OTPCode).where(OTPCode.id == otp_id).values(used=True)
+        )
+    except Exception:
+        pass
 
 
 async def get_last_otp_created_at(
@@ -440,19 +501,22 @@ async def get_last_otp_created_at(
 ) -> datetime | None:
     """Return the created_at timestamp of the most recent OTP for rate-limiting."""
     email_clean = email.lower().strip()
-    result = await session.execute(
-        select(OTPCode.created_at)
-        .where(
-            and_(
-                OTPCode.email == email_clean,
-                OTPCode.purpose == purpose,
+    try:
+        result = await session.execute(
+            select(OTPCode.created_at)
+            .where(
+                and_(
+                    OTPCode.email == email_clean,
+                    OTPCode.purpose == purpose,
+                )
             )
+            .order_by(OTPCode.created_at.desc())
+            .limit(1)
         )
-        .order_by(OTPCode.created_at.desc())
-        .limit(1)
-    )
-    row = result.fetchone()
-    return row[0] if row else None
+        row = result.fetchone()
+        return row[0] if row else None
+    except Exception:
+        return None
 
 
 # ── Refresh token repository ──────────────────────────────────────────────────
