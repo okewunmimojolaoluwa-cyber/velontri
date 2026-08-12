@@ -122,14 +122,18 @@ export default function RegisterPage() {
       router.push(
         `/verify-phone?user_id=${encodeURIComponent(userId)}&email=${encodeURIComponent(email)}`
       );
-    } catch (err) {
+    } catch (err: any) {
+      const serverMsg = err?.response?.data?.error?.message || err?.response?.data?.detail || err?.message;
       if (err instanceof VelontriApiError) {
         setError(err.code === 'ALREADY_EXISTS' ? 'An account with this email or phone already exists.' : err.message);
+      } else if (serverMsg) {
+        setError(serverMsg.includes('already exists') ? 'An account with this email or phone already exists.' : serverMsg);
       } else {
         setError('Registration failed. Please try again.');
       }
     } finally { setLoading(false); }
   }
+
 
   return (
     <div className="space-y-5">

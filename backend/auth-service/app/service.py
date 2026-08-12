@@ -103,16 +103,21 @@ class AuthService:
             purpose=PURPOSE_EMAIL_VERIFICATION,
         )
 
-        await publish_event(
-            self.channel,
-            routing_key='user.registered',
-            payload={
-                'user_id': str(user.id), 'email': email,
-                'full_name': full_name, 'phone': phone,
-                'country_code': country_code,
-            },
-            correlation_id=str(user.id),
-        )
+        try:
+            if self.channel:
+                await publish_event(
+                    self.channel,
+                    routing_key='user.registered',
+                    payload={
+                        'user_id': str(user.id), 'email': email,
+                        'full_name': full_name, 'phone': phone,
+                        'country_code': country_code,
+                    },
+                    correlation_id=str(user.id),
+                )
+        except Exception as _mq_err:
+            logger.warning('publish_user_registered_failed', error=str(_mq_err))
+
         logger.info('user_registered', user_id=str(user.id), country=country_code)
         return user.id
 
