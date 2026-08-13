@@ -962,7 +962,7 @@ class AuthService:
         # 1. Primary: Brevo HTTPS REST API (port 443 — works everywhere without recipient or SMTP port restrictions)
         if brevo_key:
             try:
-                sender_email = (getattr(self.settings, 'EMAIL_FROM', '') or gmail_user or 'okewunmimojolaoluwa@gmail.com').strip()
+                sender_email = (gmail_user or 'okewunmimojolaoluwa@gmail.com').strip()
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     resp = await client.post(
                         'https://api.brevo.com/v3/smtp/email',
@@ -980,10 +980,31 @@ class AuthService:
                         },
                     )
                     if resp.status_code in (200, 201, 202):
-                        logger.info('email_otp_sent_brevo', email=email)
+                        logger.info('email_otp_sent_brevo', email=email, brevo_id=resp.json().get('messageId'))
                         return
                     else:
-                        logger.warning('brevo_api_failed', status=resp.status_code, body=resp.text)
+                        logger.warning('brevo_primary_failed', status=resp.status_code, body=resp.text)
+                        # Fallback to Brevo system-approved sender email
+                        resp_sys = await client.post(
+                            'https://api.brevo.com/v3/smtp/email',
+                            headers={
+                                'api-key': brevo_key,
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                            },
+                            json={
+                                'sender': {'name': from_name, 'email': 'okewunmimojolaoluwa@11887786.brevosend.com'},
+                                'to': [{'email': email}],
+                                'subject': subject,
+                                'htmlContent': html_body,
+                                'textContent': plain_body,
+                            },
+                        )
+                        if resp_sys.status_code in (200, 201, 202):
+                            logger.info('email_otp_sent_brevo_sys', email=email, brevo_id=resp_sys.json().get('messageId'))
+                            return
+                        else:
+                            logger.warning('brevo_sys_failed', status=resp_sys.status_code, body=resp_sys.text)
             except Exception as _brevo_err:
                 logger.warning('brevo_api_exception', error=str(_brevo_err))
 

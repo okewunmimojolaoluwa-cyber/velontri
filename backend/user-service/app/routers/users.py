@@ -584,14 +584,69 @@ async def admin_create_moderator(request: Request, service: UserService=Depends(
 
 @router.delete('/users/admin/{user_id}', response_model=SuccessResponse, summary='Admin: permanently delete a user account')
 async def admin_delete_user(user_id: uuid.UUID, service: UserService=Depends(_build_service), payload: dict=Depends(get_current_user_payload)) -> SuccessResponse:
-    """Hard-deletes a user and all their roles. Super admin only."""
+    """Hard-deletes a user and all their roles. Super admin only. Cannot delete own account."""
     from sqlalchemy import text
     roles = payload.get('roles', [])
     if 'enterprise_admin' not in roles and 'super_admin' not in roles:
         from shared.errors import ForbiddenError
         raise ForbiddenError('Super admin role required.')
+    # Cannot delete own account
+    caller_id = payload.get('sub', '')
+    if str(user_id) == str(caller_id):
+        from shared.errors import ForbiddenError
+        raise ForbiddenError('You cannot delete your own account.')
+    # Cannot delete other enterprise_admins
     session = service.session
-    await session.execute(text('DELETE FROM user_roles WHERE user_id = :uid'), {'uid': str(user_id)})
-    await session.execute(text('DELETE FROM users WHERE id = :uid'), {'uid': str(user_id)})
+    check = (await session.execute(text(
+        "SELECT role FROM user_roles WHERE CAST(user_id AS TEXT) = :uid AND role = 'enterprise_admin'"
+    ), {'uid': str(user_id)})).fetchone()
+    if check and 'enterprise_admin' not in roles:
+        from shared.errors import ForbiddenError
+        raise ForbiddenError('Cannot delete an admin account.')
+    await session.execute(text('DELETE FROM user_roles WHERE CAST(user_id AS TEXT) = :uid'), {'uid': str(user_id)})
+    await session.execute(text('DELETE FROM users WHERE CAST(id AS TEXT) = :uid'), {'uid': str(user_id)})
     await session.commit()
-    return SuccessResponse(message='User deleted.', data={'user_id': str(user_id)})
+    return SuccessResponse(message='User account permanently deleted.', data={'user_id': str(user_id)})
+
+
+@router.post('/users/me/deactivate', response_model=SuccessResponse, summary='User: deactivate own account')
+async def deactivate_my_account(request: Request, service: UserService=Depends(_build_service), current_user_id: uuid.UUID=Depends(get_current_user_id)) -> SuccessResponse:
+    """
+    Soft-deactivates the user's own account (sets is_active=False).
+    The account can be reactivated by the admin, or by the user logging in again.
+    Requires password confirmation.
+    """
+    import asyncio, functools
+    from sqlalchemy import text
+    from shared.errors import InvalidInputError
+    body = await request.json()
+    password = (body.get('password') or '').strip()
+    if not password:
+        raise InvalidInputError('Password is required to deactivate your account.')
+    # Verify password
+    row = (await service.session.execute(
+        text('SELECT password_hash FROM users WHERE CAST(id AS TEXT) = :uid'),
+        {'uid': str(current_user_id)}
+    )).fetchone()
+    if not row or not row[0]:
+        raise InvalidInputError('Account not found.')
+    import bcrypt
+    loop = asyncio.get_event_loop()
+    try:
+        match = await loop.run_in_executor(
+            None, functools.partial(bcrypt.checkpw, password.encode(), row[0].encode())
+        )
+    except Exception:
+        match = False
+    if not match:
+        raise InvalidInputError('Incorrect password. Please try again.')
+    # Deactivate
+    await service.session.execute(
+        text('UPDATE users SET is_active = FALSE WHERE CAST(id AS TEXT) = :uid'),
+        {'uid': str(current_user_id)}
+    )
+    await service.session.commit()
+    return SuccessResponse(
+        message='Your account has been deactivated.',
+        data={'deactivated': True, 'user_id': str(current_user_id)}
+    )

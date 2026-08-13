@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, Users, ShieldOff, MessageCircle,
-  CheckCircle, AlertCircle, X,
+  CheckCircle, AlertCircle, X, Trash2,
 } from 'lucide-react';
 import { RoleGate } from '@/components/rbac/role-gate';
 import { useAuth } from '@/features/auth/auth-provider';
@@ -117,6 +117,9 @@ export default function AdminUsersPage() {
   const [committed, setCommitted] = useState('');
   const [page, setPage] = useState(1);
   const [msgUser, setMsgUser] = useState<AdminUser | null>(null);
+  const [deleteUser, setDeleteUser] = useState<AdminUser | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deleteErr, setDeleteErr] = useState('');
   const qc = useQueryClient();
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -133,6 +136,19 @@ export default function AdminUsersPage() {
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
       apiClient.patch(`/users/admin/${id}`, { is_active: active }),
     onSettled: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  });
+
+  const { mutate: deleteAccount, isPending: deleting } = useMutation({
+    mutationFn: (id: string) => apiClient.delete(`/users/admin/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'users'] });
+      setDeleteUser(null);
+      setDeleteConfirm('');
+      setDeleteErr('');
+    },
+    onError: (e: any) => {
+      setDeleteErr(e?.response?.data?.error?.message || e?.message || 'Failed to delete user.');
+    },
   });
 
   const users = Array.isArray(data?.data) ? data.data : [];
@@ -152,6 +168,53 @@ export default function AdminUsersPage() {
       }
     >
       {msgUser && <MessageModal user={msgUser} onClose={() => setMsgUser(null)} />}
+
+      {/* Delete confirm modal */}
+      {deleteUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 mb-4">
+              <Trash2 className="h-5 w-5 text-red-600" />
+            </div>
+            <h3 className="text-[16px] font-black text-slate-900 mb-1">Delete Account</h3>
+            <p className="text-[13px] text-slate-500 mb-4 leading-relaxed">
+              You are about to permanently delete <strong>{deleteUser.full_name}</strong> ({deleteUser.email}).
+              This action cannot be undone. All their listings, messages and data will be lost.
+            </p>
+            <p className="text-[12px] font-semibold text-slate-700 mb-2">
+              Type <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-red-600">DELETE</span> to confirm:
+            </p>
+            <input
+              value={deleteConfirm}
+              onChange={e => { setDeleteConfirm(e.target.value); setDeleteErr(''); }}
+              placeholder="Type DELETE"
+              className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50 px-4 text-[14px] text-slate-900 outline-none focus:border-red-400 transition-all mb-3"
+            />
+            {deleteErr && (
+              <p className="text-[12px] font-medium text-red-600 mb-3">{deleteErr}</p>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setDeleteUser(null); setDeleteConfirm(''); setDeleteErr(''); }}
+                disabled={deleting}
+                className="flex-1 h-10 rounded-xl border border-slate-200 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (deleteConfirm !== 'DELETE') { setDeleteErr('Type DELETE exactly to confirm.'); return; }
+                  deleteAccount(deleteUser.id);
+                }}
+                disabled={deleting || deleteConfirm !== 'DELETE'}
+                className="flex-1 h-10 rounded-xl bg-red-600 text-[13px] font-bold text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {deleting ? 'Deleting…' : 'Delete Account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-6">
         {/* Header */}
@@ -222,8 +285,8 @@ export default function AdminUsersPage() {
         ) : (
           <>
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="hidden lg:grid grid-cols-[1fr_1fr_auto_auto_auto_auto] gap-4 px-5 py-3 border-b border-slate-100 bg-slate-50">
-                {['User', 'Contact', 'Roles', 'Status', 'Message', 'Action'].map(h => (
+              <div className="hidden lg:grid grid-cols-[1fr_1fr_auto_auto_auto_auto_auto] gap-4 px-5 py-3 border-b border-slate-100 bg-slate-50">
+                {['User', 'Contact', 'Roles', 'Status', 'Message', 'Action', 'Delete'].map(h => (
                   <p key={h} className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400">{h}</p>
                 ))}
               </div>
@@ -232,7 +295,7 @@ export default function AdminUsersPage() {
                 {users.map(user => (
                   <li
                     key={user.id}
-                    className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto_auto_auto_auto] gap-3 lg:gap-4 px-5 py-4 items-center hover:bg-slate-50 transition-colors"
+                    className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto_auto_auto_auto_auto] gap-3 lg:gap-4 px-5 py-4 items-center hover:bg-slate-50 transition-colors"
                   >
                     {/* User */}
                     <div className="flex items-center gap-3">
@@ -305,6 +368,17 @@ export default function AdminUsersPage() {
                         {user.is_active ? 'Suspend' : 'Restore'}
                       </button>
                     )}
+
+                    {/* Delete — never show for own account */}
+                    {user.id !== currentUserId ? (
+                      <button
+                        onClick={() => { setDeleteUser(user); setDeleteConfirm(''); setDeleteErr(''); }}
+                        title="Permanently delete account"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 transition-colors"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    ) : <span />}
                   </li>
                 ))}
               </ul>
