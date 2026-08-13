@@ -981,16 +981,11 @@ class AuthService:
                         json={'raw': raw_msg},
                     )
                     sr.raise_for_status()
-                return
             except Exception:
                 pass
-                            srv.starttls(context=ctx)
-                            srv.login(gmail_user, gmail_pass)
-                            srv.sendmail(gmail_user, email, msg.as_string())
-                    loop = asyncio.get_event_loop()
-                    await asyncio.wait_for(loop.run_in_executor(None, _smtp), timeout=15.0)
-                    return
-            elif resend_key:
+
+        if resend_key:
+            try:
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     await client.post(
                         'https://api.resend.com/emails',
@@ -998,7 +993,11 @@ class AuthService:
                         json={'from': 'Velontri <onboarding@resend.dev>', 'to': [email], 'subject': subject, 'html': html_body, 'text': plain_body},
                     )
                 return
-            elif sendgrid_key:
+            except Exception:
+                pass
+
+        if sendgrid_key:
+            try:
                 from_email = self.settings.EMAIL_FROM or 'noreply@velontri.com'
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     await client.post(
@@ -1011,8 +1010,8 @@ class AuthService:
                             'content': [{'type': 'text/html', 'value': html_body}],
                         },
                     )
-        except Exception as exc:
-            logger.warning('password_changed_email_failed', email=email, error=str(exc))
+            except Exception:
+                pass
 
     async def _publish_lockout_notification(self, user: User) -> None:
         try:
