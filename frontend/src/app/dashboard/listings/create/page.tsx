@@ -153,6 +153,7 @@ export default function CreateListingPage() {
   const [dragOver, setDragOver] = useState(false);
   const [warmingUp, setWarmingUp] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // ── Quota check: how many active listings does this user have? ────────
   const { data: listingsData, isLoading: quotaLoading } = useQuery({
@@ -331,10 +332,13 @@ export default function CreateListingPage() {
     fileInputRef.current?.click();
   }
 
+  function openCamera() {
+    cameraInputRef.current?.click();
+  }
+
   function onFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files?.length) {
       readFilesAsDataURLs(e.target.files);
-      // reset so same file can be re-selected
       e.target.value = '';
     }
   }
@@ -634,12 +638,21 @@ export default function CreateListingPage() {
           <div className="space-y-4">
             <p className="text-sm font-bold text-slate-700">Add photos (up to 6)</p>
 
-            {/* Hidden file input */}
+            {/* Hidden file inputs */}
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
               multiple
+              className="hidden"
+              onChange={onFileInputChange}
+            />
+            {/* Camera input — mobile only, opens rear camera directly */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
               className="hidden"
               onChange={onFileInputChange}
             />
@@ -690,22 +703,32 @@ export default function CreateListingPage() {
               )}
             </div>
 
-            {/* Upload button */}
-            <button
-              type="button"
-              onClick={openFilePicker}
-              disabled={form.images.length >= 6}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200
-                bg-indigo-50 py-3 text-[13px] font-semibold text-indigo-600
-                hover:bg-indigo-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <Upload className="h-4 w-4" />
-              {form.images.length === 0
-                ? 'Choose photos from your device'
-                : form.images.length >= 6
-                ? 'Maximum 6 photos reached'
-                : `Add more photos (${form.images.length}/6)`}
-            </button>
+            {/* Camera + Gallery buttons */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={openCamera}
+                disabled={form.images.length >= 6}
+                className="flex items-center justify-center gap-2 rounded-xl border border-slate-200
+                  bg-white py-3.5 text-[13px] font-semibold text-slate-700
+                  hover:bg-slate-50 hover:border-slate-300 transition-colors
+                  disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <span className="text-xl">📷</span>
+                Take Photo
+              </button>
+              <button
+                type="button"
+                onClick={openFilePicker}
+                disabled={form.images.length >= 6}
+                className="flex items-center justify-center gap-2 rounded-xl border border-indigo-200
+                  bg-indigo-50 py-3.5 text-[13px] font-semibold text-indigo-600
+                  hover:bg-indigo-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Upload className="h-4 w-4" />
+                {form.images.length === 0 ? 'Choose from Gallery' : `Gallery (${form.images.length}/6)`}
+              </button>
+            </div>
 
             <p className="text-xs text-slate-400 text-center">
               Drag &amp; drop photos here, or tap the button above · JPG, PNG, WEBP, HEIC · Max 10 MB each

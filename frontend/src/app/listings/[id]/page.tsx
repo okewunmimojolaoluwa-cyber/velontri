@@ -162,6 +162,7 @@ export default function ListingDetailPage() {
   const [imgIdx,   setImgIdx]   = useState(0);
   const [lightbox, setLightbox] = useState(false);
   const [panel,    setPanel]    = useState<'none' | 'message'>('none');
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   const qc = useQueryClient();
   const uid = session.userId;
@@ -247,6 +248,42 @@ export default function ListingDetailPage() {
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
       <Navbar />
+
+      {/* Full gallery bottom sheet */}
+      {galleryOpen && hasImages && (
+        <div className="fixed inset-0 z-[300] flex flex-col bg-black/95"
+          onClick={() => setGalleryOpen(false)}>
+          <div className="flex items-center justify-between px-5 py-4 flex-shrink-0"
+            onClick={e => e.stopPropagation()}>
+            <p className="text-white font-bold text-[15px]">
+              {imgIdx + 1} / {images.length} photos
+            </p>
+            <button onClick={() => setGalleryOpen(false)}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          {/* Current large image */}
+          <div className="flex-1 flex items-center justify-center px-4 min-h-0"
+            onClick={e => e.stopPropagation()}>
+            <img src={images[imgIdx]} alt={listing?.title}
+              className="max-h-full max-w-full rounded-xl object-contain" />
+          </div>
+          {/* Thumbnail strip */}
+          <div className="flex gap-2 overflow-x-auto px-4 pb-6 pt-3 flex-shrink-0"
+            style={{ scrollbarWidth: 'none' }}
+            onClick={e => e.stopPropagation()}>
+            {images.map((img, i) => (
+              <button key={i} onClick={() => setImgIdx(i)}
+                className={`flex-shrink-0 h-16 w-16 rounded-xl overflow-hidden border-2 transition-all ${
+                  i === imgIdx ? 'border-white scale-105' : 'border-white/20 opacity-60'
+                }`}>
+                <img src={img} alt="" className="h-full w-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Lightbox */}
       {lightbox && hasImages && (
@@ -361,6 +398,31 @@ export default function ListingDetailPage() {
                 ) : (
                   <ListingImagePlaceholder type={listing.listing_type} title={listing.title} />
                 )}
+
+              {/* Thumbnail strip — only when 2+ images */}
+              {hasImages && images.length > 1 && (
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                  {images.slice(0, 5).map((img, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { setImgIdx(i); }}
+                      className={`h-10 w-10 rounded-lg overflow-hidden border-2 transition-all ${
+                        i === imgIdx ? 'border-white scale-105 shadow-lg' : 'border-white/40 opacity-70'
+                      }`}
+                    >
+                      <img src={img} alt="" className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                  {images.length > 5 && (
+                    <button
+                      onClick={() => setGalleryOpen(true)}
+                      className="h-10 w-10 rounded-lg bg-black/60 border-2 border-white/40 flex items-center justify-center backdrop-blur-sm"
+                    >
+                      <span className="text-white text-[9px] font-black">+{images.length - 5}</span>
+                    </button>
+                  )}
+                </div>
+              )}
                 <div className="absolute top-3 right-3 flex gap-2">
                   <button
                     onClick={() => {

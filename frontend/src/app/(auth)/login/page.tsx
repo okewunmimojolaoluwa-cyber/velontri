@@ -13,6 +13,7 @@ import { VelontriApiError } from '@/types/api';
 import { parseJwtPayload, payloadToSession } from '@/lib/auth/jwt';
 import { GoogleSignInButton, AuthDivider } from '@/components/auth/google-sign-in';
 import { normalizePhoneNumber } from '@/lib/utils/formatters';
+import { BackendWakeup } from '@/components/auth/backend-wakeup';
 
 const inputCls = [
   'w-full h-12 rounded-xl border border-slate-200 bg-slate-50',
@@ -58,9 +59,11 @@ function LoginInner() {
       }
       if (!d.tokens?.access_token) { setError('No token returned. Please try again.'); return; }
       handleTokens(d.tokens.access_token, d.tokens.refresh_token);
-    } catch (err) {
+    } catch (err: any) {
       if (err instanceof VelontriApiError) {
         setError(err.status === 422 ? 'Invalid email/phone or password.' : err.message);
+      } else if (err?.code === 'ERR_NETWORK' || err?.message === 'Network Error' || !err?.response) {
+        setError('The server is starting up — this can take 30–60 seconds on first load. Please wait and try again.');
       } else {
         setError('Sign in failed. Please try again.');
       }
@@ -91,6 +94,7 @@ function LoginInner() {
 
   return (
     <div className="space-y-5">
+      <BackendWakeup />
       {/* Header */}
       <div>
         <h1 className="text-[1.75rem] font-black tracking-tight text-slate-900 leading-tight">

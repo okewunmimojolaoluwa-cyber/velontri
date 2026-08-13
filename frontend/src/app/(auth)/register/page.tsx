@@ -12,6 +12,7 @@ import { useAuth } from '@/features/auth/auth-provider';
 import { parseJwtPayload, payloadToSession } from '@/lib/auth/jwt';
 import { GoogleSignInButton, AuthDivider } from '@/components/auth/google-sign-in';
 import { normalizePhoneNumber } from '@/lib/utils/formatters';
+import { BackendWakeup } from '@/components/auth/backend-wakeup';
 
 const inputCls = [
   'w-full h-12 rounded-xl border border-slate-200 bg-slate-50',
@@ -139,6 +140,7 @@ export default function RegisterPage() {
 
   return (
     <div className="space-y-5">
+      <BackendWakeup />
       <div>
         <h1 className="text-[1.75rem] font-black tracking-tight text-slate-900 leading-tight">
           Create your account
