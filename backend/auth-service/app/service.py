@@ -638,10 +638,10 @@ class AuthService:
         )
         logger.info('otp_generated_for_email', email=email, purpose=purpose, otp=otp)
         ttl_minutes = max(1, self.settings.OTP_TTL_SECONDS // 60)
-        import asyncio
-        asyncio.create_task(
-            self._send_email_otp(email=email, full_name=full_name, otp=otp, ttl_minutes=ttl_minutes)
-        )
+        try:
+            await self._send_email_otp(email=email, full_name=full_name, otp=otp, ttl_minutes=ttl_minutes)
+        except Exception as _send_err:
+            logger.warning('send_email_otp_failed', email=email, error=str(_send_err))
 
     async def _issue_token_pair(self, user: User, device_fingerprint: str) -> TokenPair:
         """Issue an access + refresh token pair for a user."""
