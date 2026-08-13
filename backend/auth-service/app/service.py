@@ -677,13 +677,16 @@ class AuthService:
 
     async def _get_subscription_tier(self, user_id: uuid.UUID) -> str:
         try:
-            async with httpx.AsyncClient(timeout=2.0) as client:
-                url = f'{self.settings.USER_SERVICE_URL}/internal/users/{user_id}/subscription-tier'
-                resp = await client.get(url)
-                if resp.status_code == 200:
-                    return resp.json().get('tier', 'starter')
+            from sqlalchemy import text as _text
+            result = await self.session.execute(
+                _text("SELECT tier FROM subscriptions WHERE user_id = :uid AND is_active IS TRUE LIMIT 1"),
+                {"uid": str(user_id)}
+            )
+            row = result.fetchone()
+            if row and row[0]:
+                return str(row[0])
         except Exception:
-            logger.warning('user_service_tier_fetch_failed', user_id=str(user_id))
+            pass
         return 'starter'
 
     async def _send_sms_otp(self, phone: str, otp: str) -> None:
