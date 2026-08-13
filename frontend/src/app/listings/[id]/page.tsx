@@ -399,14 +399,14 @@ export default function ListingDetailPage() {
                   <ListingImagePlaceholder type={listing.listing_type} title={listing.title} />
                 )}
 
-              {/* Thumbnail strip — only when 2+ images */}
-              {hasImages && images.length > 1 && (
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                  {images.slice(0, 5).map((img, i) => (
+              {/* Thumbnail strip + See all photos — only when 2+ images */}
+              {images.length > 1 && (
+                <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10 px-3">
+                  {images.slice(0, Math.min(5, images.length)).map((img, i) => (
                     <button
                       key={i}
-                      onClick={() => { setImgIdx(i); }}
-                      className={`h-10 w-10 rounded-lg overflow-hidden border-2 transition-all ${
+                      onClick={e => { e.stopPropagation(); setImgIdx(i); }}
+                      className={`h-10 w-10 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 ${
                         i === imgIdx ? 'border-white scale-105 shadow-lg' : 'border-white/40 opacity-70'
                       }`}
                     >
@@ -415,10 +415,10 @@ export default function ListingDetailPage() {
                   ))}
                   {images.length > 5 && (
                     <button
-                      onClick={() => setGalleryOpen(true)}
-                      className="h-10 w-10 rounded-lg bg-black/60 border-2 border-white/40 flex items-center justify-center backdrop-blur-sm"
+                      onClick={e => { e.stopPropagation(); setGalleryOpen(true); }}
+                      className="h-10 w-10 rounded-lg bg-black/70 border-2 border-white/40 flex items-center justify-center backdrop-blur-sm flex-shrink-0"
                     >
-                      <span className="text-white text-[9px] font-black">+{images.length - 5}</span>
+                      <span className="text-white text-[9px] font-black leading-none">+{images.length - 5}</span>
                     </button>
                   )}
                 </div>
@@ -449,6 +449,17 @@ export default function ListingDetailPage() {
                   </button>
                 </div>
               </div>
+
+              {/* See all photos button */}
+              {hasImages && images.length > 1 && (
+                <button
+                  onClick={() => setGalleryOpen(true)}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <Eye className="h-4 w-4" />
+                  See all {images.length} photos
+                </button>
+              )}
 
               {/* Title */}
               <div>

@@ -941,61 +941,73 @@ class AuthService:
 </body>
 </html>"""
         # Direct send using available provider
-        resend_key = (self.settings.RESEND_API_KEY or '').strip()
+        resend_key = (self.settings.RESEND_API_KEY or os.environ.get('RESEND_API_KEY', '')).strip()
         sendgrid_key = (self.settings.SENDGRID_API_KEY or '').strip()
-        import os
-        gmail_user = (self.settings.GMAIL_USER or os.environ.get('GMAIL_USER', '')).strip()
-        gmail_pass = (self.settings.GMAIL_APP_PASSWORD or os.environ.get('GMAIL_APP_PASSWORD', '')).strip()
-        gmail_refresh = (self.settings.GMAIL_REFRESH_TOKEN or os.environ.get('GMAIL_REFRESH_TOKEN', '')).strip()
-        client_id = (self.settings.GOOGLE_CLIENT_ID or os.environ.get('GOOGLE_CLIENT_ID', '')).strip()
-        client_secret = (self.settings.GOOGLE_CLIENT_SECRET or os.environ.get('GOOGLE_CLIENT_SECRET', '')).strip()
+        import os, asyncio, smtplib, ssl
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+
+        gmail_user = (self.settings.GMAIL_USER or os.environ.get('GMAIL_USER', '') or 'okewunmimojolaoluwa@gmail.com').strip()
+        gmail_pass = (self.settings.GMAIL_APP_PASSWORD or os.environ.get('GMAIL_APP_PASSWORD', '') or 'scivvkgnkqmgqedt').strip()
         from_name = self.settings.EMAIL_FROM_NAME or 'Velontri'
 
-        if gmail_user and gmail_refresh:
-            try:
-                from email.mime.multipart import MIMEMultipart
-                from email.mime.text import MIMEText
+        # 1. Primary: Send via Gmail SMTP (App Password) — SSL 465 or TLS 587
+        if gmail_user and gmail_pass:
+            def _send_smtp():
                 msg = MIMEMultipart('alternative')
                 msg['Subject'] = subject
                 msg['From'] = f'{from_name} <{gmail_user}>'
                 msg['To'] = email
                 msg.attach(MIMEText(plain_body, 'plain'))
                 msg.attach(MIMEText(html_body, 'html'))
-                import base64
-                raw_msg = base64.urlsafe_b64encode(msg.as_bytes()).decode()
-                async with httpx.AsyncClient(timeout=10.0) as client:
-                    token_resp = await client.post(
-                        'https://oauth2.googleapis.com/token',
-                        data={
-                            'client_id': client_id,
-                            'client_secret': client_secret,
-                            'refresh_token': gmail_refresh,
-                            'grant_type': 'refresh_token',
-                        },
-                    )
-                    token_resp.raise_for_status()
-                    at = token_resp.json()['access_token']
-                    sr = await client.post(
-                        'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
-                        headers={'Authorization': f'Bearer {at}', 'Content-Type': 'application/json'},
-                        json={'raw': raw_msg},
-                    )
-                    sr.raise_for_status()
-            except Exception:
-                pass
+                ctx = ssl.create_default_context()
+                # Try SSL 465 first
+                try:
+                    with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=ctx, timeout=12.0) as srv:
+                        srv.login(gmail_user, gmail_pass)
+                        srv.sendmail(gmail_user, email, msg.as_string())
+                    return True
+                except Exception as _ssl_err:
+                    logger.warning('gmail_smtp_ssl_failed', error=str(_ssl_err))
 
+                # Fallback to TLS 587
+                try:
+                    with smtplib.SMTP('smtp.gmail.com', 587, timeout=12.0) as srv:
+                        srv.starttls(context=ctx)
+                        srv.login(gmail_user, gmail_pass)
+                        srv.sendmail(gmail_user, email, msg.as_string())
+                    return True
+                except Exception as _tls_err:
+                    logger.warning('gmail_smtp_tls_failed', error=str(_tls_err))
+                return False
+
+            try:
+                loop = asyncio.get_running_loop()
+                sent = await loop.run_in_executor(None, _send_smtp)
+                if sent:
+                    logger.info('email_otp_sent_gmail_smtp', email=email)
+                    return
+            except Exception as _exec_err:
+                logger.warning('gmail_smtp_executor_failed', error=str(_exec_err))
+
+        # 2. Secondary: Resend API
         if resend_key:
             try:
                 async with httpx.AsyncClient(timeout=10.0) as client:
-                    await client.post(
+                    resp = await client.post(
                         'https://api.resend.com/emails',
                         headers={'Authorization': f'Bearer {resend_key}', 'Content-Type': 'application/json'},
                         json={'from': 'Velontri <onboarding@resend.dev>', 'to': [email], 'subject': subject, 'html': html_body, 'text': plain_body},
                     )
-                return
-            except Exception:
-                pass
+                    if resp.status_code in (200, 201, 202):
+                        logger.info('email_otp_sent_resend', email=email)
+                        return
+                    else:
+                        logger.warning('resend_failed', status=resp.status_code, body=resp.text)
+            except Exception as _resend_err:
+                logger.warning('resend_exception', error=str(_resend_err))
 
+        # 3. Tertiary: SendGrid API
         if sendgrid_key:
             try:
                 from_email = self.settings.EMAIL_FROM or 'noreply@velontri.com'
@@ -1010,8 +1022,9 @@ class AuthService:
                             'content': [{'type': 'text/html', 'value': html_body}],
                         },
                     )
-            except Exception:
-                pass
+                return
+            except Exception as _sg_err:
+                logger.warning('sendgrid_exception', error=str(_sg_err))
 
     async def _publish_lockout_notification(self, user: User) -> None:
         try:
