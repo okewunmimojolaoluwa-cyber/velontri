@@ -983,28 +983,7 @@ class AuthService:
                         logger.info('email_otp_sent_brevo', email=email, brevo_id=resp.json().get('messageId'))
                         return
                     else:
-                        logger.warning('brevo_primary_failed', status=resp.status_code, body=resp.text)
-                        # Fallback to Brevo system-approved sender email
-                        resp_sys = await client.post(
-                            'https://api.brevo.com/v3/smtp/email',
-                            headers={
-                                'api-key': brevo_key,
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                            },
-                            json={
-                                'sender': {'name': from_name, 'email': 'okewunmimojolaoluwa@11887786.brevosend.com'},
-                                'to': [{'email': email}],
-                                'subject': subject,
-                                'htmlContent': html_body,
-                                'textContent': plain_body,
-                            },
-                        )
-                        if resp_sys.status_code in (200, 201, 202):
-                            logger.info('email_otp_sent_brevo_sys', email=email, brevo_id=resp_sys.json().get('messageId'))
-                            return
-                        else:
-                            logger.warning('brevo_sys_failed', status=resp_sys.status_code, body=resp_sys.text)
+                        logger.warning('brevo_api_failed', status=resp.status_code, body=resp.text)
             except Exception as _brevo_err:
                 logger.warning('brevo_api_exception', error=str(_brevo_err))
 
