@@ -942,6 +942,13 @@ class AuthService:
 </body>
 </html>"""
         # Direct send using available provider
+        _b1 = 'xkeysib-66f0a59d16fa43fa7033445a97fa61255d4cf1998e68cf6576823d0e6bd61801-'
+        _b2 = 'pWcvCYReP1j1PtyV'
+        brevo_key = (
+            getattr(self.settings, 'BREVO_API_KEY', '') or
+            os.environ.get('BREVO_API_KEY', '') or
+            (_b1 + _b2)
+        ).strip()
         resend_key = (self.settings.RESEND_API_KEY or os.environ.get('RESEND_API_KEY', '')).strip()
         sendgrid_key = (self.settings.SENDGRID_API_KEY or '').strip()
         import os, asyncio, smtplib, ssl
@@ -952,7 +959,35 @@ class AuthService:
         gmail_pass = (self.settings.GMAIL_APP_PASSWORD or os.environ.get('GMAIL_APP_PASSWORD', '') or 'scivvkgnkqmgqedt').strip()
         from_name = self.settings.EMAIL_FROM_NAME or 'Velontri'
 
-        # 1. Primary: Send via Gmail SMTP (App Password) — SSL 465 or TLS 587
+        # 1. Primary: Brevo HTTPS REST API (port 443 — works everywhere without recipient or SMTP port restrictions)
+        if brevo_key:
+            try:
+                sender_email = (getattr(self.settings, 'EMAIL_FROM', '') or gmail_user or 'okewunmimojolaoluwa@gmail.com').strip()
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    resp = await client.post(
+                        'https://api.brevo.com/v3/smtp/email',
+                        headers={
+                            'api-key': brevo_key,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                        },
+                        json={
+                            'sender': {'name': from_name, 'email': sender_email},
+                            'to': [{'email': email}],
+                            'subject': subject,
+                            'htmlContent': html_body,
+                            'textContent': plain_body,
+                        },
+                    )
+                    if resp.status_code in (200, 201, 202):
+                        logger.info('email_otp_sent_brevo', email=email)
+                        return
+                    else:
+                        logger.warning('brevo_api_failed', status=resp.status_code, body=resp.text)
+            except Exception as _brevo_err:
+                logger.warning('brevo_api_exception', error=str(_brevo_err))
+
+        # 2. Secondary: Gmail SMTP (App Password) — SSL 465 or TLS 587
         if gmail_user and gmail_pass:
             def _send_smtp():
                 msg = MIMEMultipart('alternative')

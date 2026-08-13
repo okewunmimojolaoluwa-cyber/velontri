@@ -50,6 +50,10 @@ services:
       - key: TOTP_ENCRYPTION_KEY
         value: "40T5Idu3oVZchRBW_X8fgLFOCKSgCGF-TTQUFGe_h5k="
 
+      # ── Brevo API (for real OTP emails to any address) ───────────────────
+      - key: BREVO_API_KEY
+        sync: false
+
       # ── Gmail SMTP (for OTP emails) ──────────────────────────────────────
       - key: GMAIL_USER
         value: "okewunmimojolaoluwa@gmail.com"
