@@ -6,7 +6,7 @@ import { setupResponseInterceptor } from '@/lib/api/interceptors';
 export function createApiClient(): AxiosInstance {
   const client = axios.create({
     baseURL: siteConfig.apiUrl,
-    timeout: 30_000,
+    timeout: 60_000,
     headers: { 'Content-Type': 'application/json' },
     withCredentials: true,
   });

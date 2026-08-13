@@ -501,12 +501,13 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
     _expiry_task = _asyncio.create_task(_expiry_loop())
 
     # ── Keep-warm task — pings self every 8 minutes to prevent Render cold starts ──
+    _public_url = _os.environ.get('RENDER_EXTERNAL_URL', f'http://127.0.0.1:{_os.environ.get("PORT", "10000")}')
     async def _keep_warm_loop():
         await _asyncio.sleep(60)  # let startup finish first
         while True:
             try:
                 async with httpx.AsyncClient(timeout=10.0) as _kw:
-                    await _kw.get(f"http://127.0.0.1:{_os.environ.get('PORT', '10000')}/health")
+                    await _kw.get(f"{_public_url}/health")
                 logger.debug("keep_warm_ping_ok")
             except Exception as _kw_err:
                 logger.debug(f"keep_warm_ping_skip: {_kw_err}")
