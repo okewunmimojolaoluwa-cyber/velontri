@@ -994,16 +994,25 @@ class AuthService:
         # 2. Secondary: Resend API
         if resend_key:
             try:
+                from_sender = f'{from_name} <noreply@velontri.com>'
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     resp = await client.post(
                         'https://api.resend.com/emails',
                         headers={'Authorization': f'Bearer {resend_key}', 'Content-Type': 'application/json'},
-                        json={'from': 'Velontri <onboarding@resend.dev>', 'to': [email], 'subject': subject, 'html': html_body, 'text': plain_body},
+                        json={'from': from_sender, 'to': [email], 'subject': subject, 'html': html_body, 'text': plain_body},
                     )
                     if resp.status_code in (200, 201, 202):
                         logger.info('email_otp_sent_resend', email=email)
                         return
                     else:
+                        resp_dev = await client.post(
+                            'https://api.resend.com/emails',
+                            headers={'Authorization': f'Bearer {resend_key}', 'Content-Type': 'application/json'},
+                            json={'from': 'Velontri <onboarding@resend.dev>', 'to': [email], 'subject': subject, 'html': html_body, 'text': plain_body},
+                        )
+                        if resp_dev.status_code in (200, 201, 202):
+                            logger.info('email_otp_sent_resend_dev', email=email)
+                            return
                         logger.warning('resend_failed', status=resp.status_code, body=resp.text)
             except Exception as _resend_err:
                 logger.warning('resend_exception', error=str(_resend_err))
