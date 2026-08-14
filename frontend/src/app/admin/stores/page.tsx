@@ -133,48 +133,95 @@ export default function AdminStoresPage() {
           <ul className="divide-y divide-slate-100">
             {filtered.map(seller => (
               <li key={seller.id}
-                className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto_auto_auto_auto] gap-3 lg:gap-4 px-5 py-4 items-center hover:bg-slate-50 transition-colors">
+                className="hover:bg-slate-50 transition-colors">
 
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[13px] font-bold text-indigo-700 uppercase">
-                    {seller.name.charAt(0)}
+                {/* ── Mobile card ── */}
+                <div className="lg:hidden p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[14px] font-bold text-indigo-700 uppercase">
+                      {seller.name.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-[14px] font-bold text-slate-900 truncate">{seller.name}</p>
+                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold capitalize ${
+                          seller.status === 'active'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                            : 'bg-red-50 text-red-600 border-red-100'
+                        }`}>
+                          {seller.status === 'active' ? 'Active' : 'Suspended'}
+                        </span>
+                      </div>
+                      {seller.email && <p className="text-[12px] text-slate-400 truncate mt-0.5">{seller.email}</p>}
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-[14px] font-bold text-slate-900 truncate">{seller.name}</p>
-                    {seller.email && <p className="text-[11px] text-slate-400 truncate">{seller.email}</p>}
+
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[12px]">
+                    <div>
+                      <p className="font-bold uppercase tracking-wide text-slate-400 text-[10px] mb-0.5">Store</p>
+                      <p className="text-slate-700 truncate">{seller.store_name}</p>
+                    </div>
+                    <div>
+                      <p className="font-bold uppercase tracking-wide text-slate-400 text-[10px] mb-0.5">Total listings</p>
+                      <p className="text-slate-700">{seller.total_listings}</p>
+                    </div>
+                    <div>
+                      <p className="font-bold uppercase tracking-wide text-slate-400 text-[10px] mb-0.5">Active listings</p>
+                      <p className="text-emerald-600 font-semibold">{seller.active_listings}</p>
+                    </div>
                   </div>
+
+                  <button
+                    onClick={() => toggle({ id: seller.id, active: seller.status !== 'active' })}
+                    className={`w-full flex items-center justify-center gap-1.5 h-9 rounded-xl border text-[12px] font-semibold transition-all ${
+                      seller.status === 'active'
+                        ? 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100'
+                        : 'border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                    }`}>
+                    {seller.status === 'active'
+                      ? <><ShieldOff className="h-3.5 w-3.5" /> Suspend Seller</>
+                      : <><ShieldCheck className="h-3.5 w-3.5" /> Restore Seller</>}
+                  </button>
                 </div>
 
-                <p className="text-[13px] text-slate-600 truncate">{seller.store_name}</p>
-
-                <div className="flex items-center gap-1.5 text-[13px] text-slate-700">
-                  <Package className="h-3.5 w-3.5 text-slate-400" />
-                  {seller.total_listings}
-                </div>
-
-                <span className="rounded-full bg-emerald-50 border border-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
-                  {seller.active_listings} active
-                </span>
-
-                <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold capitalize shrink-0 ${
-                  seller.status === 'active'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                    : 'bg-red-50 text-red-600 border-red-100'
-                }`}>
-                  {seller.status === 'active' ? 'Active' : 'Suspended'}
-                </span>
-
-                <button
-                  onClick={() => toggle({ id: seller.id, active: seller.status !== 'active' })}
-                  className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-all shrink-0 ${
+                {/* ── Desktop row ── */}
+                <div className="hidden lg:grid grid-cols-[1fr_1fr_auto_auto_auto_auto] gap-4 px-5 py-4 items-center">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[13px] font-bold text-indigo-700 uppercase">
+                      {seller.name.charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[14px] font-bold text-slate-900 truncate">{seller.name}</p>
+                      {seller.email && <p className="text-[11px] text-slate-400 truncate">{seller.email}</p>}
+                    </div>
+                  </div>
+                  <p className="text-[13px] text-slate-600 truncate">{seller.store_name}</p>
+                  <div className="flex items-center gap-1.5 text-[13px] text-slate-700">
+                    <Package className="h-3.5 w-3.5 text-slate-400" />
+                    {seller.total_listings}
+                  </div>
+                  <span className="rounded-full bg-emerald-50 border border-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                    {seller.active_listings} active
+                  </span>
+                  <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold capitalize shrink-0 ${
                     seller.status === 'active'
-                      ? 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100'
-                      : 'border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                      : 'bg-red-50 text-red-600 border-red-100'
                   }`}>
-                  {seller.status === 'active'
-                    ? <><ShieldOff className="h-3 w-3" /> Suspend</>
-                    : <><ShieldCheck className="h-3 w-3" /> Restore</>}
-                </button>
+                    {seller.status === 'active' ? 'Active' : 'Suspended'}
+                  </span>
+                  <button
+                    onClick={() => toggle({ id: seller.id, active: seller.status !== 'active' })}
+                    className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-all shrink-0 ${
+                      seller.status === 'active'
+                        ? 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100'
+                        : 'border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                    }`}>
+                    {seller.status === 'active'
+                      ? <><ShieldOff className="h-3 w-3" /> Suspend</>
+                      : <><ShieldCheck className="h-3 w-3" /> Restore</>}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
