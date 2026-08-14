@@ -109,13 +109,9 @@ def _collect_routers():
         ("search-service",       "search",        "router",        "🔍 Search"),
         ("ai-service",           "ai",            "router",        "🤖 AI"),
         ("chat-service",         "chat",          "router",        "💬 Chat"),
-        ("payment-service",      "payments",      "router",        "💳 Payments"),
-        ("wallet-service",       "wallet",        "router",        "👛 Wallet"),
         ("inventory-service",    "inventory",     "router",        "📦 Inventory"),
-        ("logistics-service",    "logistics",     "router",        "🚚 Logistics"),
         ("analytics-service",    "analytics",     "router",        "📊 Analytics"),
         ("notification-service", "notifications", "router",        "🔔 Notifications"),
-        ("crm-service",          "crm",           "router",        "🤝 CRM"),
         ("subscription-service", "subscriptions", "router",        "💎 Subscriptions"),
     ]
 
@@ -613,8 +609,7 @@ def create_app() -> FastAPI:
             "docs": "/docs",
             "services": [
                 "auth", "users", "listings", "search", "ai", "chat",
-                "payments", "wallet", "inventory", "logistics",
-                "analytics", "notifications", "crm", "subscriptions",
+                "inventory", "analytics", "notifications", "crm", "subscriptions",
             ],
         }
 
