@@ -607,6 +607,41 @@ async def admin_reject_listing(listing_id: uuid.UUID, service: MarketplaceServic
     await service.moderate_listing(listing_id, approved=False, rejection_reason=reason)
     return SuccessResponse(message='Listing rejected.', data={'listing_id': str(listing_id)})
 
+@router.post('/listings/admin/{listing_id}/archive', response_model=SuccessResponse, summary='Admin: archive a listing')
+async def admin_archive_listing(listing_id: uuid.UUID, service: MarketplaceService=Depends(_build_service), roles: list[str]=Depends(get_user_roles)) -> SuccessResponse:
+    from shared.errors import ForbiddenError
+    from sqlalchemy import update as _upd
+    from ..models import Listing
+    allowed_roles = {'moderator', 'enterprise_admin', 'super_admin'}
+    if not allowed_roles.intersection(set(roles)):
+        raise ForbiddenError('Admin role required.')
+    await service.session.execute(
+        _upd(Listing).where(Listing.id == listing_id).values(status='archived')
+    )
+    await service.session.commit()
+    return SuccessResponse(message='Listing archived.', data={'listing_id': str(listing_id)})
+
+@router.post('/listings/admin/{listing_id}/restore', response_model=SuccessResponse, summary='Admin: restore an archived listing back to active')
+async def admin_restore_listing(listing_id: uuid.UUID, service: MarketplaceService=Depends(_build_service), roles: list[str]=Depends(get_user_roles)) -> SuccessResponse:
+    from shared.errors import ForbiddenError, NotFoundError
+    from sqlalchemy import update as _upd, select as _sel
+    from ..models import Listing
+    allowed_roles = {'moderator', 'enterprise_admin', 'super_admin'}
+    if not allowed_roles.intersection(set(roles)):
+        raise ForbiddenError('Admin role required.')
+    # Verify it exists and is archived
+    row = (await service.session.execute(_sel(Listing).where(Listing.id == listing_id))).scalars().first()
+    if row is None:
+        raise NotFoundError('Listing not found.')
+    if row.status != 'archived':
+        from shared.errors import InvalidInputError
+        raise InvalidInputError(f'Listing is not archived (current status: {row.status}).')
+    await service.session.execute(
+        _upd(Listing).where(Listing.id == listing_id).values(status='active')
+    )
+    await service.session.commit()
+    return SuccessResponse(message='Listing restored to active.', data={'listing_id': str(listing_id)})
+
 @router.get('/saved', response_model=SuccessResponse, summary="Get the authenticated user's saved listings")
 async def get_saved_listings(request: Request, current_user_id: uuid.UUID=Depends(get_current_user_id), service: MarketplaceService=Depends(_build_service)) -> SuccessResponse:
     from pathlib import Path
