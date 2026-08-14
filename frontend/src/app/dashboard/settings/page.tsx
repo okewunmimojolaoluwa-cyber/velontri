@@ -2,17 +2,19 @@
 
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { User, Lock, Eye, EyeOff, AlertTriangle } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, AlertTriangle, Mail } from 'lucide-react';
 import { usersApi, userKeys } from '@/lib/api/endpoints/users';
 import { useAuth } from '@/features/auth/auth-provider';
 import { apiClient } from '@/lib/api/client';
 import { VelontriApiError } from '@/types/api';
 import { authApi } from '@/lib/api/endpoints/auth';
 import { getRefreshToken, clearTokens } from '@/lib/auth/token-refresh';
+import { OTPInput } from '@/components/auth/otp-input';
 
 const inputCls = 'w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-[14px] text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-400 focus:bg-white focus:ring-3 focus:ring-indigo-500/10 transition-all';
 
 type Tab = 'profile' | 'security' | 'account';
+type PwStep = 'form' | 'otp';
 
 function PwStrength({ pw }: { pw: string }) {
   if (!pw) return null;
@@ -37,8 +39,12 @@ export default function SettingsPage() {
   const [profileErr, setProfileErr] = useState('');
   const fullNameRef = useRef<HTMLInputElement>(null);
   const bioRef = useRef<HTMLInputElement>(null);
+
+  // Change password — OTP-based flow
+  const [pwStep, setPwStep] = useState<PwStep>('form');
   const [curPw, setCurPw] = useState('');
   const [newPw, setNewPw] = useState('');
+  const [otpValue, setOtpValue] = useState('');
   const [showCur, setShowCur] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [pwMsg, setPwMsg] = useState('');
@@ -58,20 +64,46 @@ export default function SettingsPage() {
 
   const { mutate: updateProfile, isPending: updatingProfile } = useMutation({
     mutationFn: (p: { full_name?: string; bio?: string }) => usersApi.updateProfile(p),
-    onSuccess: () => { setProfileMsg('Saved.'); qc.invalidateQueries({ queryKey: userKeys.profile() }); setTimeout(() => setProfileMsg(''), 3000); },
-    onError: (e) => { if (e instanceof VelontriApiError) setProfileErr(e.message); else setProfileErr('Failed.'); },
+    onSuccess: () => {
+      setProfileMsg('Saved.');
+      qc.invalidateQueries({ queryKey: userKeys.profile() });
+      setTimeout(() => setProfileMsg(''), 3000);
+    },
+    onError: (e) => {
+      if (e instanceof VelontriApiError) setProfileErr(e.message); else setProfileErr('Failed.');
+    },
   });
 
-  const { mutate: changePw, isPending: changingPw } = useMutation({
-    mutationFn: () => usersApi.changePassword({ current_password: curPw, new_password: newPw }),
-    onSuccess: () => { setPwMsg('Password changed.'); setCurPw(''); setNewPw(''); setTimeout(() => setPwMsg(''), 3000); },
-    onError: (e) => { if (e instanceof VelontriApiError) setPwErr(e.message); else setPwErr('Failed.'); },
+  // Step 1: verify current password → send OTP email
+  const { mutate: requestPwChange, isPending: requestingPwChange } = useMutation({
+    mutationFn: () => authApi.changePasswordRequest(curPw),
+    onSuccess: () => { setPwErr(''); setPwStep('otp'); },
+    onError: (e: any) => {
+      setPwErr(e?.response?.data?.error?.message || e?.message || 'Failed to verify current password.');
+    },
+  });
+
+  // Step 2: confirm OTP + new password
+  const { mutate: confirmPwChange, isPending: confirmingPwChange } = useMutation({
+    mutationFn: () => authApi.changePasswordConfirm(otpValue, newPw),
+    onSuccess: () => {
+      setPwMsg('Password changed successfully.');
+      setPwStep('form');
+      setCurPw(''); setNewPw(''); setOtpValue('');
+      setTimeout(() => setPwMsg(''), 4000);
+    },
+    onError: (e: any) => {
+      const msg = e?.response?.data?.error?.message || e?.message || 'Failed to change password.';
+      setPwErr(msg);
+      if (msg.toLowerCase().includes('otp') || msg.toLowerCase().includes('code') || msg.toLowerCase().includes('incorrect')) {
+        setOtpValue('');
+      }
+    },
   });
 
   const { mutate: deactivate, isPending: deactivating } = useMutation({
     mutationFn: () => apiClient.post('/users/me/deactivate', { password: deactivatePw }),
     onSuccess: async () => {
-      // Log out immediately after deactivation
       try { const rt = getRefreshToken(); if (rt) await authApi.logout(rt); } catch {}
       clearTokens();
       authLogout();
@@ -85,183 +117,229 @@ export default function SettingsPage() {
   const profile = data?.data;
 
   return (
-      <div className="max-w-xl space-y-5">
-        <h1 className="text-[1.4rem] font-black text-slate-900 tracking-tight">Settings</h1>
+    <div className="max-w-xl space-y-5">
+      <h1 className="text-[1.4rem] font-black text-slate-900 tracking-tight">Settings</h1>
 
-        {/* Tabs */}
-        <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
-          {(['profile', 'security', 'account'] as Tab[]).map(t => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`flex-1 rounded-lg py-2 text-[13px] font-semibold capitalize transition-all
-                ${tab === t ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-              {t}
-            </button>
+      {/* Tabs */}
+      <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+        {(['profile', 'security', 'account'] as Tab[]).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`flex-1 rounded-lg py-2 text-[13px] font-semibold capitalize transition-all
+              ${tab === t ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-11 rounded-xl bg-slate-100 animate-pulse" />
           ))}
         </div>
-
-        {isLoading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-11 rounded-xl bg-slate-100 animate-pulse" />)}
-          </div>
-        ) : (
-          <>
-            {/* Profile tab */}
-            {tab === 'profile' && (
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <User className="h-4 w-4 text-slate-500" />
-                  <h2 className="text-[14px] font-bold text-slate-900">Profile Information</h2>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[13px] font-semibold text-slate-700">Full name</label>
-                  <input ref={fullNameRef} defaultValue={profile?.full_name ?? ''} className={inputCls} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[13px] font-semibold text-slate-700">Bio</label>
-                  <input ref={bioRef} defaultValue={profile?.bio ?? ''} placeholder="Tell buyers about yourself…" className={inputCls} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[13px] font-semibold text-slate-700">Email</label>
-                  <input value={profile?.email ?? ''} disabled className={`${inputCls} opacity-50 cursor-not-allowed`} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[13px] font-semibold text-slate-700">Phone</label>
-                  <input value={profile?.phone ?? ''} disabled className={`${inputCls} opacity-50 cursor-not-allowed`} />
-                </div>
-                {profileErr && <p className="text-[12px] text-red-500">{profileErr}</p>}
-                {profileMsg && <p className="text-[12px] text-emerald-600 font-semibold">{profileMsg}</p>}
-                <button
-                  disabled={updatingProfile}
-                  onClick={() => { setProfileErr(''); updateProfile({ full_name: fullNameRef.current?.value, bio: bioRef.current?.value }); }}
-                  className="h-11 w-full rounded-xl bg-indigo-600 text-[14px] font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
-                  {updatingProfile ? 'Saving…' : 'Save changes'}
-                </button>
+      ) : (
+        <>
+          {/* Profile tab */}
+          {tab === 'profile' && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <User className="h-4 w-4 text-slate-500" />
+                <h2 className="text-[14px] font-bold text-slate-900">Profile Information</h2>
               </div>
-            )}
-
-            {/* Security tab */}
-            {tab === 'security' && (
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <Lock className="h-4 w-4 text-slate-500" />
-                  <h2 className="text-[14px] font-bold text-slate-900">Change Password</h2>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[13px] font-semibold text-slate-700">Current password</label>
-                  <div className="relative">
-                    <input type={showCur ? 'text' : 'password'} value={curPw} onChange={e => setCurPw(e.target.value)}
-                      className={`${inputCls} pr-11`} autoComplete="current-password" />
-                    <button type="button" onClick={() => setShowCur(v => !v)} tabIndex={-1}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                      {showCur ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[13px] font-semibold text-slate-700">New password</label>
-                  <div className="relative">
-                    <input type={showNew ? 'text' : 'password'} value={newPw} onChange={e => { setNewPw(e.target.value); setPwErr(''); }}
-                      className={`${inputCls} pr-11`} autoComplete="new-password" />
-                    <button type="button" onClick={() => setShowNew(v => !v)} tabIndex={-1}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                      {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  <PwStrength pw={newPw} />
-                </div>
-                {pwErr && <p className="text-[12px] text-red-500">{pwErr}</p>}
-                {pwMsg && <p className="text-[12px] text-emerald-600 font-semibold">{pwMsg}</p>}
-                <button
-                  disabled={changingPw || !curPw || !newPw}
-                  onClick={() => { setPwErr(''); changePw(); }}
-                  className="h-11 w-full rounded-xl bg-indigo-600 text-[14px] font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
-                  {changingPw ? 'Changing…' : 'Change password'}
-                </button>
+              <div className="space-y-1.5">
+                <label className="text-[13px] font-semibold text-slate-700">Full name</label>
+                <input ref={fullNameRef} defaultValue={profile?.full_name ?? ''} className={inputCls} />
               </div>
-            )}
+              <div className="space-y-1.5">
+                <label className="text-[13px] font-semibold text-slate-700">Bio</label>
+                <input ref={bioRef} defaultValue={profile?.bio ?? ''} placeholder="Tell buyers about yourself…" className={inputCls} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[13px] font-semibold text-slate-700">Email</label>
+                <input value={profile?.email ?? ''} disabled className={`${inputCls} opacity-50 cursor-not-allowed`} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[13px] font-semibold text-slate-700">Phone</label>
+                <input value={profile?.phone ?? ''} disabled className={`${inputCls} opacity-50 cursor-not-allowed`} />
+              </div>
+              {profileErr && <p className="text-[12px] text-red-500">{profileErr}</p>}
+              {profileMsg && <p className="text-[12px] text-emerald-600 font-semibold">{profileMsg}</p>}
+              <button
+                disabled={updatingProfile}
+                onClick={() => { setProfileErr(''); updateProfile({ full_name: fullNameRef.current?.value, bio: bioRef.current?.value }); }}
+                className="h-11 w-full rounded-xl bg-indigo-600 text-[14px] font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+                {updatingProfile ? 'Saving…' : 'Save changes'}
+              </button>
+            </div>
+          )}
 
-            {/* Account tab — deactivate */}
-            {tab === 'account' && (
-              <div className="space-y-4">
-                {/* Info card */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h2 className="text-[14px] font-bold text-slate-900 mb-1">Account Status</h2>
-                  <p className="text-[13px] text-slate-500 mb-4">
-                    Your account is currently <span className="font-semibold text-emerald-600">active</span>.
-                    All your listings, messages, and data are intact.
-                  </p>
-                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-[12px] text-slate-500 space-y-1">
-                    <p>• Email: <span className="font-semibold text-slate-700">{profile?.email}</span></p>
-                    <p>• Member since: <span className="font-semibold text-slate-700">{profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-NG', { year: 'numeric', month: 'long' }) : '—'}</span></p>
-                  </div>
+          {/* Security tab */}
+          {tab === 'security' && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <Lock className="h-4 w-4 text-slate-500" />
+                <h2 className="text-[14px] font-bold text-slate-900">Change Password</h2>
+              </div>
+
+              {pwErr && (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                  <p className="text-[12px] font-medium text-red-600">{pwErr}</p>
                 </div>
+              )}
+              {pwMsg && (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                  <p className="text-[12px] font-semibold text-emerald-700">{pwMsg}</p>
+                </div>
+              )}
 
-                {/* Deactivate section */}
-                <div className="rounded-2xl border-2 border-red-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-start gap-3 mb-4">
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-red-100">
-                      <AlertTriangle className="h-5 w-5 text-red-600" />
-                    </div>
-                    <div>
-                      <h2 className="text-[14px] font-bold text-red-900">Deactivate Account</h2>
-                      <p className="text-[12px] text-red-700 mt-0.5 leading-relaxed">
-                        Your account will be deactivated and you will be logged out immediately.
-                        Your listings will be hidden. You can contact support to reactivate.
-                      </p>
+              {/* Step 1: current + new password */}
+              {pwStep === 'form' && (
+                <>
+                  <div className="space-y-1.5">
+                    <label className="text-[13px] font-semibold text-slate-700">Current password</label>
+                    <div className="relative">
+                      <input type={showCur ? 'text' : 'password'} value={curPw}
+                        onChange={e => { setCurPw(e.target.value); setPwErr(''); }}
+                        className={`${inputCls} pr-11`} autoComplete="current-password" />
+                      <button type="button" onClick={() => setShowCur(v => !v)} tabIndex={-1}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        {showCur ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
                   </div>
+                  <div className="space-y-1">
+                    <label className="text-[13px] font-semibold text-slate-700">New password</label>
+                    <div className="relative">
+                      <input type={showNew ? 'text' : 'password'} value={newPw}
+                        onChange={e => { setNewPw(e.target.value); setPwErr(''); }}
+                        className={`${inputCls} pr-11`} autoComplete="new-password" />
+                      <button type="button" onClick={() => setShowNew(v => !v)} tabIndex={-1}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <PwStrength pw={newPw} />
+                  </div>
+                  <button
+                    disabled={requestingPwChange || !curPw || newPw.length < 8}
+                    onClick={() => { setPwErr(''); requestPwChange(); }}
+                    className="h-11 w-full rounded-xl bg-indigo-600 text-[14px] font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+                    {requestingPwChange ? 'Sending code…' : 'Send Verification Code'}
+                  </button>
+                </>
+              )}
 
-                  {!confirmDeactivate ? (
+              {/* Step 2: OTP verification */}
+              {pwStep === 'otp' && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 rounded-xl bg-indigo-50 border border-indigo-100 px-4 py-3">
+                    <Mail className="h-4 w-4 text-indigo-500 flex-shrink-0" />
+                    <p className="text-[13px] text-indigo-700">
+                      A 6-digit code was sent to your email. Enter it to confirm the change.
+                    </p>
+                  </div>
+                  <OTPInput
+                    value={otpValue}
+                    onChange={val => { setOtpValue(val); setPwErr(''); }}
+                    theme="light"
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
                     <button
-                      onClick={() => setConfirmDeactivate(true)}
-                      className="h-10 w-full rounded-xl border-2 border-red-300 bg-red-50 text-[13px] font-bold text-red-700 hover:bg-red-100 transition-colors"
+                      type="button"
+                      onClick={() => { setPwStep('form'); setOtpValue(''); setPwErr(''); }}
+                      className="flex-1 h-11 rounded-xl border border-slate-200 text-[14px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                     >
-                      Deactivate my account
+                      Back
                     </button>
-                  ) : (
-                    <div className="space-y-3">
-                      <p className="text-[12px] font-semibold text-slate-700">
-                        Enter your password to confirm deactivation:
-                      </p>
-                      <div className="relative">
-                        <input
-                          type={showDeactivatePw ? 'text' : 'password'}
-                          value={deactivatePw}
-                          onChange={e => { setDeactivatePw(e.target.value); setDeactivateErr(''); }}
-                          placeholder="Your current password"
-                          className={`${inputCls} pr-11 border-red-200 focus:border-red-400`}
-                        />
-                        <button type="button" onClick={() => setShowDeactivatePw(v => !v)} tabIndex={-1}
-                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                          {showDeactivatePw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                      {deactivateErr && (
-                        <p className="text-[12px] font-medium text-red-600">{deactivateErr}</p>
-                      )}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => { setConfirmDeactivate(false); setDeactivatePw(''); setDeactivateErr(''); }}
-                          disabled={deactivating}
-                          className="flex-1 h-10 rounded-xl border border-slate-200 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => { setDeactivateErr(''); deactivate(); }}
-                          disabled={deactivating || !deactivatePw.trim()}
-                          className="flex-1 h-10 rounded-xl bg-red-600 text-[13px] font-bold text-white hover:bg-red-700 transition-colors disabled:opacity-50"
-                        >
-                          {deactivating ? 'Deactivating…' : 'Confirm Deactivate'}
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                    <button
+                      disabled={confirmingPwChange || otpValue.length !== 6}
+                      onClick={() => { setPwErr(''); confirmPwChange(); }}
+                      className="flex-1 h-11 rounded-xl bg-indigo-600 text-[14px] font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+                      {confirmingPwChange ? 'Confirming…' : 'Confirm Change'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Account tab */}
+          {tab === 'account' && (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 className="text-[14px] font-bold text-slate-900 mb-1">Account Status</h2>
+                <p className="text-[13px] text-slate-500 mb-4">
+                  Your account is currently <span className="font-semibold text-emerald-600">active</span>.
+                  All your listings, messages, and data are intact.
+                </p>
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-[12px] text-slate-500 space-y-1">
+                  <p>• Email: <span className="font-semibold text-slate-700">{profile?.email}</span></p>
+                  <p>• Member since: <span className="font-semibold text-slate-700">{profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-NG', { year: 'numeric', month: 'long' }) : '—'}</span></p>
                 </div>
               </div>
-            )}
-          </>
-        )}
-      </div>
+
+              <div className="rounded-2xl border-2 border-red-200 bg-white p-6 shadow-sm">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-red-100">
+                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-[14px] font-bold text-red-900">Deactivate Account</h2>
+                    <p className="text-[12px] text-red-700 mt-0.5 leading-relaxed">
+                      Your account will be deactivated and you will be logged out immediately.
+                      Your listings will be hidden. You can contact support to reactivate.
+                    </p>
+                  </div>
+                </div>
+
+                {!confirmDeactivate ? (
+                  <button
+                    onClick={() => setConfirmDeactivate(true)}
+                    className="h-10 w-full rounded-xl border-2 border-red-300 bg-red-50 text-[13px] font-bold text-red-700 hover:bg-red-100 transition-colors"
+                  >
+                    Deactivate my account
+                  </button>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-[12px] font-semibold text-slate-700">Enter your password to confirm:</p>
+                    <div className="relative">
+                      <input
+                        type={showDeactivatePw ? 'text' : 'password'}
+                        value={deactivatePw}
+                        onChange={e => { setDeactivatePw(e.target.value); setDeactivateErr(''); }}
+                        placeholder="Your current password"
+                        className={`${inputCls} pr-11 border-red-200 focus:border-red-400`}
+                      />
+                      <button type="button" onClick={() => setShowDeactivatePw(v => !v)} tabIndex={-1}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        {showDeactivatePw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    {deactivateErr && <p className="text-[12px] font-medium text-red-600">{deactivateErr}</p>}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { setConfirmDeactivate(false); setDeactivatePw(''); setDeactivateErr(''); }}
+                        disabled={deactivating}
+                        className="flex-1 h-10 rounded-xl border border-slate-200 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => { setDeactivateErr(''); deactivate(); }}
+                        disabled={deactivating || !deactivatePw.trim()}
+                        className="flex-1 h-10 rounded-xl bg-red-600 text-[13px] font-bold text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                      >
+                        {deactivating ? 'Deactivating…' : 'Confirm Deactivate'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 }

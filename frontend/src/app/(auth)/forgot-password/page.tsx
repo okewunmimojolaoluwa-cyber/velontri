@@ -9,7 +9,7 @@ import { OTPInput } from '@/components/auth/otp-input';
 import { ROUTES } from '@/config/routes';
 
 const RESEND_COUNTDOWN = 60;
-type Step = 'email' | 'otp' | 'password' | 'done';
+type Step = 'email' | 'otp' | 'done';
 
 function ForgotPasswordInner() {
   const router = useRouter();
@@ -25,7 +25,6 @@ function ForgotPasswordInner() {
   const [countdown, setCountdown] = useState(RESEND_COUNTDOWN);
   const [canResend, setCanResend] = useState(false);
 
-  // Countdown timer
   useEffect(() => {
     if (step !== 'otp') return;
     if (countdown <= 0) { setCanResend(true); return; }
@@ -33,7 +32,6 @@ function ForgotPasswordInner() {
     return () => clearInterval(t);
   }, [countdown, step]);
 
-  // ── Step 1: Email ────────────────────────────────────────────────────
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
@@ -50,13 +48,6 @@ function ForgotPasswordInner() {
     setCanResend(false);
   }
 
-  // ── Step 2: OTP Continue ──────────────────────────────────────────────
-  function handleOtpContinue() {
-    if (otpValue.length !== 6) { setError('Please enter all 6 digits.'); return; }
-    setError('');
-    setStep('password');
-  }
-
   async function handleResend() {
     setCanResend(false);
     setCountdown(RESEND_COUNTDOWN);
@@ -65,10 +56,10 @@ function ForgotPasswordInner() {
     try { await authApi.passwordResetRequest(email); } catch { /* silent */ }
   }
 
-  // ── Step 3: New Password ──────────────────────────────────────────────
-  async function handlePasswordSubmit(e: React.FormEvent) {
+  async function handleResetSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    if (otpValue.length !== 6) { setError('Please enter all 6 digits of your code.'); return; }
     if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return; }
     if (newPassword.length < 8) { setError('Password must be at least 8 characters.'); return; }
     setIsLoading(true);
@@ -76,7 +67,11 @@ function ForgotPasswordInner() {
       await authApi.passwordResetOtp(email, otpValue, newPassword);
       setStep('done');
     } catch (err: any) {
-      setError(err?.response?.data?.error?.message || err?.message || 'Failed to reset password. Please try again.');
+      const msg = err?.response?.data?.error?.message || err?.message || 'Failed to reset password.';
+      setError(msg);
+      if (msg.toLowerCase().includes('otp') || msg.toLowerCase().includes('code') || msg.toLowerCase().includes('incorrect')) {
+        setOtpValue('');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -89,9 +84,9 @@ function ForgotPasswordInner() {
           {/* Header */}
           <div className="bg-gradient-to-r from-violet-600 to-indigo-600 px-8 py-7">
             <div className="flex items-center gap-3">
-              {step !== 'email' && step !== 'done' && (
+              {step === 'otp' && (
                 <button
-                  onClick={() => { setStep(step === 'otp' ? 'email' : 'otp'); setError(''); }}
+                  onClick={() => { setStep('email'); setError(''); setOtpValue(''); }}
                   className="text-white/70 hover:text-white transition-colors"
                   aria-label="Go back"
                 >
@@ -101,14 +96,12 @@ function ForgotPasswordInner() {
               <div>
                 <h1 className="text-xl font-black text-white">
                   {step === 'email' && 'Reset Password'}
-                  {step === 'otp' && 'Check your email'}
-                  {step === 'password' && 'New Password'}
+                  {step === 'otp' && 'Enter Code & New Password'}
                   {step === 'done' && 'Password Reset!'}
                 </h1>
                 <p className="text-white/60 text-xs mt-0.5">
                   {step === 'email' && "We'll send a 6-digit code to your email"}
                   {step === 'otp' && `Code sent to ${email}`}
-                  {step === 'password' && 'Choose a strong new password'}
                   {step === 'done' && 'You can now log in with your new password'}
                 </p>
               </div>
@@ -116,14 +109,14 @@ function ForgotPasswordInner() {
           </div>
 
           <div className="px-8 py-8">
-            {/* Progress bar */}
+            {/* Progress */}
             {step !== 'done' && (
               <div className="flex gap-2 mb-8">
-                {(['email', 'otp', 'password'] as Step[]).map((s, i) => (
+                {(['email', 'otp'] as Step[]).map((s, i) => (
                   <div
                     key={s}
                     className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                      ['email', 'otp', 'password'].indexOf(step) >= i ? 'bg-violet-500' : 'bg-slate-700'
+                      ['email', 'otp'].indexOf(step) >= i ? 'bg-violet-500' : 'bg-slate-700'
                     }`}
                   />
                 ))}
@@ -137,7 +130,7 @@ function ForgotPasswordInner() {
               </div>
             )}
 
-            {/* ── Step 1: Email ── */}
+            {/* Step 1: Email */}
             {step === 'email' && (
               <form onSubmit={handleEmailSubmit} className="space-y-5">
                 <div>
@@ -177,65 +170,45 @@ function ForgotPasswordInner() {
               </form>
             )}
 
-            {/* ── Step 2: OTP ── */}
+            {/* Step 2: OTP + New Password (validated together on submit) */}
             {step === 'otp' && (
-              <div className="space-y-6">
-                <p className="text-[13px] text-slate-400 text-center leading-relaxed">
-                  If an account exists for <span className="font-semibold text-slate-200">{email}</span>,
-                  you'll receive a 6-digit code within seconds.
-                </p>
-
-                {/* Shared OTPInput component — dark theme */}
-                <OTPInput
-                  value={otpValue}
-                  onChange={val => { setOtpValue(val); setError(''); }}
-                  onComplete={handleOtpContinue}
-                  theme="dark"
-                  autoFocus
-                />
-
-                <button
-                  onClick={handleOtpContinue}
-                  disabled={otpValue.length !== 6}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600
-                    text-white font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed
-                    hover:from-violet-500 hover:to-indigo-500 transition-all active:scale-[0.98]"
-                >
-                  Continue
-                </button>
-
-                <div className="text-center space-y-1">
-                  <p className="text-[12px] text-slate-500">Didn't receive the code?</p>
-                  {canResend ? (
-                    <button
-                      onClick={handleResend}
-                      className="flex items-center justify-center gap-1.5 mx-auto text-[13px]
-                        font-semibold text-violet-400 hover:text-violet-300 transition-colors"
-                    >
-                      <RefreshCw className="h-3.5 w-3.5" />
-                      Resend code
-                    </button>
-                  ) : (
-                    <p className="text-[12px] text-slate-500">
-                      Resend in <span className="font-semibold text-slate-300">{countdown}s</span>
-                    </p>
-                  )}
+              <form onSubmit={handleResetSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <p className="text-[13px] text-slate-400 text-center leading-relaxed">
+                    Enter the 6-digit code sent to{' '}
+                    <span className="font-semibold text-slate-200">{email}</span>
+                  </p>
+                  <OTPInput
+                    value={otpValue}
+                    onChange={val => { setOtpValue(val); setError(''); }}
+                    theme="dark"
+                    autoFocus
+                  />
+                  <div className="text-center pt-1">
+                    {canResend ? (
+                      <button
+                        type="button"
+                        onClick={handleResend}
+                        className="flex items-center justify-center gap-1.5 mx-auto text-[13px]
+                          font-semibold text-violet-400 hover:text-violet-300 transition-colors"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        Resend code
+                      </button>
+                    ) : (
+                      <p className="text-[12px] text-slate-500">
+                        Resend in <span className="font-semibold text-slate-300">{countdown}s</span>
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <p className="text-[11px] text-slate-600 text-center">Check your spam folder if you don't see it.</p>
-              </div>
-            )}
 
-            {/* ── Step 3: New Password ── */}
-            {step === 'password' && (
-              <form onSubmit={handlePasswordSubmit} className="space-y-5">
-                <div>
-                  <label htmlFor="fp-newpw" className="block text-sm font-semibold text-slate-300 mb-2">
-                    New Password
-                  </label>
+                {/* New password fields */}
+                <div className="space-y-4 pt-2 border-t border-slate-700/50">
+                  <p className="text-[12px] font-semibold text-slate-400 uppercase tracking-wider pt-1">New Password</p>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                     <input
-                      id="fp-newpw"
                       type={showPw ? 'text' : 'password'}
                       value={newPassword}
                       onChange={e => setNewPassword(e.target.value)}
@@ -250,15 +223,9 @@ function ForgotPasswordInner() {
                       {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                </div>
-                <div>
-                  <label htmlFor="fp-confirmpw" className="block text-sm font-semibold text-slate-300 mb-2">
-                    Confirm Password
-                  </label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                     <input
-                      id="fp-confirmpw"
                       type={showConfirmPw ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={e => setConfirmPassword(e.target.value)}
@@ -274,22 +241,21 @@ function ForgotPasswordInner() {
                     </button>
                   </div>
                 </div>
-                <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Use at least 8 characters including uppercase, lowercase, a number and a special character.
-                </p>
+
                 <button
                   type="submit"
-                  disabled={isLoading || !newPassword || !confirmPassword}
+                  disabled={isLoading || otpValue.length !== 6 || !newPassword || !confirmPassword}
                   className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600
                     text-white font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed
                     hover:from-violet-500 hover:to-indigo-500 transition-all active:scale-[0.98]"
                 >
                   {isLoading ? 'Resetting…' : 'Reset Password'}
                 </button>
+                <p className="text-[11px] text-slate-600 text-center">Check your spam folder if you don't see the code.</p>
               </form>
             )}
 
-            {/* ── Done ── */}
+            {/* Done */}
             {step === 'done' && (
               <div className="text-center space-y-6 py-4">
                 <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/30 mx-auto">
