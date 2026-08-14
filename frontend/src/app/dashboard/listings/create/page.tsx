@@ -245,20 +245,19 @@ export default function CreateListingPage() {
       const listingId = (res.data as any)?.id;
       if (!listingId) throw new Error('No listing ID returned from server.');
 
-      // 3. Upload remaining images (index 1+) as multipart in background
-      //    These enhance the gallery but are non-critical — failure is silent.
+      // 3. Upload remaining images (index 1+) before publishing so they're all present
       if (form.images.length > 1) {
-        Promise.all(
+        await Promise.all(
           form.images.slice(1).map(async (dataUrl) => {
             try {
               const compressed = await compressToJpeg(dataUrl);
               await sellerApi.uploadImage(listingId, compressed);
-            } catch { /* non-fatal */ }
+            } catch { /* non-fatal — cover image still works */ }
           })
-        ).catch(() => {});
+        );
       }
 
-      // 3. Publish so it goes live
+      // 4. Publish so it goes live
       await sellerApi.publishListing(listingId);
       return res;
     },
