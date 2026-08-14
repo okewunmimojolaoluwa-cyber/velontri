@@ -81,6 +81,14 @@ export function OTPInput({
   }
 
   function handleKeyDown(index: number, e: React.KeyboardEvent) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const code = digits.join('');
+      if (code.length === length && !code.includes('')) {
+        onComplete?.(code);
+      }
+      return;
+    }
     if (e.key === 'Backspace') {
       if (digits[index]) {
         updateDigit(index, '');

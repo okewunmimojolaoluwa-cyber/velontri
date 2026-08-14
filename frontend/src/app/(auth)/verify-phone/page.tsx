@@ -107,6 +107,17 @@ function VerifyEmailInner() {
             theme="light"
           />
 
+          {/* Verify button — submit when all 6 digits filled */}
+          <button
+            onClick={() => handleVerify(otpValue)}
+            disabled={otpValue.length < 6 || verifyPhone.isPending}
+            className="w-full rounded-xl bg-indigo-600 py-3.5 text-[15px] font-bold
+              text-white transition-all hover:bg-indigo-700 active:scale-[0.98]
+              disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {verifyPhone.isPending ? 'Verifying…' : 'Verify Email'}
+          </button>
+
           {/* Error */}
           {error && (
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center">
