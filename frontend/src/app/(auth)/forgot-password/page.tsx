@@ -22,6 +22,7 @@ function ForgotPasswordInner() {
   const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [otpError, setOtpError] = useState('');
   const [countdown, setCountdown] = useState(RESEND_COUNTDOWN);
   const [canResend, setCanResend] = useState(false);
 
@@ -52,6 +53,7 @@ function ForgotPasswordInner() {
     setCanResend(false);
     setCountdown(RESEND_COUNTDOWN);
     setError('');
+    setOtpError('');
     setOtpValue('');
     try { await authApi.passwordResetRequest(email); } catch { /* silent */ }
   }
@@ -59,7 +61,8 @@ function ForgotPasswordInner() {
   async function handleResetSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    if (otpValue.length !== 6) { setError('Please enter all 6 digits of your code.'); return; }
+    setOtpError('');
+    if (otpValue.length !== 6) { setOtpError('Please enter all 6 digits of your code.'); return; }
     if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return; }
     if (newPassword.length < 8) { setError('Password must be at least 8 characters.'); return; }
     setIsLoading(true);
@@ -67,10 +70,22 @@ function ForgotPasswordInner() {
       await authApi.passwordResetOtp(email, otpValue, newPassword);
       setStep('done');
     } catch (err: any) {
-      const msg = err?.response?.data?.error?.message || err?.message || 'Failed to reset password.';
-      setError(msg);
-      if (msg.toLowerCase().includes('otp') || msg.toLowerCase().includes('code') || msg.toLowerCase().includes('incorrect')) {
+      // VelontriApiError comes from the interceptor — message is in err.message
+      // Axios raw errors have err.response.data.error.message
+      const msg = err?.message || err?.response?.data?.error?.message || 'Failed to reset password. Please try again.';
+      const code = err?.code ?? '';
+      // Show OTP-specific errors inline next to the OTP boxes
+      if (
+        code === 'OTP_INVALID' || code === 'OTP_EXPIRED' ||
+        msg.toLowerCase().includes('otp') ||
+        msg.toLowerCase().includes('code') ||
+        msg.toLowerCase().includes('incorrect') ||
+        msg.toLowerCase().includes('expired')
+      ) {
+        setOtpError(msg);
         setOtpValue('');
+      } else {
+        setError(msg);
       }
     } finally {
       setIsLoading(false);
@@ -180,10 +195,16 @@ function ForgotPasswordInner() {
                   </p>
                   <OTPInput
                     value={otpValue}
-                    onChange={val => { setOtpValue(val); setError(''); }}
+                    onChange={val => { setOtpValue(val); setOtpError(''); setError(''); }}
                     theme="dark"
                     autoFocus
                   />
+                  {/* Inline OTP error — shown right below the boxes */}
+                  {otpError && (
+                    <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2.5 text-center">
+                      <p className="text-[13px] font-semibold text-red-400">{otpError}</p>
+                    </div>
+                  )}
                   <div className="text-center pt-1">
                     {canResend ? (
                       <button
