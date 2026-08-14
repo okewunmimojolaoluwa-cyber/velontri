@@ -115,7 +115,12 @@ export default function ModUsersPage() {
   });
 
   const allUsers: AdminUser[] = Array.isArray(data?.data) ? data.data : [];
-  const users = allUsers.filter(u => {
+  // Never show enterprise_admin or super_admin to moderators — backend filters
+  // these too, but this is a client-side safety net
+  const visibleUsers = allUsers.filter(u =>
+    !u.roles.includes('enterprise_admin') && !u.roles.includes('super_admin')
+  );
+  const users = visibleUsers.filter(u => {
     if (filter === 'active') return u.is_active;
     if (filter === 'suspended') return !u.is_active;
     return true;
@@ -129,9 +134,9 @@ export default function ModUsersPage() {
   }
 
   const counts = {
-    all: allUsers.length,
-    active: allUsers.filter(u => u.is_active).length,
-    suspended: allUsers.filter(u => !u.is_active).length,
+    all: visibleUsers.length,
+    active: visibleUsers.filter(u => u.is_active).length,
+    suspended: visibleUsers.filter(u => !u.is_active).length,
   };
 
   return (
@@ -144,7 +149,7 @@ export default function ModUsersPage() {
           <Users className="h-6 w-6 text-amber-500" /> User Management
         </h1>
         <p className="text-[13px] text-slate-400 mt-0.5">
-          {allUsers.length} registered user{allUsers.length !== 1 ? 's' : ''}
+          {visibleUsers.length} registered user{visibleUsers.length !== 1 ? 's' : ''}
         </p>
       </div>
 
