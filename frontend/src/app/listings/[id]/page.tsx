@@ -202,14 +202,12 @@ export default function ListingDetailPage() {
   });
 
   const sellerName = sellerData?.data?.full_name || sellerData?.data?.display_name || 'Seller';
-  // Build deduplicated images array from media_urls + image_url fallback
-  const rawUrls: string[] = (listing as any)?.media_urls?.length
+  // Build images array from media_urls (backend already ensures correct order and no duplicates)
+  const images: string[] = ((listing as any)?.media_urls?.length
     ? (listing as any).media_urls
     : listing?.image_url
     ? [listing.image_url]
-    : [];
-  // Deduplicate while preserving order (cover might appear in both image_url and media_urls)
-  const images: string[] = rawUrls.filter((url, idx) => url && rawUrls.indexOf(url) === idx);
+    : []).filter(Boolean);
   const hasImages = images.length > 0;
 
   // WhatsApp number — from listing data, then seller profile phone as fallback

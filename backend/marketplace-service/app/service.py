@@ -209,15 +209,17 @@ class MarketplaceService:
         media_rows = await repo.get_listing_media(self.session, listing_id)
         media_urls = [m.s3_key for m in media_rows if m.media_type == "image"]
 
-        # Always ensure the cover image is first in the list.
-        # When no S3 is configured, image_url is stored directly on the listing
-        # row but NOT added to listing_media for the first image — so we prepend it.
-        if listing.image_url and listing.image_url not in media_urls:
-            media_urls = [listing.image_url] + media_urls
-
-        # Final fallback: nothing in media at all
-        if not media_urls and listing.image_url:
-            media_urls = [listing.image_url]
+        # Ensure cover image is in the list.
+        # Only prepend image_url if it's not already the first item in media_urls
+        # (listing_media[0] often duplicates image_url when uploaded via uploadImage).
+        if listing.image_url:
+            if not media_urls:
+                # No media rows at all — use image_url as only image
+                media_urls = [listing.image_url]
+            elif media_urls[0] != listing.image_url:
+                # Media rows exist but first one differs from cover — prepend cover
+                media_urls = [listing.image_url] + media_urls
+            # else: media_urls[0] == image_url already — no action needed
 
         response = _to_listing_response(listing, media_urls)
         await self.redis.setex(cache_key, 300, response.model_dump_json())
