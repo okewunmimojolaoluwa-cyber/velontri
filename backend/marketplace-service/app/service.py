@@ -208,7 +208,14 @@ class MarketplaceService:
         # Load all media in sort order
         media_rows = await repo.get_listing_media(self.session, listing_id)
         media_urls = [m.s3_key for m in media_rows if m.media_type == "image"]
-        # Fallback: if no media rows but image_url set on listing, use it
+
+        # Always ensure the cover image is first in the list.
+        # When no S3 is configured, image_url is stored directly on the listing
+        # row but NOT added to listing_media for the first image — so we prepend it.
+        if listing.image_url and listing.image_url not in media_urls:
+            media_urls = [listing.image_url] + media_urls
+
+        # Final fallback: nothing in media at all
         if not media_urls and listing.image_url:
             media_urls = [listing.image_url]
 
@@ -282,8 +289,7 @@ class MarketplaceService:
         media_url = s3_key if self.s3_session else (image_url or s3_key)
 
         if not self.s3_session and current_count == 0:
-            # Set cover image on the listing row via explicit UPDATE (not ORM dirty tracking
-            # which can be missed after a prior flush in the same session)
+            # Set cover image on the listing row AND add to listing_media at sort_order 0
             from sqlalchemy import update as _update
             from .models import Listing as _Listing
             await self.session.execute(
