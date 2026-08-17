@@ -393,7 +393,7 @@ export default function HomePage() {
                 {/* Mobile: 2×2 grid with card style */}
                 <div className="grid grid-cols-2 gap-3 sm:hidden">
                   {[
-                    { v: '500K+', l: 'Active sellers',  accent: '#4F46E5', bg: '#eef2ff', emoji: '🏪' },
+                    { v: 'Growing', l: 'Community',       accent: '#4F46E5', bg: '#eef2ff', emoji: '🏪' },
                     { v: '12',    l: 'Countries',        accent: '#059669', bg: '#ecfdf5', emoji: '🌍' },
                     { v: 'Free',  l: 'To list',          accent: '#0369A1', bg: '#e0f2fe', emoji: '✅' },
                     { v: '100%',  l: 'No commissions',   accent: '#D97706', bg: '#fffbeb', emoji: '💰' },
@@ -417,7 +417,7 @@ export default function HomePage() {
                 {/* Desktop: horizontal bar with dividers */}
                 <div className="hidden sm:grid grid-cols-4 gap-0">
                   {[
-                    { v: '500K+', l: 'Active sellers',  accent: '#4F46E5' },
+                    { v: 'Early', l: 'Join now — free',  accent: '#4F46E5' },
                     { v: '12',    l: 'Countries',        accent: '#059669' },
                     { v: 'Free',  l: 'To list',          accent: '#0369A1' },
                     { v: '100%',  l: 'No commissions',   accent: '#D97706' },
@@ -917,7 +917,7 @@ export default function HomePage() {
                 tag: 'Pricing',
               },
               {
-                icon: BadgeCheck, n: '500K+', label: 'Sellers',
+                icon: BadgeCheck, n: 'Verified', label: 'Sellers only',
                 t: 'Verified sellers only',
                 d: 'Every seller is ID-verified. Every listing reviewed. You only see quality, trusted stores.',
                 c: '#A78BFA', bg: 'linear-gradient(135deg,#0a0f1e 0%,#130a1a 100%)',
@@ -978,11 +978,11 @@ export default function HomePage() {
             </h2>
             <p className="mb-8 leading-relaxed text-white/60"
               style={{ fontSize: 'clamp(15px,1.5vw,17px)', maxWidth: 420 }}>
-              Join 500,000+ sellers reaching buyers in 12 countries.
+              Join early and grow with us — reaching buyers across 12 countries.
               Free to list. Chat buyers on WhatsApp instantly. Subscription plans that scale with you.
             </p>
             <div className="mb-8 flex flex-wrap gap-6">
-              {[['500K+','Sellers'],['12','Countries'],['Free','To list'],['WhatsApp','Direct contact']].map(([v, l]) => (
+              {[['Early','Access'],['12','Countries'],['Free','To list'],['WhatsApp','Direct contact']].map(([v, l]) => (
                 <div key={l}>
                   <p className="text-[1.25rem] font-black text-white leading-none"
                     style={{ letterSpacing: '-0.02em' }}>{v}</p>
