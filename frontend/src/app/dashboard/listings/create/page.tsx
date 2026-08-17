@@ -14,7 +14,11 @@ import { normalizePhoneNumber } from '@/lib/utils/formatters';
 import Link from 'next/link';
 
 /* ── Client-side image compressor ──────────────────────── */
-/** Compress a data URL to JPEG at max 800px wide, ~60KB output */
+/** 
+ * Compress a data URL to JPEG.
+ * Cover image: 800px, 55% quality (~60KB) — used in the main listing response
+ * Extra images: 600px, 45% quality (~30KB) — uploaded separately
+ */
 async function compressToJpeg(dataUrl: string, maxPx = 800, quality = 0.55): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();
@@ -250,7 +254,8 @@ export default function CreateListingPage() {
         await Promise.all(
           form.images.slice(1).map(async (dataUrl) => {
             try {
-              const compressed = await compressToJpeg(dataUrl);
+              // Extra images: 600px at 45% quality (~25-30KB each)
+              const compressed = await compressToJpeg(dataUrl, 600, 0.45);
               await sellerApi.uploadImage(listingId, compressed);
             } catch { /* non-fatal — cover image still works */ }
           })
