@@ -112,10 +112,10 @@ function EditModal({
   const inputCls = 'w-full h-10 rounded-xl border border-slate-200 bg-slate-50 px-4 text-[14px] text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/10 transition-all';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm px-4 pb-4 sm:pb-0">
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm px-4 pb-0 sm:pb-0">
+      <div className="w-full max-w-md rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 flex-shrink-0">
           <div>
             <h2 className="text-[15px] font-black text-slate-900">
               {mode === 'price' ? 'Update Price' : 'Edit Listing'}
@@ -127,7 +127,8 @@ function EditModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
+          <div className="p-6 space-y-4">
           {mode === 'full' && (
             <>
               <div className="space-y-1.5">
@@ -221,8 +222,10 @@ function EditModal({
               <p className="text-[12px] font-medium text-red-600">{err}</p>
             </div>
           )}
+          </div>
 
-          <div className="flex gap-2 pt-1">
+          {/* Sticky footer buttons */}
+          <div className="flex gap-2 px-6 py-4 border-t border-slate-100 bg-white flex-shrink-0">
             <button type="button" onClick={onClose}
               className="flex-1 h-11 rounded-xl border border-slate-200 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
               Cancel

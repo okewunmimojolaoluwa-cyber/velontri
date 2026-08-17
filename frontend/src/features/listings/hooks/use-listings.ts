@@ -13,5 +13,7 @@ export function useListing(id: string) {
     queryKey: listingKeys.detail(id),
     queryFn: () => listingsApi.getById(id),
     enabled: Boolean(id),
+    staleTime: 0,       // always re-fetch so media_urls is current
+    gcTime: 30_000,
   });
 }
