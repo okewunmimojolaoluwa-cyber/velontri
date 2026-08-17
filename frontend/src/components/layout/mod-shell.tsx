@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, ListChecks, FileCheck, Flag, AlertTriangle,
   Users, Store, MessageSquare, Megaphone, LogOut, Menu, X, Zap,
-  Star, FileText, User, Settings,
+  Star, FileText, User, Settings, BadgeCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
@@ -22,6 +22,7 @@ const MOD_NAV = [
   { icon: ListChecks,      label: 'Pending Listings',   href: ROUTES.mod.pendingListings },
   { icon: Flag,            label: 'Reported Listings',  href: ROUTES.mod.reportedListings },
   { icon: FileCheck,       label: 'Pending KYC',         href: ROUTES.mod.kyc },
+  { icon: BadgeCheck,      label: 'Seller Verification', href: '/mod/verification' },
   { icon: Users,           label: 'Users',              href: ROUTES.mod.users },
   { icon: Store,           label: 'Stores',             href: ROUTES.mod.stores },
   { icon: Star,            label: 'Reported Reviews',   href: ROUTES.mod.reviews },

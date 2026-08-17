@@ -7,7 +7,7 @@ import {
   LayoutDashboard, PlusCircle, Package, Activity,
   Bookmark, Store, BarChart3,
   MessageCircle, Bell, User, Settings, Lock,
-  HelpCircle, LogOut, Menu, X, CreditCard, AlertTriangle,
+  HelpCircle, LogOut, Menu, X, CreditCard, AlertTriangle, BadgeCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
@@ -56,6 +56,7 @@ const NAV = [
       { icon: Lock,            label: 'Security',     href: ROUTES.user.security },
       { icon: Settings,        label: 'Settings',     href: ROUTES.user.settings },
       { icon: CreditCard,      label: 'Subscription', href: ROUTES.user.subscription },
+      { icon: BadgeCheck,      label: 'Verification',  href: '/dashboard/verification' },
       { icon: AlertTriangle,   label: 'Disputes',     href: '/dashboard/disputes' },
       { icon: HelpCircle,      label: 'Help',         href: ROUTES.user.help },
     ],

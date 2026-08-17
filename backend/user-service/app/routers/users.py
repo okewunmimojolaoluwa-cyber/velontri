@@ -584,3 +584,14 @@ async def deactivate_my_account(request: Request, service: UserService=Depends(_
         message='Your account has been deactivated.',
         data={'deactivated': True, 'user_id': str(current_user_id)}
     )
+
+
+# ── Include seller verification router ───────────────────────────────────────
+# This must be at the bottom so it picks up the same `router` object that the
+# gateway loads via _load_service_router("user-service", "users", "router").
+try:
+    from .verification import router as _ver_router
+    router.include_router(_ver_router)
+except Exception as _ver_err:
+    import logging as _log
+    _log.getLogger(__name__).warning(f'verification_router_load_failed: {_ver_err}')

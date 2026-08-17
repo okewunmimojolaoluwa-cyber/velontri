@@ -420,6 +420,69 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
             await _conn.execute(_text(
                 "CREATE INDEX IF NOT EXISTS ix_moderation_log_resource ON moderation_log(resource_id)"
             ))
+
+            # ── Seller Verification System ────────────────────────────────────
+            await _conn.execute(_text("""
+                DO $$ BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name='users' AND column_name='seller_verification_status'
+                    ) THEN
+                        ALTER TABLE users ADD COLUMN seller_verification_status TEXT DEFAULT 'not_verified';
+                    END IF;
+                END $$
+            """))
+            await _conn.execute(_text("""
+                CREATE TABLE IF NOT EXISTS seller_verification_applications (
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    user_id UUID NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'draft',
+                    seller_type TEXT,
+                    full_name TEXT,
+                    date_of_birth DATE,
+                    country TEXT,
+                    state TEXT,
+                    city TEXT,
+                    residential_address TEXT,
+                    phone TEXT,
+                    email TEXT,
+                    id_type TEXT,
+                    id_number TEXT,
+                    id_front_url TEXT,
+                    id_back_url TEXT,
+                    display_name TEXT,
+                    seller_description TEXT,
+                    business_name TEXT,
+                    business_description TEXT,
+                    business_address TEXT,
+                    business_reg_number TEXT,
+                    business_phone TEXT,
+                    whatsapp_number TEXT,
+                    business_category TEXT,
+                    store_name TEXT,
+                    store_description TEXT,
+                    store_logo_url TEXT,
+                    profile_photo_url TEXT,
+                    location TEXT,
+                    submitted_at TIMESTAMPTZ,
+                    reviewed_at TIMESTAMPTZ,
+                    reviewed_by UUID,
+                    reviewer_name TEXT,
+                    rejection_reason TEXT,
+                    rejection_category TEXT,
+                    additional_notes TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            """))
+            await _conn.execute(_text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_sva_user_id "
+                "ON seller_verification_applications(user_id)"
+            ))
+            await _conn.execute(_text(
+                "CREATE INDEX IF NOT EXISTS ix_sva_status "
+                "ON seller_verification_applications(status)"
+            ))
         logger.info("db_schema_ensured")
     except Exception as _te:
         logger.warning(f"db_schema_ensure_failed: {_te}")

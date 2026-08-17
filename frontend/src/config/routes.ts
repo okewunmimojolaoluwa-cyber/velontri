@@ -38,6 +38,7 @@ export const ROUTES = {
     settings:    '/dashboard/settings',
     help:        '/dashboard/help',
     subscription: '/dashboard/subscription',
+    verification: '/dashboard/verification',
   },
 
   // Moderator dashboard (focused on moderation only)
@@ -45,6 +46,7 @@ export const ROUTES = {
     overview:    '/mod',
     pendingListings: '/mod/pending-listings',
     reportedListings: '/mod/reported-listings',
+    verification:  '/mod/verification',
     kyc:         '/mod/kyc',
     users:       '/mod/users',
     stores:      '/mod/stores',

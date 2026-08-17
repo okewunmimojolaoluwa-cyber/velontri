@@ -10,7 +10,7 @@ import {
   Mail, MessageSquare, MessageCircle, MapPin, Settings, BarChart3,
   ClipboardList, LogOut, Menu, X, ChevronRight,
   TrendingUp, UserCog, Home, Car, Briefcase,
-  Tag, Globe, Download, User, Star, Smartphone, Shield,
+  Tag, Globe, Download, User, Star, Smartphone, Shield, BadgeCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
@@ -53,6 +53,7 @@ const ADMIN_NAV: NavGroup[] = [
       { icon: Users,           label: 'Total Users',          href: ROUTES.admin.users },
       { icon: Users,           label: 'Verified Users',       href: ROUTES.admin.verifiedUsers },
       { icon: Users,           label: 'Sellers',             href: ROUTES.admin.sellers },
+      { icon: BadgeCheck,      label: 'Seller Verification', href: '/admin/verification' },
     ],
   },
   {
