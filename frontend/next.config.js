@@ -2,10 +2,6 @@
 const nextConfig = {
   reactStrictMode: false,
 
-  // Standalone output produces a self-contained bundle under .next/standalone
-  // — smaller artifact, no node_modules needed at runtime, required by pxxl.
-  output: 'standalone',
-
   typescript: {
     ignoreBuildErrors: true,
   },

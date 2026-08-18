@@ -20,7 +20,7 @@
 
     "dev:frontend": "npm --prefix frontend run dev",
 
-    "start": "cd frontend && node .next/standalone/server.js",
+    "start": "npm --prefix frontend run start",
 
     "stop": "npm --prefix backend run stop",
 

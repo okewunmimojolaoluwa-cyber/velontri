@@ -1,6 +1,6 @@
 {
-  "install": "cd frontend && npm install --prefer-offline",
-  "build": "cd frontend && npm run build && cp -r public .next/standalone/public && cp -r .next/static .next/standalone/.next/static",
-  "start": "cd frontend && PORT=${PORT:-3000} node .next/standalone/server.js",
+  "install": "cd frontend && npm install",
+  "build": "cd frontend && npm run build",
+  "start": "cd frontend && npm run start",
   "port": 3000
 }
