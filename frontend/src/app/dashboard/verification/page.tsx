@@ -46,7 +46,7 @@ const ID_TYPES = [
   'National ID (NIN)',
   'International Passport',
   "Driver's Licence",
-  'Voter's Card',
+  "Voter's Card",
   'Other Government-issued ID',
 ];
 
