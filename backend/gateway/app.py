@@ -269,10 +269,11 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
             await _conn.execute(_text("""
                 CREATE TABLE IF NOT EXISTS threads (
                     id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                    participant_a TEXT NOT NULL,
-                    participant_b TEXT NOT NULL,
-                    listing_id    TEXT,
-                    created_at    TIMESTAMPTZ DEFAULT NOW()
+                    participant_a UUID NOT NULL,
+                    participant_b UUID NOT NULL,
+                    listing_id    UUID,
+                    created_at    TIMESTAMPTZ DEFAULT NOW(),
+                    CONSTRAINT uq_thread_participants UNIQUE (participant_a, participant_b, listing_id)
                 )
             """))
             await _conn.execute(_text(
@@ -285,7 +286,7 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
                 CREATE TABLE IF NOT EXISTS messages (
                     id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                     thread_id    UUID NOT NULL,
-                    sender_id    TEXT NOT NULL,
+                    sender_id    UUID NOT NULL,
                     message_type VARCHAR(20) NOT NULL DEFAULT 'text',
                     content      TEXT NOT NULL,
                     media_s3_key TEXT,
@@ -295,6 +296,17 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
             """))
             await _conn.execute(_text(
                 "CREATE INDEX IF NOT EXISTS ix_messages_thread ON messages(thread_id)"
+            ))
+            await _conn.execute(_text("""
+                CREATE TABLE IF NOT EXISTS message_queue (
+                    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    recipient_id UUID NOT NULL,
+                    message_id   UUID NOT NULL,
+                    queued_at    TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await _conn.execute(_text(
+                "CREATE INDEX IF NOT EXISTS ix_message_queue_recipient ON message_queue(recipient_id)"
             ))
             # ── Notifications ─────────────────────────────────────────────
             await _conn.execute(_text("""
