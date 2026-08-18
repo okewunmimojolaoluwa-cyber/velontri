@@ -207,19 +207,25 @@ class MarketplaceService:
 
         # Load all media in sort order
         media_rows = await repo.get_listing_media(self.session, listing_id)
-        media_urls = [m.s3_key for m in media_rows if m.media_type == "image"]
+        media_urls: list[str] = [m.s3_key for m in media_rows if m.media_type == "image" and m.s3_key]
 
-        # Ensure cover image is in the list.
-        # Only prepend image_url if it's not already the first item in media_urls
-        # (listing_media[0] often duplicates image_url when uploaded via uploadImage).
+        # Deduplicate while preserving order (media_rows may contain the cover too)
+        seen: set[str] = set()
+        deduped: list[str] = []
+        for url in media_urls:
+            if url not in seen:
+                seen.add(url)
+                deduped.append(url)
+        media_urls = deduped
+
+        # Ensure cover image is in the list and is first.
         if listing.image_url:
             if not media_urls:
-                # No media rows at all — use image_url as only image
                 media_urls = [listing.image_url]
             elif media_urls[0] != listing.image_url:
-                # Media rows exist but first one differs from cover — prepend cover
-                media_urls = [listing.image_url] + media_urls
-            # else: media_urls[0] == image_url already — no action needed
+                # Cover not first — remove it from wherever it is and prepend it
+                media_urls = [listing.image_url] + [u for u in media_urls if u != listing.image_url]
+            # else: media_urls[0] == image_url — already in the right place
 
         response = _to_listing_response(listing, media_urls)
         await self.redis.setex(cache_key, 300, response.model_dump_json())
@@ -290,8 +296,10 @@ class MarketplaceService:
         sort_order = current_count  # zero-indexed
         media_url = s3_key if self.s3_session else (image_url or s3_key)
 
-        if not self.s3_session and current_count == 0:
-            # Set cover image on the listing row AND add to listing_media at sort_order 0
+        if not self.s3_session and current_count == 0 and not listing.image_url:
+            # Only set cover image on the listing row if one isn't already set.
+            # The cover is usually embedded at create time via image_url in the
+            # create request — we must not overwrite it with the first uploadImage call.
             from sqlalchemy import update as _update
             from .models import Listing as _Listing
             await self.session.execute(
@@ -301,6 +309,9 @@ class MarketplaceService:
             )
         await repo.add_listing_media(self.session, listing_id, "image", media_url, sort_order)
         await self.session.flush()  # flush immediately so connection returns to pool sooner
+
+        # Always invalidate cache so next get_listing returns fresh media_urls
+        await self.redis.delete(RedisKeys.listing_cache(str(listing_id)))
 
         await self.redis.delete(RedisKeys.listing_cache(str(listing_id)))
         return s3_key
