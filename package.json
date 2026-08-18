@@ -20,7 +20,7 @@
 
     "dev:frontend": "npm --prefix frontend run dev",
 
-    "start": "npm --prefix frontend run start",
+    "start": "node server.js",
 
     "stop": "npm --prefix backend run stop",
 
