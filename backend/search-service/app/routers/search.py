@@ -391,15 +391,54 @@ async def _search_fallback(
 )
 async def autocomplete(
     q: str = Query(..., description="Search prefix (min 2 chars)"),
+    request: Request = None,
     svc: SearchService = Depends(_build_service),
 ) -> SuccessResponse:
     prefix = (q or "").strip()
     if len(prefix) < 2:
-        # Spec: prefix shorter than 2 chars returns empty, not an error
         return SuccessResponse(data=AutocompleteResponse(suggestions=[]).model_dump())
 
-    suggestions = await svc.autocomplete(prefix)
-    return SuccessResponse(data=AutocompleteResponse(suggestions=suggestions).model_dump())
+    # Try Elasticsearch via service first
+    try:
+        suggestions = await svc.autocomplete(prefix)
+        if suggestions:
+            return SuccessResponse(data=AutocompleteResponse(suggestions=suggestions).model_dump())
+    except Exception:
+        pass
+
+    # Fallback: query DB for matching listing titles
+    suggestions = []
+    try:
+        from sqlalchemy import text as _text
+        async with request.app.state.session_factory() as db:
+            like = f"{prefix}%"
+            rows = (await db.execute(
+                _text("""
+                    SELECT DISTINCT title FROM listings
+                    WHERE title ILIKE :like AND status = 'active'
+                    ORDER BY title ASC LIMIT 8
+                """),
+                {"like": like},
+            )).fetchall()
+            suggestions = [r[0] for r in rows if r[0]]
+
+            # Also add category matches
+            if len(suggestions) < 8:
+                cat_rows = (await db.execute(
+                    _text("""
+                        SELECT DISTINCT category FROM listings
+                        WHERE category ILIKE :like AND status = 'active'
+                        ORDER BY category ASC LIMIT 4
+                    """),
+                    {"like": like},
+                )).fetchall()
+                for r in cat_rows:
+                    if r[0] and r[0] not in suggestions:
+                        suggestions.append(r[0])
+    except Exception:
+        pass
+
+    return SuccessResponse(data=AutocompleteResponse(suggestions=suggestions[:8]).model_dump())
 
 
 @router.post(
