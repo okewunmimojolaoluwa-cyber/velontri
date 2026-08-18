@@ -1,35 +1,31 @@
 /**
- * Root-level pxxl start wrapper for Velontri.
- * pxxl runs this from the repo root with PORT set in environment.
+ * Velontri pxxl entry point — runs from /workspace/app (repo root).
+ *
+ * Uses process.chdir + require() to load Next.js server directly
+ * without spawning a child process, so port binding is immediate.
  */
-const { spawn } = require('child_process');
 const path = require('path');
-
-const port = process.env.PORT || '3000';
-const host = '0.0.0.0';
+const port = parseInt(process.env.PORT || '3000', 10);
 const frontendDir = path.join(__dirname, 'frontend');
 
-console.log(`[velontri] Starting Next.js on ${host}:${port} (cwd: ${frontendDir})`);
+// Change into frontend directory so Next.js finds .next/ and public/
+process.chdir(frontendDir);
+process.env.PORT = String(port);
+process.env.NEXT_TELEMETRY_DISABLED = '1';
 
-const next = spawn(
-  'node',
-  [path.join(frontendDir, 'node_modules', '.bin', 'next'), 'start', '-p', port, '-H', host],
-  {
-    stdio: 'inherit',
-    env: { ...process.env, PORT: port },
-    cwd: frontendDir,
-  }
-);
+console.log(`[velontri] Starting from ${frontendDir} on port ${port}`);
 
-next.on('error', (err) => {
-  console.error('[velontri] Failed to start:', err.message);
+// Load Next.js CLI directly — same as running `next start` but in-process
+// This avoids child_process spawn delay and lets pxxl detect port immediately
+const { startServer } = require(path.join(frontendDir, 'node_modules', 'next', 'dist', 'server', 'lib', 'start-server'));
+
+startServer({
+  dir: frontendDir,
+  isDev: false,
+  hostname: '0.0.0.0',
+  port,
+  allowRetry: false,
+}).catch((err) => {
+  console.error('[velontri] Failed to start:', err);
   process.exit(1);
 });
-
-next.on('close', (code) => {
-  console.log(`[velontri] Next.js exited with code ${code}`);
-  process.exit(code ?? 1);
-});
-
-process.on('SIGTERM', () => next.kill('SIGTERM'));
-process.on('SIGINT',  () => next.kill('SIGINT'));
