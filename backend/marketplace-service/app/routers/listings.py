@@ -36,11 +36,13 @@ async def browse_listings(service: MarketplaceService=Depends(_build_service), p
     media_map: dict[str, str] = {}
     if listing_ids_without_image:
         try:
+            placeholders = ", ".join(f":id_{i}" for i in range(len(listing_ids_without_image)))
+            params = {f"id_{i}": lid for i, lid in enumerate(listing_ids_without_image)}
             media_rows = (await service.session.execute(_text(
-                "SELECT CAST(listing_id AS TEXT) AS lid, s3_key FROM listing_media "
-                "WHERE CAST(listing_id AS TEXT) = ANY(:ids) AND media_type = 'image' "
-                "ORDER BY sort_order ASC"
-            ), {'ids': listing_ids_without_image})).mappings().all()
+                f"SELECT CAST(listing_id AS TEXT) AS lid, s3_key FROM listing_media "
+                f"WHERE CAST(listing_id AS TEXT) IN ({placeholders}) AND media_type = 'image' "
+                f"ORDER BY sort_order ASC"
+            ), params)).mappings().all()
             seen: set = set()
             for mr in media_rows:
                 lid = str(mr['lid'])
@@ -77,11 +79,13 @@ async def my_listings(service: MarketplaceService=Depends(_build_service), curre
     media_map: dict[str, str] = {}
     if ids_without_image:
         try:
+            placeholders = ", ".join(f":id_{i}" for i in range(len(ids_without_image)))
+            params = {f"id_{i}": lid for i, lid in enumerate(ids_without_image)}
             media_rows = (await service.session.execute(_text(
-                "SELECT CAST(listing_id AS TEXT) AS lid, s3_key FROM listing_media "
-                "WHERE CAST(listing_id AS TEXT) = ANY(:ids) AND media_type = 'image' "
-                "ORDER BY sort_order ASC"
-            ), {'ids': ids_without_image})).mappings().all()
+                f"SELECT CAST(listing_id AS TEXT) AS lid, s3_key FROM listing_media "
+                f"WHERE CAST(listing_id AS TEXT) IN ({placeholders}) AND media_type = 'image' "
+                f"ORDER BY sort_order ASC"
+            ), params)).mappings().all()
             seen: set = set()
             for mr in media_rows:
                 lid = str(mr['lid'])
@@ -91,7 +95,20 @@ async def my_listings(service: MarketplaceService=Depends(_build_service), curre
         except Exception:
             pass
 
-    data = [{'id': str(l.id), 'seller_id': str(l.seller_id), 'listing_type': l.listing_type, 'title': l.title, 'description': l.description, 'price': float(l.price) if l.price is not None else None, 'currency': l.currency, 'country': l.country, 'state': l.state, 'city': l.city, 'category': l.category, 'condition': l.condition, 'status': l.status, 'avg_rating': float(l.avg_rating) if l.avg_rating is not None else 0.0, 'review_count': l.review_count or 0, 'created_at': l.created_at.isoformat() if l.created_at else None, 'updated_at': l.updated_at.isoformat() if l.updated_at else None, 'image_url': l.image_url or media_map.get(str(l.id))} for l in listings]
+    data = [{'id': str(l.id), 'seller_id': str(l.seller_id), 'listing_type': l.listing_type,
+              'title': l.title, 'description': l.description,
+              'price': float(l.price) if l.price is not None else None,
+              'currency': l.currency, 'country': l.country, 'state': l.state,
+              'city': l.city, 'category': l.category, 'condition': l.condition,
+              'status': l.status,
+              'rejection_reason': getattr(l, 'rejection_reason', None),
+              'whatsapp_number': getattr(l, 'whatsapp_number', None),
+              'contact_phone': getattr(l, 'contact_phone', None),
+              'avg_rating': float(l.avg_rating) if l.avg_rating is not None else 0.0,
+              'review_count': l.review_count or 0,
+              'created_at': l.created_at.isoformat() if l.created_at else None,
+              'updated_at': l.updated_at.isoformat() if l.updated_at else None,
+              'image_url': l.image_url or media_map.get(str(l.id))} for l in listings]
     return SuccessResponse(message=f'{total} listing(s) found.', data=data, meta=paginated_meta(page, page_size, total))
 
 @router.get('/listings/{listing_id}', response_model=SuccessResponse, summary='Get listing detail')
@@ -371,11 +388,13 @@ async def admin_pending_listings(service: MarketplaceService=Depends(_build_serv
     seller_map: dict[str, dict] = {}
     if seller_ids:
         try:
+            _ph = ", ".join(f":sid_{i}" for i in range(len(seller_ids)))
+            _pm = {f"sid_{i}": s for i, s in enumerate(seller_ids)}
             rows = (await service.session.execute(
-                _text("SELECT id, full_name, email, phone FROM users WHERE id = ANY(:ids)"),
-                {"ids": seller_ids}
+                _text(f"SELECT id, full_name, email, phone FROM users WHERE CAST(id AS TEXT) IN ({_ph})"),
+                _pm
             )).mappings().all()
-            seller_map = {r['id']: dict(r) for r in rows}
+            seller_map = {str(r['id']): dict(r) for r in rows}
         except Exception:
             pass
     data = []
@@ -436,11 +455,13 @@ async def mod_listings(service: MarketplaceService=Depends(_build_service), role
     seller_map: dict[str, dict] = {}
     if seller_ids:
         try:
+            _ph = ", ".join(f":sid_{i}" for i in range(len(seller_ids)))
+            _pm = {f"sid_{i}": s for i, s in enumerate(seller_ids)}
             rows = (await service.session.execute(
-                _text("SELECT id, full_name, email FROM users WHERE id = ANY(:ids)"),
-                {"ids": seller_ids}
+                _text(f"SELECT id, full_name, email FROM users WHERE CAST(id AS TEXT) IN ({_ph})"),
+                _pm
             )).mappings().all()
-            seller_map = {r['id']: dict(r) for r in rows}
+            seller_map = {str(r['id']): dict(r) for r in rows}
         except Exception:
             pass
     data = [{
@@ -554,9 +575,11 @@ async def admin_featured_listings(service: MarketplaceService=Depends(_build_ser
         seller_map: dict = {}
         if seller_ids:
             try:
+                _ph2 = ", ".join(f":sid_{i}" for i in range(len(seller_ids)))
+                _pm2 = {f"sid_{i}": s for i, s in enumerate(seller_ids)}
                 rows = (await service.session.execute(
-                    _text("SELECT id, full_name, email FROM users WHERE id = ANY(:ids)"),
-                    {"ids": seller_ids}
+                    _text(f"SELECT id, full_name, email FROM users WHERE CAST(id AS TEXT) IN ({_ph2})"),
+                    _pm2
                 )).mappings().all()
                 seller_map = {str(r['id']): r['full_name'] or r['email'] or 'Seller' for r in rows}
             except Exception:

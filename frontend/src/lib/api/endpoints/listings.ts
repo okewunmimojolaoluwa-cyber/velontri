@@ -19,6 +19,9 @@ export interface ListingSummary {
   avg_rating?: number;
   review_count?: number;
   seller_id?: string;
+  whatsapp_number?: string;
+  contact_phone?: string;
+  rejection_reason?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -34,7 +37,9 @@ export interface ListingFilters {
   max_price?: number;
   condition?: string;
   q?: string;
+  search?: string;
   seller_id?: string;
+  sort?: string;
 }
 
 export const listingsApi = {
