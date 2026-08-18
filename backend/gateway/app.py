@@ -495,6 +495,52 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
                 "CREATE INDEX IF NOT EXISTS ix_sva_status "
                 "ON seller_verification_applications(status)"
             ))
+
+            # ── Notifications: add missing columns for full notification support ──
+            for _notif_col in [
+                ("recipient_user_id",       "UUID"),
+                ("channel",                 "TEXT DEFAULT 'in_app'"),
+                ("notification_type",       "TEXT"),
+                ("content",                 "TEXT"),
+                ("status",                  "TEXT DEFAULT 'sent'"),
+                ("attempts",                "INT DEFAULT 1"),
+            ]:
+                await _conn.execute(_text(f"""
+                    DO $$ BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM information_schema.columns
+                            WHERE table_name='notifications' AND column_name='{_notif_col[0]}'
+                        ) THEN
+                            ALTER TABLE notifications ADD COLUMN {_notif_col[0]} {_notif_col[1]};
+                        END IF;
+                    END $$
+                """))
+
+            # ── Chat schema migration: TEXT → UUID for existing deployments ─────
+            # If threads/messages were created with TEXT columns (old DDL), convert them.
+            # Wrapped in try/except per column so partial migrations don't block startup.
+            _chat_alters = [
+                ("threads",  "participant_a", "UUID USING participant_a::uuid"),
+                ("threads",  "participant_b", "UUID USING participant_b::uuid"),
+                ("threads",  "listing_id",
+                 "UUID USING CASE WHEN listing_id IS NOT NULL THEN listing_id::uuid END"),
+                ("messages", "sender_id",    "UUID USING sender_id::uuid"),
+            ]
+            for _tbl, _col, _cast in _chat_alters:
+                try:
+                    # Only attempt if column currently has a non-UUID type
+                    _type_check = await _conn.execute(_text(f"""
+                        SELECT data_type FROM information_schema.columns
+                        WHERE table_name='{_tbl}' AND column_name='{_col}'
+                    """))
+                    _row = _type_check.fetchone()
+                    if _row and _row[0].lower() not in ('uuid',):
+                        await _conn.execute(_text(
+                            f"ALTER TABLE {_tbl} ALTER COLUMN {_col} TYPE {_cast}"
+                        ))
+                except Exception as _alt_err:
+                    logger.warning(f"chat_alter_skip table={_tbl} col={_col}: {_alt_err}")
+
         logger.info("db_schema_ensured")
     except Exception as _te:
         logger.warning(f"db_schema_ensure_failed: {_te}")

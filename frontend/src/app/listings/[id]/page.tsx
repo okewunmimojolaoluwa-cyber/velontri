@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, MapPin, BadgeCheck, MessageCircle,
-  ChevronRight, Heart, Share2, Eye, Clock, Star,
+  ChevronRight, Heart, Share2, Eye, Star,
   ChevronLeft, X, ZoomIn, Send, CheckCircle, AlertCircle,
   AlertTriangle,
 } from 'lucide-react';

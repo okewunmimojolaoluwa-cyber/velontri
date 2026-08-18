@@ -35,6 +35,7 @@ def _user(token: str = Query(...), settings: NotificationSettings = Depends(_set
 async def get_notifications(
     request: Request,
     page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
     unread_only: bool = Query(default=False),
 ) -> SuccessResponse:
     from shared.jwt_utils import verify_token as _vt
@@ -54,21 +55,27 @@ async def get_notifications(
             conditions = "WHERE (recipient_user_id = :uid OR user_id = :uid)"
             if unread_only:
                 conditions += " AND is_read = FALSE"
-            offset = (page - 1) * 20
+            offset = (page - 1) * page_size
             rows = (await session.execute(
                 _text(f"""
                     SELECT id,
                            COALESCE(notification_type, type, 'system') AS notification_type,
-                           COALESCE(content, message, '{{}}') AS content,
+                           title,
+                           message,
+                           COALESCE(content, '{{}}') AS content,
                            is_read,
                            created_at,
-                           channel
+                           sender_user_id,
+                           sender_role,
+                           action_url,
+                           related_resource_type,
+                           related_resource_id
                     FROM notifications
                     {conditions}
                     ORDER BY created_at DESC
-                    LIMIT 20 OFFSET :offset
+                    LIMIT :lim OFFSET :offset
                 """),
-                {"uid": user_id, "offset": offset}
+                {"uid": user_id, "offset": offset, "lim": page_size}
             )).mappings().all()
             unread_count = (await session.execute(
                 _text("SELECT COUNT(*) FROM notifications WHERE (recipient_user_id = :uid OR user_id = :uid) AND is_read = FALSE"),
@@ -80,20 +87,30 @@ async def get_notifications(
 
     notifications = []
     for r in rows:
-        content_raw = r["content"] or "{}"
+        # title/message may be direct columns (new format) or packed in content JSON (old format)
+        direct_title = r.get("title") or ""
+        direct_msg   = r.get("message") or ""
+        content_raw  = r.get("content") or "{}"
         try:
-            content_parsed = json.loads(content_raw)
+            content_parsed = json.loads(content_raw) if content_raw.strip().startswith("{") else {}
         except Exception:
-            content_parsed = {"message": content_raw}
+            content_parsed = {}
+        title   = direct_title or content_parsed.get("title", "Notification")
+        message = direct_msg   or content_parsed.get("message", "")
         notifications.append({
-            "id": str(r["id"]),
-            "type": r["notification_type"],
-            "title": content_parsed.get("title", "Notification"),
-            "message": content_parsed.get("message", ""),
-            "listing_id": content_parsed.get("listing_id"),
-            "is_read": r["is_read"],
-            "channel": r.get("channel", "in_app"),
-            "created_at": str(r["created_at"]),
+            "id":                    str(r["id"]),
+            "type":                  r["notification_type"],
+            "title":                 title,
+            "message":               message,
+            "listing_id":            content_parsed.get("listing_id") or r.get("related_resource_id"),
+            "is_read":               r["is_read"],
+            "sender_user_id":        r.get("sender_user_id"),
+            "sender_role":           r.get("sender_role"),
+            "sender_name":           r.get("sender_role"),   # role doubles as display name
+            "action_url":            r.get("action_url"),
+            "related_resource_type": r.get("related_resource_type"),
+            "related_resource_id":   r.get("related_resource_id"),
+            "created_at":            str(r["created_at"]),
         })
     return SuccessResponse(data={"notifications": notifications, "unread_count": unread_count})
 

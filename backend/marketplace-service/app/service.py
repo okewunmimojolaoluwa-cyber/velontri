@@ -466,34 +466,25 @@ class MarketplaceService:
         from sqlalchemy import text as _text
         try:
             notif_id = str(uuid.uuid4())
-            content = _json.dumps({
-                "title": title,
-                "message": message,
-                "listing_id": listing_id,
-            })
             await self.session.execute(
                 _text(
                     "INSERT INTO notifications "
-                    "(id, user_id, recipient_user_id, type, channel, notification_type, "
-                    " title, message, content, status, is_read, attempts, "
+                    "(id, user_id, type, title, message, is_read, "
                     " sender_user_id, sender_role, related_resource_type, related_resource_id, action_url, "
                     " created_at) "
-                    "VALUES (:id, :uid, :uid, 'system', 'in_app', :ntype, "
-                    "        :title, :message, :content, 'sent', FALSE, 1, "
+                    "VALUES (:id, :uid, 'system', :title, :message, FALSE, "
                     "        :sender_id, :sender_role, 'listing', :listing_id, :action_url, "
                     "        NOW())"
                 ),
                 {
                     "id": notif_id,
                     "uid": seller_id,
-                    "ntype": notification_type,
                     "title": title,
                     "message": message,
-                    "content": content,
                     "sender_id": sender_id,
                     "sender_role": sender_role,
                     "listing_id": listing_id,
-                    "action_url": action_url or f"/dashboard/listings",
+                    "action_url": action_url or "/dashboard/listings",
                 },
             )
             await self.session.commit()
@@ -721,14 +712,23 @@ class MarketplaceService:
         reviewer_id: uuid.UUID,
         body: CreateReviewRequest,
     ) -> ReviewResponse:
-        # Verify purchase eligibility
-        eligible = await repo.check_review_eligibility(
-            self.session, listing_id, reviewer_id
-        )
-        if not eligible:
-            raise ForbiddenError(
-                "You can only review a listing after completing an order or booking."
+        # Check the listing exists and reviewer is not the seller
+        listing = await repo.get_listing(self.session, listing_id)
+        if listing is None:
+            raise NotFoundError("Listing not found.")
+        if listing.seller_id == reviewer_id:
+            raise ForbiddenError("You cannot review your own listing.")
+
+        # Prevent duplicate reviews — one per user per listing
+        from sqlalchemy import select as _select, and_ as _and_
+        from .models import Review as _Review
+        existing = (await self.session.execute(
+            _select(_Review).where(
+                _and_(_Review.listing_id == listing_id, _Review.reviewer_id == reviewer_id)
             )
+        )).scalars().first()
+        if existing:
+            raise ForbiddenError("You have already reviewed this listing.")
 
         # AI spam check (async call to AI Service)
         status = "published"
@@ -777,9 +777,15 @@ class MarketplaceService:
         if reviewer_ids:
             try:
                 from sqlalchemy import text as _text
+                # Build IN clause manually — avoids ANY() dialect differences
+                placeholders = ", ".join(f":id_{i}" for i in range(len(reviewer_ids)))
+                params = {f"id_{i}": rid for i, rid in enumerate(reviewer_ids)}
                 rows = (await self.session.execute(
-                    _text("SELECT CAST(id AS TEXT) AS id, full_name FROM users WHERE CAST(id AS TEXT) = ANY(:ids)"),
-                    {"ids": reviewer_ids}
+                    _text(
+                        f"SELECT CAST(id AS TEXT) AS id, full_name FROM users "
+                        f"WHERE CAST(id AS TEXT) IN ({placeholders})"
+                    ),
+                    params,
                 )).mappings().all()
                 name_map = {str(r["id"]): r["full_name"] for r in rows if r["full_name"]}
             except Exception:
