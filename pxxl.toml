@@ -1,6 +1,5 @@
 [app]
 name = "velontri"
-port = 3000
 
 [build]
 install = "cd frontend && npm install"
