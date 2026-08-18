@@ -771,11 +771,25 @@ class MarketplaceService:
         self, listing_id: uuid.UUID, page: int = 1
     ) -> list[ReviewResponse]:
         reviews = await repo.list_reviews(self.session, listing_id, page=page)
+        # Fetch reviewer names in one query
+        reviewer_ids = list({str(r.reviewer_id) for r in reviews})
+        name_map: dict[str, str] = {}
+        if reviewer_ids:
+            try:
+                from sqlalchemy import text as _text
+                rows = (await self.session.execute(
+                    _text("SELECT CAST(id AS TEXT) AS id, full_name FROM users WHERE CAST(id AS TEXT) = ANY(:ids)"),
+                    {"ids": reviewer_ids}
+                )).mappings().all()
+                name_map = {str(r["id"]): r["full_name"] for r in rows if r["full_name"]}
+            except Exception:
+                pass
         return [
             ReviewResponse(
                 id=r.id,
                 listing_id=r.listing_id,
                 reviewer_id=r.reviewer_id,
+                reviewer_name=name_map.get(str(r.reviewer_id)),
                 rating=r.rating,
                 comment=r.comment,
                 status=r.status,

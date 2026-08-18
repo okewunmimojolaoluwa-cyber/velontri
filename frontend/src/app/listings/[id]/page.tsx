@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useListing } from '@/features/listings/hooks/use-listings';
+import { listingKeys } from '@/lib/api/endpoints/listings';
 import { useAuth } from '@/features/auth/auth-provider';
 import { apiClient } from '@/lib/api/client';
 import { Navbar } from '@/components/layout/navbar';
@@ -202,6 +203,39 @@ export default function ListingDetailPage() {
   });
 
   const sellerName = sellerData?.data?.full_name || sellerData?.data?.display_name || 'Seller';
+
+  // Fetch real reviews for this listing
+  const { data: reviewsData } = useQuery({
+    queryKey: ['listing-reviews', id],
+    queryFn: () => apiClient.get(`/listings/${id}/reviews`).then(r => r.data),
+    enabled: !!id,
+    staleTime: 60_000,
+  });
+  const reviews: any[] = Array.isArray(reviewsData?.data) ? reviewsData.data : [];
+
+  // Review submission state
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewHover, setReviewHover] = useState(0);
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [reviewErr, setReviewErr] = useState('');
+
+  const { mutate: submitReview, isPending: submittingReview } = useMutation({
+    mutationFn: () => apiClient.post(`/listings/${id}/reviews`, {
+      rating: reviewRating,
+      comment: reviewComment.trim() || undefined,
+    }),
+    onSuccess: () => {
+      setReviewSuccess(true);
+      setReviewRating(0);
+      setReviewComment('');
+      qc.invalidateQueries({ queryKey: ['listing-reviews', id] });
+      qc.invalidateQueries({ queryKey: listingKeys.detail(id) });
+    },
+    onError: (e: any) => {
+      setReviewErr(e?.message || 'Could not submit review. You may have already reviewed this listing.');
+    },
+  });
   // Build images array from media_urls (backend already ensures correct order and no duplicates)
   const images: string[] = ((listing as any)?.media_urls?.length
     ? (listing as any).media_urls
@@ -513,6 +547,146 @@ export default function ListingDetailPage() {
 
               {/* Safety notice — always visible */}
               <SafetyNotice />
+
+              {/* ── Reviews section ───────────────────────────────────── */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-5">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-[14px] font-bold text-slate-900">
+                    Reviews
+                    {(listing.review_count ?? 0) > 0 && (
+                      <span className="ml-2 text-[12px] font-normal text-slate-400">
+                        ({listing.review_count})
+                      </span>
+                    )}
+                  </h2>
+                  {(listing.avg_rating ?? 0) > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      {[1,2,3,4,5].map(s => (
+                        <Star key={s} className={`h-4 w-4 ${
+                          s <= Math.round(listing.avg_rating ?? 0)
+                            ? 'fill-amber-400 text-amber-400'
+                            : 'text-slate-200'
+                        }`} />
+                      ))}
+                      <span className="text-[13px] font-bold text-slate-700 ml-1">
+                        {Number(listing.avg_rating).toFixed(1)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Review list */}
+                {reviews.length === 0 ? (
+                  <p className="text-[13px] text-slate-400 text-center py-4">
+                    No reviews yet. Be the first to rate this listing.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {reviews.map((r: any) => (
+                      <div key={r.id} className="border-b border-slate-100 pb-4 last:border-0 last:pb-0">
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-100 text-[11px] font-bold text-indigo-700 flex-shrink-0">
+                              {(r.reviewer_name || 'U').charAt(0).toUpperCase()}
+                            </div>
+                            <p className="text-[13px] font-semibold text-slate-800">
+                              {r.reviewer_name || 'Anonymous'}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-0.5 flex-shrink-0">
+                            {[1,2,3,4,5].map(s => (
+                              <Star key={s} className={`h-3.5 w-3.5 ${
+                                s <= (r.rating ?? 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'
+                              }`} />
+                            ))}
+                          </div>
+                        </div>
+                        {r.comment && (
+                          <p className="text-[13px] text-slate-600 leading-relaxed ml-9">{r.comment}</p>
+                        )}
+                        <p className="text-[11px] text-slate-400 mt-1 ml-9">
+                          {r.created_at ? new Date(r.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                        </p>
+                        {r.seller_response && (
+                          <div className="mt-2 ml-9 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                            <p className="text-[11px] font-bold text-slate-500 mb-0.5">Seller response</p>
+                            <p className="text-[12px] text-slate-700">{r.seller_response}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Submit review — only for authenticated users who are not the seller */}
+                {session.isAuthenticated && listing.seller_id !== session.userId && (
+                  <div className="border-t border-slate-100 pt-5">
+                    <p className="text-[13px] font-bold text-slate-900 mb-3">Rate this listing</p>
+                    {reviewSuccess ? (
+                      <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                        <CheckCircle className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                        <p className="text-[13px] font-semibold text-emerald-700">Review submitted! Thank you.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {/* Star picker */}
+                        <div className="flex items-center gap-1">
+                          {[1,2,3,4,5].map(s => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => setReviewRating(s)}
+                              onMouseEnter={() => setReviewHover(s)}
+                              onMouseLeave={() => setReviewHover(0)}
+                              className="p-0.5 transition-transform hover:scale-110 active:scale-95"
+                            >
+                              <Star className={`h-7 w-7 transition-colors ${
+                                s <= (reviewHover || reviewRating)
+                                  ? 'fill-amber-400 text-amber-400'
+                                  : 'text-slate-200 hover:text-amber-300'
+                              }`} />
+                            </button>
+                          ))}
+                          {reviewRating > 0 && (
+                            <span className="ml-2 text-[12px] font-semibold text-slate-500">
+                              {['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][reviewRating]}
+                            </span>
+                          )}
+                        </div>
+                        <textarea
+                          value={reviewComment}
+                          onChange={e => setReviewComment(e.target.value)}
+                          placeholder="Share your experience with this listing (optional)…"
+                          rows={3}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-400 focus:bg-white resize-none transition-all"
+                        />
+                        {reviewErr && (
+                          <p className="text-[12px] font-medium text-red-600">{reviewErr}</p>
+                        )}
+                        <button
+                          onClick={() => {
+                            setReviewErr('');
+                            if (reviewRating === 0) { setReviewErr('Please select a star rating.'); return; }
+                            submitReview();
+                          }}
+                          disabled={submittingReview || reviewRating === 0}
+                          className="h-10 rounded-xl bg-indigo-600 px-5 text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                        >
+                          {submittingReview ? 'Submitting…' : 'Submit Review'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {!session.isAuthenticated && (
+                  <p className="text-[12px] text-slate-400 text-center border-t border-slate-100 pt-4">
+                    <button onClick={() => router.push(`${ROUTES.login}?redirect=/listings/${id}`)}
+                      className="text-indigo-600 font-semibold hover:underline">Sign in</button>
+                    {' '}to leave a review
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* RIGHT — sticky sidebar */}
@@ -585,7 +759,7 @@ export default function ListingDetailPage() {
                 )}
               </div>
 
-              {/* Seller card */}
+              {/* Seller card — real rating from listing data */}
               <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4">
                 <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full
                   bg-indigo-100 text-[15px] font-bold text-indigo-700 uppercase">
@@ -597,15 +771,23 @@ export default function ListingDetailPage() {
                     <BadgeCheck className="h-4 w-4 text-indigo-600 flex-shrink-0" />
                   </div>
                   <div className="flex flex-wrap items-center gap-2 mt-0.5 text-[12px] text-slate-400">
-                    <span className="flex items-center gap-1">
-                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> 4.9
-                    </span>
-                    <span>·</span>
-                    <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> ~1 hr reply</span>
-                    <span>·</span>
-                    <span className="flex items-center gap-1">
-                      <Eye className="h-3 w-3" /> {listing.review_count ?? 0} reviews
-                    </span>
+                    {(listing.avg_rating ?? 0) > 0 ? (
+                      <span className="flex items-center gap-1">
+                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                        {Number(listing.avg_rating).toFixed(1)}
+                      </span>
+                    ) : (
+                      <span className="text-slate-300">No ratings yet</span>
+                    )}
+                    {(listing.review_count ?? 0) > 0 && (
+                      <>
+                        <span>·</span>
+                        <span className="flex items-center gap-1">
+                          <Star className="h-3 w-3" />
+                          {listing.review_count} review{listing.review_count !== 1 ? 's' : ''}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

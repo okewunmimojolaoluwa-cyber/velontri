@@ -188,6 +188,7 @@ class ReviewResponse(BaseModel):
     id: uuid.UUID
     listing_id: uuid.UUID
     reviewer_id: uuid.UUID
+    reviewer_name: str | None = None
     rating: int
     comment: str | None
     status: str
