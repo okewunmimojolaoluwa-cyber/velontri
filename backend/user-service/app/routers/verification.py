@@ -147,6 +147,16 @@ async def save_verification(
     }
     data = {k: v for k, v in body.items() if k in allowed}
 
+    # Convert date_of_birth string → Python date object so asyncpg can bind it
+    from datetime import date as _date
+    if 'date_of_birth' in data and data['date_of_birth']:
+        try:
+            data['date_of_birth'] = _date.fromisoformat(str(data['date_of_birth']))
+        except (ValueError, TypeError):
+            data.pop('date_of_birth', None)  # ignore invalid dates
+    elif 'date_of_birth' in data and not data['date_of_birth']:
+        data.pop('date_of_birth', None)  # don't insert empty string into DATE column
+
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _t
