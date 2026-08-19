@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, MapPin, BadgeCheck, MessageCircle,
-  ChevronRight, Heart, Share2, Eye, Star,
-  ChevronLeft, X, ZoomIn, Send, CheckCircle, AlertCircle,
+  ChevronRight, Heart, Share2, Star,
+  ChevronLeft, X, Send, CheckCircle, AlertCircle,
   AlertTriangle,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -20,9 +20,7 @@ import type { ApiResponse } from '@/types/api';
 
 function fmt(n: number, currency: string) {
   try {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency', currency, maximumFractionDigits: 0,
-    }).format(n);
+    return new Intl.NumberFormat('en-NG', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n);
   } catch { return `${currency} ${n.toLocaleString()}`; }
 }
 
@@ -42,14 +40,11 @@ function ListingImagePlaceholder({ type, title }: { type: string; title: string 
     <div className="h-full w-full flex flex-col items-center justify-center gap-4 select-none"
       style={{ background: `linear-gradient(135deg, ${color}18 0%, ${color}08 100%)` }}>
       <span style={{ fontSize: 72 }}>{emoji}</span>
-      <p className="text-[13px] font-semibold text-slate-400 max-w-[200px] text-center px-4 truncate">
-        {title}
-      </p>
+      <p className="text-[13px] font-semibold text-slate-400 max-w-[200px] text-center px-4 truncate">{title}</p>
     </div>
   );
 }
 
-/* ── Safety Notice ─────────────────────────────────── */
 function SafetyNotice() {
   return (
     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
@@ -75,16 +70,10 @@ function SafetyNotice() {
   );
 }
 
-/* ── Message Panel ─────────────────────────────────── */
-function MessagePanel({
-  listingId, sellerId, sellerName, listingTitle, onClose,
-}: {
-  listingId: string; sellerId: string; sellerName: string;
-  listingTitle: string; onClose: () => void;
+function MessagePanel({ listingId, sellerId, sellerName, listingTitle, onClose }: {
+  listingId: string; sellerId: string; sellerName: string; listingTitle: string; onClose: () => void;
 }) {
-  const [text, setText] = useState(
-    `Hi, I'm interested in your listing: "${listingTitle}". Is it still available?`
-  );
+  const [text, setText] = useState(`Hi, I'm interested in your listing: "${listingTitle}". Is it still available?`);
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sendError, setSendError] = useState('');
@@ -93,9 +82,7 @@ function MessagePanel({
     if (!text.trim() || loading) return;
     setLoading(true); setSendError('');
     try {
-      await apiClient.post('/chat/messages', {
-        recipient_id: sellerId, content: text.trim(), listing_id: listingId,
-      });
+      await apiClient.post('/chat/messages', { recipient_id: sellerId, content: text.trim(), listing_id: listingId });
       setSent(true);
     } catch (err: any) {
       setSendError(err?.response?.data?.error?.message || err?.message || 'Failed to send.');
@@ -110,9 +97,7 @@ function MessagePanel({
         </div>
         <p className="text-[15px] font-bold text-slate-900">Message sent!</p>
         <p className="text-[13px] text-slate-500">{sellerName} will reply soon.</p>
-        <button onClick={onClose}
-          className="mt-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-[13px] font-bold
-            text-white hover:bg-indigo-700 transition-colors">Done</button>
+        <button onClick={onClose} className="mt-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors">Done</button>
       </div>
     );
   }
@@ -121,9 +106,7 @@ function MessagePanel({
     <div className="space-y-4">
       <p className="text-[14px] font-bold text-slate-900">Message {sellerName}</p>
       <textarea value={text} onChange={e => setText(e.target.value)} rows={4}
-        className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[14px]
-          text-slate-800 focus:border-indigo-400 focus:outline-none
-          focus:ring-2 focus:ring-indigo-500/10 resize-none" />
+        className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[14px] text-slate-800 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 resize-none" />
       {sendError && (
         <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5">
           <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
@@ -131,18 +114,10 @@ function MessagePanel({
         </div>
       )}
       <div className="flex gap-2">
-        <button onClick={onClose}
-          className="flex-1 h-10 rounded-xl border border-slate-200 text-[13px]
-            font-semibold text-slate-600 hover:bg-slate-50 transition-colors">Cancel</button>
+        <button onClick={onClose} className="flex-1 h-10 rounded-xl border border-slate-200 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors">Cancel</button>
         <button onClick={send} disabled={loading || !text.trim()}
-          className="flex-1 h-10 rounded-xl bg-indigo-600 text-[13px] font-bold text-white
-            hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-          {loading
-            ? <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
-                  strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
-              </svg>
-            : <Send className="h-4 w-4" />}
+          className="flex-1 h-10 rounded-xl bg-indigo-600 text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+          {loading ? <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" /></svg> : <Send className="h-4 w-4" />}
           Send
         </button>
       </div>
@@ -150,65 +125,143 @@ function MessagePanel({
   );
 }
 
+/* ── Full-screen image viewer with swipe, keyboard, counter ── */
+function ImageViewer({ images, startIdx, onClose }: { images: string[]; startIdx: number; onClose: () => void }) {
+  const [idx, setIdx] = useState(startIdx);
+  const touchStartX = useRef<number | null>(null);
+
+  const prev = () => setIdx(i => (i - 1 + images.length) % images.length);
+  const next = () => setIdx(i => (i + 1) % images.length);
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape')       onClose();
+      else if (e.key === 'ArrowLeft')  prev();
+      else if (e.key === 'ArrowRight') next();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 z-[300] flex flex-col bg-black select-none"
+      style={{ touchAction: 'none' }}
+      onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
+      onTouchEnd={e => {
+        if (touchStartX.current === null) return;
+        const dx = e.changedTouches[0].clientX - touchStartX.current;
+        if (Math.abs(dx) > 40) { dx < 0 ? next() : prev(); }
+        touchStartX.current = null;
+      }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 flex-shrink-0">
+        <p className="text-white font-bold text-[15px] tabular-nums">{idx + 1} / {images.length}</p>
+        <button onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/25 transition-colors active:scale-95">
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Main image */}
+      <div className="relative flex-1 flex items-center justify-center min-h-0 px-2">
+        <img
+          key={idx}
+          src={images[idx]}
+          alt={`Photo ${idx + 1} of ${images.length}`}
+          className="max-h-full max-w-full object-contain rounded-xl"
+          style={{ maxHeight: 'calc(100dvh - 200px)' }}
+          draggable={false}
+        />
+        {images.length > 1 && (
+          <>
+            <button onClick={e => { e.stopPropagation(); prev(); }}
+              className="absolute left-2 sm:left-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/30 transition-colors active:scale-95 backdrop-blur-sm"
+              aria-label="Previous image">
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <button onClick={e => { e.stopPropagation(); next(); }}
+              className="absolute right-2 sm:right-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/30 transition-colors active:scale-95 backdrop-blur-sm"
+              aria-label="Next image">
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Bottom: dots + thumbnails */}
+      <div className="flex-shrink-0 pb-safe pb-6 pt-3 space-y-2.5">
+        {images.length > 1 && images.length <= 10 && (
+          <div className="flex items-center justify-center gap-1.5 px-4">
+            {images.map((_, i) => (
+              <button key={i} onClick={() => setIdx(i)}
+                className={`rounded-full transition-all ${i === idx ? 'h-2 w-6 bg-white' : 'h-2 w-2 bg-white/40 hover:bg-white/70'}`}
+                aria-label={`Go to image ${i + 1}`} />
+            ))}
+          </div>
+        )}
+        {images.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: 'none' }}>
+            {images.map((img, i) => (
+              <button key={i} onClick={() => setIdx(i)}
+                className={`flex-shrink-0 h-14 w-14 rounded-lg overflow-hidden border-2 transition-all ${i === idx ? 'border-white scale-105 shadow-lg' : 'border-white/25 opacity-55 hover:opacity-80'}`}
+                aria-label={`View image ${i + 1}`}>
+                <img src={img} alt="" className="h-full w-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ════════════════════════════════════════════════════
    MAIN PAGE
-═══════════════════════════════════════════════════ */
+════════════════════════════════════════════════════ */
 export default function ListingDetailPage() {
-  const { id }   = useParams<{ id: string }>();
-  const router   = useRouter();
+  const { id }     = useParams<{ id: string }>();
+  const router     = useRouter();
   const { session } = useAuth();
   const { data, isLoading, isError } = useListing(id);
   const listing = data?.data;
 
-  const [imgIdx,   setImgIdx]   = useState(0);
-  const [lightbox, setLightbox] = useState(false);
-  const [panel,    setPanel]    = useState<'none' | 'message'>('none');
-  const [galleryOpen, setGalleryOpen] = useState(false);
+  // Gallery state — single index drives both main carousel AND viewer
+  const [imgIdx,      setImgIdx]      = useState(0);
+  const [viewerOpen,  setViewerOpen]  = useState(false);
+  const [panel,       setPanel]       = useState<'none' | 'message'>('none');
 
-  const qc = useQueryClient();
+  // Main image swipe (mobile)
+  const touchStartX = useRef<number | null>(null);
+
+  const qc  = useQueryClient();
   const uid = session.userId;
 
-  // Check saved status
   const { data: savedData } = useQuery({
     queryKey: [uid, 'saved-check', id],
-    queryFn: () =>
-      apiClient.get<ApiResponse<{ saved: boolean }>>(`/saved/${id}/check`)
-        .then(r => r.data)
-        .catch(() => ({ data: { saved: false } })),
+    queryFn: () => apiClient.get<ApiResponse<{ saved: boolean }>>(`/saved/${id}/check`).then(r => r.data).catch(() => ({ data: { saved: false } })),
     enabled: !!session.isAuthenticated && !!id,
     staleTime: 60_000,
   });
   const isSaved = savedData?.data?.saved ?? false;
 
   const { mutate: toggleSave, isPending: savePending } = useMutation({
-    mutationFn: () =>
-      isSaved
-        ? apiClient.delete(`/saved/${id}`)
-        : apiClient.post(`/saved/${id}`, {}),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [uid, 'saved-check', id] });
-      qc.invalidateQueries({ queryKey: [uid, 'saved'] });
-    },
+    mutationFn: () => isSaved ? apiClient.delete(`/saved/${id}`) : apiClient.post(`/saved/${id}`, {}),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: [uid, 'saved-check', id] }); qc.invalidateQueries({ queryKey: [uid, 'saved'] }); },
   });
 
   const { data: sellerData } = useQuery({
     queryKey: ['user-public', listing?.seller_id],
-    queryFn: () =>
-      apiClient.get<ApiResponse<{ full_name?: string; display_name?: string; trust_badge?: string; phone?: string; seller_verification_status?: string }>>(
-        `/users/${listing!.seller_id}/profile`
-      ).then(r => r.data).catch(() => null),
+    queryFn: () => apiClient.get<ApiResponse<{ full_name?: string; display_name?: string; trust_badge?: string; phone?: string; seller_verification_status?: string }>>(`/users/${listing!.seller_id}/profile`).then(r => r.data).catch(() => null),
     enabled: !!listing?.seller_id,
     retry: false,
     staleTime: 5 * 60_000,
   });
 
   const sellerName = sellerData?.data?.full_name || sellerData?.data?.display_name || 'Seller';
-  // Only show verified badge if the seller has completed verification and been approved
-  const isVerifiedSeller = sellerData?.data?.seller_verification_status === 'approved'
-    || sellerData?.data?.seller_verification_status === 'verified'
-    || sellerData?.data?.trust_badge === 'verified';
+  const isVerifiedSeller = ['approved', 'verified'].includes(sellerData?.data?.seller_verification_status ?? '') || sellerData?.data?.trust_badge === 'verified';
 
-  // Fetch real reviews for this listing
   const { data: reviewsData } = useQuery({
     queryKey: ['listing-reviews', id],
     queryFn: () => apiClient.get(`/listings/${id}/reviews`).then(r => r.data),
@@ -217,58 +270,43 @@ export default function ListingDetailPage() {
   });
   const reviews: any[] = Array.isArray(reviewsData?.data) ? reviewsData.data : [];
 
-  // Review submission state
-  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewRating,  setReviewRating]  = useState(0);
   const [reviewComment, setReviewComment] = useState('');
-  const [reviewHover, setReviewHover] = useState(0);
+  const [reviewHover,   setReviewHover]   = useState(0);
   const [reviewSuccess, setReviewSuccess] = useState(false);
-  const [reviewErr, setReviewErr] = useState('');
+  const [reviewErr,     setReviewErr]     = useState('');
 
   const { mutate: submitReview, isPending: submittingReview } = useMutation({
-    mutationFn: () => apiClient.post(`/listings/${id}/reviews`, {
-      rating: reviewRating,
-      comment: reviewComment.trim() || undefined,
-    }),
+    mutationFn: () => apiClient.post(`/listings/${id}/reviews`, { rating: reviewRating, comment: reviewComment.trim() || undefined }),
     onSuccess: () => {
-      setReviewSuccess(true);
-      setReviewRating(0);
-      setReviewComment('');
+      setReviewSuccess(true); setReviewRating(0); setReviewComment('');
       qc.invalidateQueries({ queryKey: ['listing-reviews', id] });
       qc.invalidateQueries({ queryKey: listingKeys.detail(id) });
     },
-    onError: (e: any) => {
-      setReviewErr(e?.message || 'Could not submit review. You may have already reviewed this listing.');
-    },
+    onError: (e: any) => { setReviewErr(e?.message || 'Could not submit review. You may have already reviewed this listing.'); },
   });
-  // Build images array from media_urls (backend already ensures correct order and no duplicates)
+
+  // Images — full array from backend
   const images: string[] = ((listing as any)?.media_urls?.length
     ? (listing as any).media_urls
-    : listing?.image_url
-    ? [listing.image_url]
-    : []).filter(Boolean);
+    : listing?.image_url ? [listing.image_url] : []
+  ).filter(Boolean);
   const hasImages = images.length > 0;
 
-  // WhatsApp number — from listing data, then seller profile phone as fallback
-  const whatsapp: string = (listing as any)?.whatsapp_number
-    || (listing as any)?.contact_phone
-    || sellerData?.data?.phone
-    || '';
+  const whatsapp: string = (listing as any)?.whatsapp_number || (listing as any)?.contact_phone || sellerData?.data?.phone || '';
 
   function buildWhatsAppUrl() {
     if (!whatsapp) return '#';
     const clean = normalizePhoneNumber(whatsapp);
-    const title = listing?.title ?? 'your listing';
-    const msg = encodeURIComponent(
-      `Hello, I found your listing on Velontri.\nI'm interested in: ${title}\nIs it still available?`
-    );
+    const msg = encodeURIComponent(`Hello, I found your listing on Velontri.\nI'm interested in: ${listing?.title ?? 'your listing'}\nIs it still available?`);
     return `https://wa.me/${clean}?text=${msg}`;
   }
 
+  function prevImg() { setImgIdx(i => (i - 1 + images.length) % images.length); }
+  function nextImg() { setImgIdx(i => (i + 1) % images.length); }
+
   function handleMessage() {
-    if (!session.isAuthenticated) {
-      router.push(`${ROUTES.login}?redirect=/listings/${id}`);
-      return;
-    }
+    if (!session.isAuthenticated) { router.push(`${ROUTES.login}?redirect=/listings/${id}`); return; }
     setPanel('message');
   }
 
@@ -280,76 +318,20 @@ export default function ListingDetailPage() {
     }
   }
 
-  function prevImg() { setImgIdx(i => (i - 1 + images.length) % images.length); }
-  function nextImg() { setImgIdx(i => (i + 1) % images.length); }
-
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
       <Navbar />
 
-      {/* Full gallery bottom sheet */}
-      {galleryOpen && hasImages && (
-        <div className="fixed inset-0 z-[300] flex flex-col bg-black/95"
-          onClick={() => setGalleryOpen(false)}>
-          <div className="flex items-center justify-between px-5 py-4 flex-shrink-0"
-            onClick={e => e.stopPropagation()}>
-            <p className="text-white font-bold text-[15px]">
-              {imgIdx + 1} / {images.length} photos
-            </p>
-            <button onClick={() => setGalleryOpen(false)}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors">
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          {/* Current large image */}
-          <div className="flex-1 flex items-center justify-center px-4 min-h-0"
-            onClick={e => e.stopPropagation()}>
-            <img src={images[imgIdx]} alt={listing?.title}
-              className="max-h-full max-w-full rounded-xl object-contain" />
-          </div>
-          {/* Thumbnail strip */}
-          <div className="flex gap-2 overflow-x-auto px-4 pb-6 pt-3 flex-shrink-0"
-            style={{ scrollbarWidth: 'none' }}
-            onClick={e => e.stopPropagation()}>
-            {images.map((img, i) => (
-              <button key={i} onClick={() => setImgIdx(i)}
-                className={`flex-shrink-0 h-16 w-16 rounded-xl overflow-hidden border-2 transition-all ${
-                  i === imgIdx ? 'border-white scale-105' : 'border-white/20 opacity-60'
-                }`}>
-                <img src={img} alt="" className="h-full w-full object-cover" />
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* Full-screen image viewer */}
+      {viewerOpen && hasImages && (
+        <ImageViewer images={images} startIdx={imgIdx} onClose={() => setViewerOpen(false)} />
       )}
 
-      {/* Lightbox */}
-      {lightbox && hasImages && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/92 backdrop-blur-sm"
-          onClick={() => setLightbox(false)}>
-          <button onClick={() => setLightbox(false)}
-            className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center
-              rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors">
-            <X className="h-5 w-5" />
-          </button>
-          <img src={images[imgIdx]} alt={listing?.title}
-            className="max-h-[88vh] max-w-[92vw] rounded-xl object-contain shadow-2xl"
-            onClick={e => e.stopPropagation()} />
-        </div>
-      )}
-
-      {/* Message panel modal */}
+      {/* Message panel */}
       {panel !== 'none' && listing && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center
-          bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
-          onClick={() => setPanel('none')}>
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
-            onClick={e => e.stopPropagation()}>
-            <MessagePanel
-              listingId={id} sellerId={listing.seller_id ?? ''}
-              sellerName={sellerName} listingTitle={listing.title}
-              onClose={() => setPanel('none')}
-            />
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0" onClick={() => setPanel('none')}>
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <MessagePanel listingId={id} sellerId={listing.seller_id ?? ''} sellerName={sellerName} listingTitle={listing.title} onClose={() => setPanel('none')} />
           </div>
         </div>
       )}
@@ -358,34 +340,21 @@ export default function ListingDetailPage() {
 
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-[13px] text-slate-400 mb-7">
-          <button onClick={() => router.back()}
-            className="flex items-center gap-1.5 hover:text-slate-700 transition-colors cursor-pointer">
+          <button onClick={() => router.back()} className="flex items-center gap-1.5 hover:text-slate-700 transition-colors cursor-pointer">
             <ArrowLeft className="h-3.5 w-3.5" /> Back
           </button>
           <ChevronRight className="h-3.5 w-3.5 opacity-40" />
-          <button onClick={() => router.push('/listings')}
-            className="hover:text-slate-700 transition-colors cursor-pointer">Listings</button>
-          {listing && (
-            <>
-              <ChevronRight className="h-3.5 w-3.5 opacity-40" />
-              <span className="text-slate-700 truncate max-w-[200px]">{listing.title}</span>
-            </>
-          )}
+          <button onClick={() => router.push('/listings')} className="hover:text-slate-700 transition-colors cursor-pointer">Listings</button>
+          {listing && (<><ChevronRight className="h-3.5 w-3.5 opacity-40" /><span className="text-slate-700 truncate max-w-[200px]">{listing.title}</span></>)}
         </nav>
 
-        {/* Error */}
         {isError && (
           <div className="rounded-2xl border border-slate-200 bg-white p-16 text-center">
             <p className="text-[18px] font-bold text-slate-900 mb-2">Listing not found</p>
-            <button onClick={() => router.push('/listings')}
-              className="inline-flex h-11 items-center rounded-xl bg-indigo-600 px-6 text-[14px]
-                font-semibold text-white hover:bg-indigo-700 transition-colors">
-              Browse all listings
-            </button>
+            <button onClick={() => router.push('/listings')} className="inline-flex h-11 items-center rounded-xl bg-indigo-600 px-6 text-[14px] font-semibold text-white hover:bg-indigo-700 transition-colors">Browse all listings</button>
           </div>
         )}
 
-        {/* Loading */}
         {isLoading && (
           <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
             <div className="space-y-4">
@@ -396,126 +365,111 @@ export default function ListingDetailPage() {
           </div>
         )}
 
-        {/* Main content */}
         {listing && (
           <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
 
             {/* LEFT */}
             <div className="space-y-6">
 
-              {/* Main image */}
-              <div className="relative overflow-hidden rounded-2xl bg-slate-100 border border-slate-200 group"
-                style={{ aspectRatio: '4/3' }}>
-                {hasImages ? (
-                  <>
-                    <img src={images[imgIdx]} alt={listing.title} className="h-full w-full object-cover" />
-                    <button onClick={() => setLightbox(true)}
-                      className="absolute inset-0 flex items-center justify-center
-                        bg-black/0 hover:bg-black/20 transition-colors" aria-label="View full size">
-                      <span className="flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5
-                        text-[11px] font-semibold text-white opacity-0 group-hover:opacity-100
-                        transition-opacity backdrop-blur-sm">
-                        <ZoomIn className="h-3.5 w-3.5" /> View full size
-                      </span>
-                    </button>
-                    {images.length > 1 && (
-                      <>
-                        <button onClick={prevImg}
-                          className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9
-                            items-center justify-center rounded-full bg-white/80 shadow hover:bg-white">
-                          <ChevronLeft className="h-4 w-4 text-slate-700" />
-                        </button>
-                        <button onClick={nextImg}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9
-                            items-center justify-center rounded-full bg-white/80 shadow hover:bg-white">
-                          <ChevronRight className="h-4 w-4 text-slate-700" />
-                        </button>
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <ListingImagePlaceholder type={listing.listing_type} title={listing.title} />
-                )}
+              {/* ── Image gallery ─────────────────────────────────── */}
+              <div className="space-y-2">
+                {/* Main image container */}
+                <div
+                  className="relative overflow-hidden rounded-2xl bg-slate-100 border border-slate-200 cursor-pointer"
+                  style={{ aspectRatio: '4/3', touchAction: 'pan-y' }}
+                  onClick={() => hasImages && setViewerOpen(true)}
+                  onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
+                  onTouchEnd={e => {
+                    if (touchStartX.current === null) return;
+                    const dx = e.changedTouches[0].clientX - touchStartX.current;
+                    if (Math.abs(dx) > 40) { e.stopPropagation(); dx < 0 ? nextImg() : prevImg(); }
+                    touchStartX.current = null;
+                  }}
+                >
+                  {hasImages ? (
+                    <>
+                      <img
+                        src={images[imgIdx]}
+                        alt={listing.title}
+                        className="h-full w-full object-cover"
+                        draggable={false}
+                      />
 
-              {/* Thumbnail strip + See all photos — only when 2+ images */}
-              {images.length > 1 && (
-                <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10 px-3">
-                  {images.slice(0, Math.min(5, images.length)).map((img, i) => (
-                    <button
-                      key={i}
-                      onClick={e => { e.stopPropagation(); setImgIdx(i); }}
-                      className={`h-10 w-10 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 ${
-                        i === imgIdx ? 'border-white scale-105 shadow-lg' : 'border-white/40 opacity-70'
-                      }`}
-                    >
-                      <img src={img} alt="" className="h-full w-full object-cover" />
-                    </button>
-                  ))}
-                  {images.length > 5 && (
-                    <button
-                      onClick={e => { e.stopPropagation(); setGalleryOpen(true); }}
-                      className="h-10 w-10 rounded-lg bg-black/70 border-2 border-white/40 flex items-center justify-center backdrop-blur-sm flex-shrink-0"
-                    >
-                      <span className="text-white text-[9px] font-black leading-none">+{images.length - 5}</span>
-                    </button>
+                      {/* Counter badge — top left */}
+                      {images.length > 1 && (
+                        <div className="absolute top-3 left-3 flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[12px] font-bold text-white backdrop-blur-sm tabular-nums pointer-events-none">
+                          {imgIdx + 1} / {images.length}
+                        </div>
+                      )}
+
+                      {/* Prev / Next arrows */}
+                      {images.length > 1 && (
+                        <>
+                          <button
+                            onClick={e => { e.stopPropagation(); prevImg(); }}
+                            className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/85 shadow-md hover:bg-white transition-colors active:scale-95"
+                            aria-label="Previous image"
+                          >
+                            <ChevronLeft className="h-5 w-5 text-slate-700" />
+                          </button>
+                          <button
+                            onClick={e => { e.stopPropagation(); nextImg(); }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/85 shadow-md hover:bg-white transition-colors active:scale-95"
+                            aria-label="Next image"
+                          >
+                            <ChevronRight className="h-5 w-5 text-slate-700" />
+                          </button>
+                        </>
+                      )}
+
+                      {/* Save + Share — top right */}
+                      <div className="absolute top-3 right-3 flex gap-2" onClick={e => e.stopPropagation()}>
+                        <button
+                          onClick={() => { if (!session.isAuthenticated) { router.push(`${ROUTES.login}?redirect=/listings/${id}`); return; } toggleSave(); }}
+                          disabled={savePending}
+                          className={`h-9 w-9 rounded-xl backdrop-blur-sm border flex items-center justify-center shadow-sm transition-all hover:scale-105 disabled:opacity-60 ${isSaved ? 'bg-red-500 border-red-400 text-white' : 'bg-white/90 border-white/50 text-slate-600 hover:bg-white'}`}>
+                          <Heart className={`h-4 w-4 ${isSaved ? 'fill-white' : ''}`} />
+                        </button>
+                        <button onClick={handleShare} className="h-9 w-9 rounded-xl bg-white/90 backdrop-blur-sm border border-white/50 flex items-center justify-center text-slate-600 shadow-sm hover:bg-white">
+                          <Share2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <ListingImagePlaceholder type={listing.listing_type} title={listing.title} />
                   )}
                 </div>
-              )}
-                <div className="absolute top-3 right-3 flex gap-2">
-                  <button
-                    onClick={() => {
-                      if (!session.isAuthenticated) {
-                        router.push(`${ROUTES.login}?redirect=/listings/${id}`);
-                        return;
-                      }
-                      toggleSave();
-                    }}
-                    disabled={savePending}
-                    title={isSaved ? 'Remove from saved' : 'Save listing'}
-                    className={`h-9 w-9 rounded-xl backdrop-blur-sm border flex items-center justify-center
-                      shadow-sm transition-all hover:scale-105 disabled:opacity-60 ${
-                        isSaved
-                          ? 'bg-red-500 border-red-400 text-white'
-                          : 'bg-white/90 border-white/50 text-slate-600 hover:bg-white'
-                      }`}>
-                    <Heart className={`h-4 w-4 ${isSaved ? 'fill-white' : ''}`} />
-                  </button>
-                  <button onClick={handleShare}
-                    className="h-9 w-9 rounded-xl bg-white/90 backdrop-blur-sm border border-white/50
-                      flex items-center justify-center text-slate-600 shadow-sm hover:bg-white">
-                    <Share2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
 
-              {/* See all photos button */}
-              {hasImages && images.length > 1 && (
-                <button
-                  onClick={() => setGalleryOpen(true)}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-                >
-                  <Eye className="h-4 w-4" />
-                  See all {images.length} photos
-                </button>
-              )}
+                {/* Thumbnail strip — shown when 2+ images */}
+                {images.length > 1 && (
+                  <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                    {images.map((img, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setImgIdx(i)}
+                        className={`flex-shrink-0 h-16 w-16 rounded-xl overflow-hidden border-2 transition-all ${i === imgIdx ? 'border-indigo-500 scale-105 shadow-sm' : 'border-slate-200 opacity-70 hover:opacity-100'}`}
+                        aria-label={`View image ${i + 1}`}
+                      >
+                        <img src={img} alt="" className="h-full w-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* "Tap to view full size" hint — mobile */}
+                {hasImages && (
+                  <p className="text-center text-[11px] text-slate-400 sm:hidden">Tap image to view full size · Swipe to browse</p>
+                )}
+              </div>
 
               {/* Title */}
               <div>
                 <div className="flex flex-wrap items-center gap-2 mb-3">
-                  <span className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white"
-                    style={{ background: TYPE_COLOR[listing.listing_type] ?? '#4F46E5' }}>
-                    {listing.listing_type}
-                  </span>
-                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1
-                    text-[11px] font-semibold text-slate-500">{listing.category}</span>
-                  {listing.condition && (
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1
-                      text-[11px] font-semibold text-slate-500 capitalize">{listing.condition}</span>
-                  )}
+                  <span className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white" style={{ background: TYPE_COLOR[listing.listing_type] ?? '#4F46E5' }}>{listing.listing_type}</span>
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-500">{listing.category}</span>
+                  {listing.condition && <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-500 capitalize">{listing.condition}</span>}
                 </div>
-                <h1 className="text-[1.6rem] font-black text-slate-900 leading-tight tracking-tight mb-3">
-                  {listing.title}
-                </h1>
+                <h1 className="text-[1.6rem] font-black text-slate-900 leading-tight tracking-tight mb-3">{listing.title}</h1>
                 {(listing.city || listing.country) && (
                   <div className="flex items-center gap-1.5 text-[13px] text-slate-500">
                     <MapPin className="h-4 w-4 flex-shrink-0 text-slate-400" />
@@ -549,68 +503,39 @@ export default function ListingDetailPage() {
                 </div>
               </div>
 
-              {/* Safety notice — always visible */}
               <SafetyNotice />
 
-              {/* ── Reviews section ───────────────────────────────────── */}
+              {/* Reviews */}
               <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-5">
                 <div className="flex items-center justify-between">
                   <h2 className="text-[14px] font-bold text-slate-900">
-                    Reviews
-                    {(listing.review_count ?? 0) > 0 && (
-                      <span className="ml-2 text-[12px] font-normal text-slate-400">
-                        ({listing.review_count})
-                      </span>
-                    )}
+                    Reviews{(listing.review_count ?? 0) > 0 && <span className="ml-2 text-[12px] font-normal text-slate-400">({listing.review_count})</span>}
                   </h2>
                   {(listing.avg_rating ?? 0) > 0 && (
                     <div className="flex items-center gap-1.5">
-                      {[1,2,3,4,5].map(s => (
-                        <Star key={s} className={`h-4 w-4 ${
-                          s <= Math.round(listing.avg_rating ?? 0)
-                            ? 'fill-amber-400 text-amber-400'
-                            : 'text-slate-200'
-                        }`} />
-                      ))}
-                      <span className="text-[13px] font-bold text-slate-700 ml-1">
-                        {Number(listing.avg_rating).toFixed(1)}
-                      </span>
+                      {[1,2,3,4,5].map(s => <Star key={s} className={`h-4 w-4 ${s <= Math.round(listing.avg_rating ?? 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />)}
+                      <span className="text-[13px] font-bold text-slate-700 ml-1">{Number(listing.avg_rating).toFixed(1)}</span>
                     </div>
                   )}
                 </div>
 
-                {/* Review list */}
                 {reviews.length === 0 ? (
-                  <p className="text-[13px] text-slate-400 text-center py-4">
-                    No reviews yet. Be the first to rate this listing.
-                  </p>
+                  <p className="text-[13px] text-slate-400 text-center py-4">No reviews yet. Be the first to rate this listing.</p>
                 ) : (
                   <div className="space-y-4">
                     {reviews.map((r: any) => (
                       <div key={r.id} className="border-b border-slate-100 pb-4 last:border-0 last:pb-0">
                         <div className="flex items-start justify-between gap-2 mb-1.5">
                           <div className="flex items-center gap-2">
-                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-100 text-[11px] font-bold text-indigo-700 flex-shrink-0">
-                              {(r.reviewer_name || 'U').charAt(0).toUpperCase()}
-                            </div>
-                            <p className="text-[13px] font-semibold text-slate-800">
-                              {r.reviewer_name || 'Anonymous'}
-                            </p>
+                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-100 text-[11px] font-bold text-indigo-700 flex-shrink-0">{(r.reviewer_name || 'U').charAt(0).toUpperCase()}</div>
+                            <p className="text-[13px] font-semibold text-slate-800">{r.reviewer_name || 'Anonymous'}</p>
                           </div>
                           <div className="flex items-center gap-0.5 flex-shrink-0">
-                            {[1,2,3,4,5].map(s => (
-                              <Star key={s} className={`h-3.5 w-3.5 ${
-                                s <= (r.rating ?? 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'
-                              }`} />
-                            ))}
+                            {[1,2,3,4,5].map(s => <Star key={s} className={`h-3.5 w-3.5 ${s <= (r.rating ?? 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />)}
                           </div>
                         </div>
-                        {r.comment && (
-                          <p className="text-[13px] text-slate-600 leading-relaxed ml-9">{r.comment}</p>
-                        )}
-                        <p className="text-[11px] text-slate-400 mt-1 ml-9">
-                          {r.created_at ? new Date(r.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
-                        </p>
+                        {r.comment && <p className="text-[13px] text-slate-600 leading-relaxed ml-9">{r.comment}</p>}
+                        <p className="text-[11px] text-slate-400 mt-1 ml-9">{r.created_at ? new Date(r.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</p>
                         {r.seller_response && (
                           <div className="mt-2 ml-9 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
                             <p className="text-[11px] font-bold text-slate-500 mb-0.5">Seller response</p>
@@ -622,7 +547,6 @@ export default function ListingDetailPage() {
                   </div>
                 )}
 
-                {/* Submit review — only for authenticated users who are not the seller */}
                 {session.isAuthenticated && listing.seller_id !== session.userId && (
                   <div className="border-t border-slate-100 pt-5">
                     <p className="text-[13px] font-bold text-slate-900 mb-3">Rate this listing</p>
@@ -633,49 +557,20 @@ export default function ListingDetailPage() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {/* Star picker */}
                         <div className="flex items-center gap-1">
                           {[1,2,3,4,5].map(s => (
-                            <button
-                              key={s}
-                              type="button"
-                              onClick={() => setReviewRating(s)}
-                              onMouseEnter={() => setReviewHover(s)}
-                              onMouseLeave={() => setReviewHover(0)}
-                              className="p-0.5 transition-transform hover:scale-110 active:scale-95"
-                            >
-                              <Star className={`h-7 w-7 transition-colors ${
-                                s <= (reviewHover || reviewRating)
-                                  ? 'fill-amber-400 text-amber-400'
-                                  : 'text-slate-200 hover:text-amber-300'
-                              }`} />
+                            <button key={s} type="button" onClick={() => setReviewRating(s)} onMouseEnter={() => setReviewHover(s)} onMouseLeave={() => setReviewHover(0)} className="p-0.5 transition-transform hover:scale-110 active:scale-95">
+                              <Star className={`h-7 w-7 transition-colors ${s <= (reviewHover || reviewRating) ? 'fill-amber-400 text-amber-400' : 'text-slate-200 hover:text-amber-300'}`} />
                             </button>
                           ))}
-                          {reviewRating > 0 && (
-                            <span className="ml-2 text-[12px] font-semibold text-slate-500">
-                              {['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][reviewRating]}
-                            </span>
-                          )}
+                          {reviewRating > 0 && <span className="ml-2 text-[12px] font-semibold text-slate-500">{['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][reviewRating]}</span>}
                         </div>
-                        <textarea
-                          value={reviewComment}
-                          onChange={e => setReviewComment(e.target.value)}
-                          placeholder="Share your experience with this listing (optional)…"
-                          rows={3}
-                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-400 focus:bg-white resize-none transition-all"
-                        />
-                        {reviewErr && (
-                          <p className="text-[12px] font-medium text-red-600">{reviewErr}</p>
-                        )}
-                        <button
-                          onClick={() => {
-                            setReviewErr('');
-                            if (reviewRating === 0) { setReviewErr('Please select a star rating.'); return; }
-                            submitReview();
-                          }}
+                        <textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder="Share your experience (optional)…" rows={3}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-400 focus:bg-white resize-none transition-all" />
+                        {reviewErr && <p className="text-[12px] font-medium text-red-600">{reviewErr}</p>}
+                        <button onClick={() => { setReviewErr(''); if (reviewRating === 0) { setReviewErr('Please select a star rating.'); return; } submitReview(); }}
                           disabled={submittingReview || reviewRating === 0}
-                          className="h-10 rounded-xl bg-indigo-600 px-5 text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors disabled:opacity-50"
-                        >
+                          className="h-10 rounded-xl bg-indigo-600 px-5 text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors disabled:opacity-50">
                           {submittingReview ? 'Submitting…' : 'Submit Review'}
                         </button>
                       </div>
@@ -685,9 +580,7 @@ export default function ListingDetailPage() {
 
                 {!session.isAuthenticated && (
                   <p className="text-[12px] text-slate-400 text-center border-t border-slate-100 pt-4">
-                    <button onClick={() => router.push(`${ROUTES.login}?redirect=/listings/${id}`)}
-                      className="text-indigo-600 font-semibold hover:underline">Sign in</button>
-                    {' '}to leave a review
+                    <button onClick={() => router.push(`${ROUTES.login}?redirect=/listings/${id}`)} className="text-indigo-600 font-semibold hover:underline">Sign in</button>{' '}to leave a review
                   </p>
                 )}
               </div>
@@ -699,39 +592,17 @@ export default function ListingDetailPage() {
               {/* Price + CTA */}
               <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 mb-1.5">
-                    Listed price
-                  </p>
-                  <p className="text-[2.25rem] font-black text-slate-900 tracking-tight leading-none">
-                    {fmt(listing.price ?? 0, listing.currency ?? 'NGN')}
-                  </p>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 mb-1.5">Listed price</p>
+                  <p className="text-[2.25rem] font-black text-slate-900 tracking-tight leading-none">{fmt(listing.price ?? 0, listing.currency ?? 'NGN')}</p>
                 </div>
 
                 <div className="space-y-2.5">
-                  {/* Primary WhatsApp CTA */}
                   {whatsapp ? (
-                    <a
-                      href={buildWhatsAppUrl()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex w-full h-13 items-center justify-center gap-2.5 rounded-xl
-                        bg-[#25D366] text-white text-[14px] font-bold shadow-sm
-                        hover:bg-[#1ebe5d] active:scale-[0.99] transition-all no-underline py-3.5"
-                    >
-                      {/* WhatsApp SVG icon */}
+                    <a href={buildWhatsAppUrl()} target="_blank" rel="noopener noreferrer"
+                      className="flex w-full h-13 items-center justify-center gap-2.5 rounded-xl bg-[#25D366] text-white text-[14px] font-bold shadow-sm hover:bg-[#1ebe5d] active:scale-[0.99] transition-all no-underline py-3.5">
                       <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white flex-shrink-0">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15
-                          -.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475
-                          -.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52
-                          .149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207
-                          -.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372
-                          -.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096
-                          3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085
-                          1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.535 5.857L0 24l6.335-1.51
-                          A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.848 0-3.572
-                          -.504-5.057-1.385l-.362-.215-3.758.895.952-3.663-.235-.376A9.96 9.96 0 012 12C2
-                          6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.535 5.857L0 24l6.335-1.51A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.848 0-3.572-.504-5.057-1.385l-.362-.215-3.758.895.952-3.663-.235-.376A9.96 9.96 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
                       </svg>
                       Chat Seller on WhatsApp
                     </a>
@@ -741,11 +612,8 @@ export default function ListingDetailPage() {
                     </div>
                   )}
 
-                  {/* Secondary message button */}
                   <button onClick={handleMessage}
-                    className="w-full h-11 rounded-xl border-2 border-slate-200 bg-white text-[14px]
-                      font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-600
-                      active:scale-[0.99] transition-all flex items-center justify-center gap-2">
+                    className="w-full h-11 rounded-xl border-2 border-slate-200 bg-white text-[14px] font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-600 active:scale-[0.99] transition-all flex items-center justify-center gap-2">
                     <MessageCircle className="h-4 w-4" />
                     {session.isAuthenticated ? 'Message in app' : 'Sign in to message'}
                   </button>
@@ -753,28 +621,23 @@ export default function ListingDetailPage() {
 
                 {!session.isAuthenticated && (
                   <p className="text-center text-[12px] text-slate-400">
-                    <button onClick={() => router.push(`${ROUTES.login}?redirect=/listings/${id}`)}
-                      className="text-indigo-600 font-semibold hover:underline">Sign in</button>
+                    <button onClick={() => router.push(`${ROUTES.login}?redirect=/listings/${id}`)} className="text-indigo-600 font-semibold hover:underline">Sign in</button>
                     {' '}or{' '}
-                    <button onClick={() => router.push(ROUTES.register)}
-                      className="text-indigo-600 font-semibold hover:underline">register</button>
+                    <button onClick={() => router.push(ROUTES.register)} className="text-indigo-600 font-semibold hover:underline">register</button>
                     {' '}to send in-app messages
                   </p>
                 )}
               </div>
 
-              {/* Seller card — real rating from listing data */}
+              {/* Seller card */}
               <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4">
-                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full
-                  bg-indigo-100 text-[15px] font-bold text-indigo-700 uppercase">
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[15px] font-bold text-indigo-700 uppercase">
                   {sellerName.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <p className="text-[13px] font-semibold text-slate-900 truncate">{sellerName}</p>
-                    {isVerifiedSeller && (
-                      <BadgeCheck className="h-4 w-4 text-indigo-600 flex-shrink-0" aria-label="Verified Seller" />
-                    )}
+                    {isVerifiedSeller && <BadgeCheck className="h-4 w-4 text-indigo-600 flex-shrink-0" aria-label="Verified Seller" />}
                   </div>
                   <div className="flex flex-wrap items-center gap-2 mt-0.5 text-[12px] text-slate-400">
                     {(listing.avg_rating ?? 0) > 0 ? (
@@ -782,27 +645,16 @@ export default function ListingDetailPage() {
                         <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                         {Number(listing.avg_rating).toFixed(1)}
                       </span>
-                    ) : (
-                      <span className="text-slate-300">No ratings yet</span>
-                    )}
+                    ) : <span className="text-slate-300">No ratings yet</span>}
                     {(listing.review_count ?? 0) > 0 && (
-                      <>
-                        <span>·</span>
-                        <span className="flex items-center gap-1">
-                          <Star className="h-3 w-3" />
-                          {listing.review_count} review{listing.review_count !== 1 ? 's' : ''}
-                        </span>
-                      </>
+                      <><span>·</span><span className="flex items-center gap-1"><Star className="h-3 w-3" />{listing.review_count} review{listing.review_count !== 1 ? 's' : ''}</span></>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Safety notice — also in sidebar on desktop */}
-              <div className="hidden lg:block">
-                <SafetyNotice />
-              </div>
-
+              {/* Safety notice — sidebar */}
+              <div className="hidden lg:block"><SafetyNotice /></div>
             </div>
           </div>
         )}
