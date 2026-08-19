@@ -286,7 +286,7 @@ export function UserShell({ children }: { children: ReactNode }) {
           </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+        <main className="flex-1 overflow-y-auto pb-[88px] md:pb-0" style={{ paddingBottom: 'max(88px, calc(88px + env(safe-area-inset-bottom)))' }}>
           <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:py-8">
             {children}
           </div>

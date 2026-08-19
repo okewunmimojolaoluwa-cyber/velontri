@@ -26,12 +26,12 @@ export function UserBottomNav() {
   // Return placeholder during SSR to prevent hydration mismatch
   if (!mounted) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-50 h-[84px] bg-white border-t border-slate-200 md:hidden" />
+      <div className="fixed bottom-0 left-0 right-0 z-[60] h-16 bg-white border-t border-slate-200 md:hidden dark:bg-[#1c1c1c] dark:border-[#2a2a2a]" />
     );
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 md:hidden">
+    <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-slate-200 md:hidden dark:bg-[#1c1c1c] dark:border-[#2a2a2a]">
       <div className="flex items-center justify-around h-16 px-2">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
@@ -68,7 +68,7 @@ export function UserBottomNav() {
         })}
       </div>
       {/* Safe area for iPhone home indicator */}
-      <div className="h-5 bg-white" />
+      <div className="bg-white dark:bg-[#1c1c1c]" style={{ height: 'env(safe-area-inset-bottom, 0px)' }} />
     </div>
   );
 }

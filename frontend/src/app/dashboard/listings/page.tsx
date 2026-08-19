@@ -112,7 +112,7 @@ function EditModal({
   const inputCls = 'w-full h-10 rounded-xl border border-slate-200 bg-slate-50 px-4 text-[14px] text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/10 transition-all';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm px-4 pb-0 sm:pb-0">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm px-4 pb-[84px] sm:pb-0">
       <div className="w-full max-w-md rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 flex-shrink-0">
@@ -346,7 +346,7 @@ export default function UserListingsPage() {
 
       {/* Delete confirm modal */}
       {confirmId && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4 pb-4 sm:pb-0 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4 pb-[84px] sm:pb-0 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100">
               <AlertCircle className="h-6 w-6 text-red-600" />

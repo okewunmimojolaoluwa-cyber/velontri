@@ -67,6 +67,9 @@
   *, *::before, *::after { box-sizing: border-box; }
   * { border-color: hsl(var(--border)); margin: 0; }
 
+  /* Bottom nav height token — used by shells and modals */
+  :root { --bottom-nav-h: 64px; }
+
   html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
   body {
