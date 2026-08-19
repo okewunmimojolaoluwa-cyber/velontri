@@ -249,17 +249,17 @@ export default function CreateListingPage() {
       const listingId = (res.data as any)?.id;
       if (!listingId) throw new Error('No listing ID returned from server.');
 
-      // 3. Upload remaining images (index 1+) before publishing so they're all present
+      // 3. Upload remaining images (index 1+) sequentially so sort_order is correct
       if (form.images.length > 1) {
-        await Promise.all(
-          form.images.slice(1).map(async (dataUrl) => {
-            try {
-              // Extra images: 600px at 45% quality (~25-30KB each)
-              const compressed = await compressToJpeg(dataUrl, 600, 0.45);
-              await sellerApi.uploadImage(listingId, compressed);
-            } catch { /* non-fatal — cover image still works */ }
-          })
-        );
+        for (let i = 1; i < form.images.length; i++) {
+          try {
+            const compressed = await compressToJpeg(form.images[i], 600, 0.45);
+            await sellerApi.uploadImage(listingId, compressed);
+          } catch (uploadErr: any) {
+            // Log but don't fail — cover image is always present
+            console.warn(`Image ${i + 1} upload failed:`, uploadErr?.message || uploadErr);
+          }
+        }
       }
 
       // 4. Publish so it goes live

@@ -332,12 +332,24 @@ class MarketplaceService:
                 .where(_Listing.id == listing_id)
                 .values(image_url=image_url)
             )
-        await repo.add_listing_media(self.session, listing_id, "image", media_url, sort_order)
-        await self.session.flush()  # flush immediately so connection returns to pool sooner
+        # Use raw SQL INSERT to avoid asyncpg UUID type mismatch issues
+        from sqlalchemy import text as _ins_text
+        import uuid as _uuid_mod
+        await self.session.execute(
+            _ins_text("""
+                INSERT INTO listing_media (id, listing_id, media_type, s3_key, sort_order, uploaded_at)
+                VALUES (:mid, :lid, 'image', :s3key, :sorder, NOW())
+            """),
+            {
+                "mid": str(_uuid_mod.uuid4()),
+                "lid": str(listing_id),
+                "s3key": media_url,
+                "sorder": sort_order,
+            },
+        )
+        await self.session.commit()
 
         # Always invalidate cache so next get_listing returns fresh media_urls
-        await self.redis.delete(RedisKeys.listing_cache(str(listing_id)))
-
         await self.redis.delete(RedisKeys.listing_cache(str(listing_id)))
         return s3_key
 
