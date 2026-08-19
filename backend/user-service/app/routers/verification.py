@@ -379,7 +379,7 @@ async def approve_application(
                 WHERE CAST(id AS TEXT) = :aid
             """), {'mod_id': mod_id, 'mod_name': mod_name, 'aid': str(app_id)})
             await db.execute(_t("""
-                UPDATE users SET seller_verification_status = 'verified'
+                UPDATE users SET seller_verification_status = 'approved'
                 WHERE CAST(id AS TEXT) = :uid
             """), {'uid': uid})
             await db.commit()

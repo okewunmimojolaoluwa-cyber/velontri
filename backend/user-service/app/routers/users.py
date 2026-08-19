@@ -335,9 +335,9 @@ async def admin_list_users(request: Request, service: UserService=Depends(_build
             # kyc_verified filter — only return users with approved seller verification
             kyc_filter = ""
             if kyc_verified is True:
-                kyc_filter = "AND COALESCE(u.seller_verification_status, 'not_verified') = 'approved'"
+                kyc_filter = "AND COALESCE(u.seller_verification_status, 'not_verified') IN ('approved', 'verified')"
             elif kyc_verified is False:
-                kyc_filter = "AND COALESCE(u.seller_verification_status, 'not_verified') != 'approved'"
+                kyc_filter = "AND COALESCE(u.seller_verification_status, 'not_verified') NOT IN ('approved', 'verified')"
 
             if search:
                 s = f'%{search}%'

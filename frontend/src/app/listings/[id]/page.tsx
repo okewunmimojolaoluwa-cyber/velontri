@@ -205,6 +205,7 @@ export default function ListingDetailPage() {
   const sellerName = sellerData?.data?.full_name || sellerData?.data?.display_name || 'Seller';
   // Only show verified badge if the seller has completed verification and been approved
   const isVerifiedSeller = sellerData?.data?.seller_verification_status === 'approved'
+    || sellerData?.data?.seller_verification_status === 'verified'
     || sellerData?.data?.trust_badge === 'verified';
 
   // Fetch real reviews for this listing
@@ -772,7 +773,7 @@ export default function ListingDetailPage() {
                   <div className="flex items-center gap-1.5">
                     <p className="text-[13px] font-semibold text-slate-900 truncate">{sellerName}</p>
                     {isVerifiedSeller && (
-                      <BadgeCheck className="h-4 w-4 text-indigo-600 flex-shrink-0" title="Verified Seller" />
+                      <BadgeCheck className="h-4 w-4 text-indigo-600 flex-shrink-0" aria-label="Verified Seller" />
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-2 mt-0.5 text-[12px] text-slate-400">

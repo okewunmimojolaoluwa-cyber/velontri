@@ -144,38 +144,44 @@ export default function VerificationPage() {
     queryKey: ['verification', 'me'],
     queryFn: () => apiClient.get('/verification/me').then(r => r.data),
     enabled: session.isAuthenticated,
-    onSuccess: (d: any) => {
-      const app = d?.data?.application;
-      if (app) {
-        setForm(prev => ({
-          ...prev,
-          full_name: app.full_name || prev.full_name,
-          date_of_birth: app.date_of_birth || '',
-          country: app.country || 'Nigeria',
-          state: app.state || '',
-          city: app.city || '',
-          residential_address: app.residential_address || '',
-          phone: app.phone || '',
-          email: app.email || '',
-          id_type: app.id_type || '',
-          id_number: app.id_number || '',
-          seller_type: app.seller_type || 'individual',
-          display_name: app.display_name || '',
-          seller_description: app.seller_description || '',
-          location: app.location || '',
-          whatsapp_number: app.whatsapp_number || '',
-          business_name: app.business_name || '',
-          business_description: app.business_description || '',
-          business_address: app.business_address || '',
-          business_reg_number: app.business_reg_number || '',
-          business_phone: app.business_phone || '',
-          business_category: app.business_category || '',
-          store_name: app.store_name || '',
-          store_description: app.store_description || '',
-        }));
-      }
-    },
   });
+
+  // Populate form from existing application data (useQuery onSuccess removed in v5)
+  const [formPopulated, setFormPopulated] = useState(false);
+  if (data && !formPopulated) {
+    const app = (data as any)?.data?.application;
+    if (app) {
+      setFormPopulated(true);
+      setForm(prev => ({
+        ...prev,
+        full_name:            app.full_name || prev.full_name,
+        date_of_birth:        app.date_of_birth || '',
+        country:              app.country || 'Nigeria',
+        state:                app.state || '',
+        city:                 app.city || '',
+        residential_address:  app.residential_address || '',
+        phone:                app.phone || '',
+        email:                app.email || '',
+        id_type:              app.id_type || '',
+        id_number:            app.id_number || '',
+        seller_type:          app.seller_type || 'individual',
+        display_name:         app.display_name || '',
+        seller_description:   app.seller_description || '',
+        location:             app.location || '',
+        whatsapp_number:      app.whatsapp_number || '',
+        business_name:        app.business_name || '',
+        business_description: app.business_description || '',
+        business_address:     app.business_address || '',
+        business_reg_number:  app.business_reg_number || '',
+        business_phone:       app.business_phone || '',
+        business_category:    app.business_category || '',
+        store_name:           app.store_name || '',
+        store_description:    app.store_description || '',
+        store_logo_url:       app.store_logo_url || '',
+        profile_photo_url:    app.profile_photo_url || '',
+      }));
+    }
+  }
 
   const verData: VerificationData = data?.data ?? { status: 'not_verified' };
   const status = verData.status;
@@ -188,20 +194,24 @@ export default function VerificationPage() {
     setErr('');
   }
 
-  async function saveStep() {
+  async function saveStep(): Promise<boolean> {
     setSaving(true);
     setErr('');
     try {
       await apiClient.post('/verification/save', form);
       qc.invalidateQueries({ queryKey: ['verification', 'me'] });
+      return true;
     } catch (e: any) {
-      setErr(e?.message || 'Failed to save. Please try again.');
+      const msg = e?.response?.data?.error?.message || e?.message || 'Failed to save. Please try again.';
+      setErr(msg);
+      return false;
     } finally {
       setSaving(false);
     }
   }
 
   async function nextStep() {
+    setErr('');
     if (step === 1) {
       if (!form.full_name.trim()) { setErr('Full name is required.'); return; }
       if (!form.phone.trim()) { setErr('Phone number is required.'); return; }
@@ -211,8 +221,8 @@ export default function VerificationPage() {
       if (!form.id_number.trim()) { setErr('ID number is required.'); return; }
       if (!form.id_front_url) { setErr('Please upload the front of your ID.'); return; }
     }
-    await saveStep();
-    if (!err) setStep(s => s + 1);
+    const ok = await saveStep();
+    if (ok) setStep(s => s + 1);
   }
 
   async function handleSubmit() {
