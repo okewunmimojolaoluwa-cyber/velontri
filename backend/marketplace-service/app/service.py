@@ -194,12 +194,18 @@ class MarketplaceService:
         return _to_listing_response(listing)
 
     async def get_listing(self, listing_id: uuid.UUID) -> ListingResponse:
-        # Try cache first
+        # Try cache first — but only if it has valid media_urls
         cache_key = RedisKeys.listing_cache(str(listing_id))
         cached = await self.redis.get(cache_key)
         if cached:
-            import json
-            return ListingResponse.model_validate_json(cached)
+            try:
+                cached_resp = ListingResponse.model_validate_json(cached)
+                # Only use cache if it has images or the listing itself has no image
+                if cached_resp.media_urls or not cached_resp.image_url:
+                    return cached_resp
+                # Cache has image_url but empty media_urls — stale, re-fetch
+            except Exception:
+                pass
 
         listing = await repo.get_listing(self.session, listing_id)
         if listing is None:
@@ -228,7 +234,7 @@ class MarketplaceService:
             # else: media_urls[0] == image_url — already in the right place
 
         response = _to_listing_response(listing, media_urls)
-        await self.redis.setex(cache_key, 300, response.model_dump_json())
+        await self.redis.setex(cache_key, 60, response.model_dump_json())
         return response
 
     async def update_listing(

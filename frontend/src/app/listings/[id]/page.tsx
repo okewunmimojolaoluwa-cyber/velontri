@@ -194,7 +194,7 @@ export default function ListingDetailPage() {
   const { data: sellerData } = useQuery({
     queryKey: ['user-public', listing?.seller_id],
     queryFn: () =>
-      apiClient.get<ApiResponse<{ full_name?: string; display_name?: string; trust_badge?: string; phone?: string }>>(
+      apiClient.get<ApiResponse<{ full_name?: string; display_name?: string; trust_badge?: string; phone?: string; seller_verification_status?: string }>>(
         `/users/${listing!.seller_id}/profile`
       ).then(r => r.data).catch(() => null),
     enabled: !!listing?.seller_id,
@@ -203,6 +203,9 @@ export default function ListingDetailPage() {
   });
 
   const sellerName = sellerData?.data?.full_name || sellerData?.data?.display_name || 'Seller';
+  // Only show verified badge if the seller has completed verification and been approved
+  const isVerifiedSeller = sellerData?.data?.seller_verification_status === 'approved'
+    || sellerData?.data?.trust_badge === 'verified';
 
   // Fetch real reviews for this listing
   const { data: reviewsData } = useQuery({
@@ -768,7 +771,9 @@ export default function ListingDetailPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <p className="text-[13px] font-semibold text-slate-900 truncate">{sellerName}</p>
-                    <BadgeCheck className="h-4 w-4 text-indigo-600 flex-shrink-0" />
+                    {isVerifiedSeller && (
+                      <BadgeCheck className="h-4 w-4 text-indigo-600 flex-shrink-0" title="Verified Seller" />
+                    )}
                   </div>
                   <div className="flex flex-wrap items-center gap-2 mt-0.5 text-[12px] text-slate-400">
                     {(listing.avg_rating ?? 0) > 0 ? (

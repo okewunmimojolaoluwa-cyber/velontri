@@ -187,13 +187,22 @@ async def get_profile(user_id: uuid.UUID, service: UserService=Depends(_build_se
     except Exception:
         profile_data = {}
     try:
-        row = (await service.session.execute(text('SELECT full_name, email, phone FROM users WHERE id = :uid'), {'uid': str(user_id)})).fetchone()
+        row = (await service.session.execute(
+            text("""
+                SELECT u.full_name, u.email, u.phone,
+                       COALESCE(u.seller_verification_status, 'not_verified') AS seller_verification_status
+                FROM users u
+                WHERE id = :uid
+            """),
+            {'uid': str(user_id)}
+        )).fetchone()
         if row:
             if not profile_data.get('full_name'):
                 profile_data['full_name'] = row[0] or row[1] or 'Seller'
             if not profile_data.get('display_name'):
                 profile_data['display_name'] = row[0] or row[1]
             profile_data['phone'] = row[2] or profile_data.get('phone') or ''
+            profile_data['seller_verification_status'] = row[3] or 'not_verified'
     except Exception:
         pass
     return SuccessResponse(data=profile_data)
