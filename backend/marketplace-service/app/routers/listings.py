@@ -665,6 +665,33 @@ async def admin_restore_listing(listing_id: uuid.UUID, service: MarketplaceServi
     await service.session.commit()
     return SuccessResponse(message='Listing restored to active.', data={'listing_id': str(listing_id)})
 
+@router.get('/listings/{listing_id}/media-debug', response_model=SuccessResponse, summary='Debug: show raw listing_media rows')
+async def debug_listing_media(listing_id: uuid.UUID, request: Request) -> SuccessResponse:
+    """Returns raw listing_media rows and listing.image_url for debugging multi-image issues."""
+    from sqlalchemy import text as _text
+    async with request.app.state.session_factory() as db:
+        rows = (await db.execute(_text("""
+            SELECT CAST(id AS TEXT) AS id, CAST(listing_id AS TEXT) AS listing_id,
+                   media_type, sort_order,
+                   LENGTH(s3_key) AS key_len,
+                   LEFT(s3_key, 40) AS key_preview
+            FROM listing_media
+            WHERE CAST(listing_id AS TEXT) = :lid
+            ORDER BY sort_order ASC
+        """), {"lid": str(listing_id)})).mappings().all()
+        listing_row = (await db.execute(_text("""
+            SELECT title,
+                   CASE WHEN image_url IS NOT NULL THEN LENGTH(image_url) ELSE 0 END AS cover_len
+            FROM listings WHERE CAST(id AS TEXT) = :lid
+        """), {"lid": str(listing_id)})).mappings().first()
+    return SuccessResponse(data={
+        "listing_id": str(listing_id),
+        "title": listing_row["title"] if listing_row else None,
+        "cover_image_url_len": listing_row["cover_len"] if listing_row else 0,
+        "media_rows_count": len(rows),
+        "media_rows": [dict(r) for r in rows],
+    })
+
 @router.get('/saved', response_model=SuccessResponse, summary="Get the authenticated user's saved listings")
 async def get_saved_listings(request: Request, current_user_id: uuid.UUID=Depends(get_current_user_id), service: MarketplaceService=Depends(_build_service)) -> SuccessResponse:
     from pathlib import Path

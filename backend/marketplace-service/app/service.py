@@ -194,56 +194,59 @@ class MarketplaceService:
         return _to_listing_response(listing)
 
     async def get_listing(self, listing_id: uuid.UUID) -> ListingResponse:
-        # Try cache first — but only if it has valid media_urls
+        # Skip cache entirely — always re-fetch from DB
+        # This ensures media_urls is always current
         cache_key = RedisKeys.listing_cache(str(listing_id))
-        cached = await self.redis.get(cache_key)
-        if cached:
-            try:
-                cached_resp = ListingResponse.model_validate_json(cached)
-                # Skip cache if it has no media_urls (stale — re-fetch from DB)
-                if cached_resp.media_urls:
-                    return cached_resp
-            except Exception:
-                pass
 
         listing = await repo.get_listing(self.session, listing_id)
         if listing is None:
             raise NotFoundError("Listing not found.")
 
-        # Load all media in sort order — use raw SQL with CAST to handle UUID/text mismatch
+        # Load ALL media rows via raw SQL (avoids ORM UUID/text comparison issues)
         from sqlalchemy import text as _text_raw
         media_rows_raw = (await self.session.execute(
             _text_raw("""
-                SELECT s3_key, media_type, sort_order
+                SELECT s3_key, sort_order
                 FROM listing_media
                 WHERE CAST(listing_id AS TEXT) = :lid
                   AND media_type = 'image'
+                  AND s3_key IS NOT NULL
+                  AND s3_key != ''
                 ORDER BY sort_order ASC
             """),
             {"lid": str(listing_id)},
         )).mappings().all()
-        media_urls: list[str] = [r["s3_key"] for r in media_rows_raw if r["s3_key"]]
 
-        # Deduplicate while preserving order
-        seen: set[str] = set()
-        deduped: list[str] = []
-        for url in media_urls:
-            if url not in seen:
-                seen.add(url)
-                deduped.append(url)
-        media_urls = deduped
+        # All unique s3_keys from listing_media, in sort order
+        seen_keys: set[str] = set()
+        media_urls: list[str] = []
+        for row in media_rows_raw:
+            k = row["s3_key"]
+            if k and k not in seen_keys:
+                seen_keys.add(k)
+                media_urls.append(k)
 
-        # Ensure cover image is in the list and is first.
-        if listing.image_url:
-            if not media_urls:
-                media_urls = [listing.image_url]
-            elif media_urls[0] != listing.image_url:
-                # Cover not first — remove it from wherever it is and prepend it
-                media_urls = [listing.image_url] + [u for u in media_urls if u != listing.image_url]
-            # else: media_urls[0] == image_url — already in the right place
+        # If the listing has a cover image_url not already in media_urls, prepend it
+        if listing.image_url and listing.image_url not in seen_keys:
+            media_urls.insert(0, listing.image_url)
+
+        # If no media at all, fall back to image_url alone
+        if not media_urls and listing.image_url:
+            media_urls = [listing.image_url]
+
+        logger.info(
+            "get_listing_media",
+            listing_id=str(listing_id),
+            media_count=len(media_urls),
+            db_rows=len(media_rows_raw),
+        )
 
         response = _to_listing_response(listing, media_urls)
-        await self.redis.setex(cache_key, 60, response.model_dump_json())
+        # Cache for 30 seconds only
+        try:
+            await self.redis.setex(cache_key, 30, response.model_dump_json())
+        except Exception:
+            pass
         return response
 
     async def update_listing(
