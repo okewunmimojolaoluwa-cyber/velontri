@@ -200,10 +200,9 @@ class MarketplaceService:
         if cached:
             try:
                 cached_resp = ListingResponse.model_validate_json(cached)
-                # Only use cache if it has images or the listing itself has no image
-                if cached_resp.media_urls or not cached_resp.image_url:
+                # Skip cache if it has no media_urls (stale — re-fetch from DB)
+                if cached_resp.media_urls:
                     return cached_resp
-                # Cache has image_url but empty media_urls — stale, re-fetch
             except Exception:
                 pass
 
