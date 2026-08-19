@@ -332,35 +332,60 @@ async def admin_list_users(request: Request, service: UserService=Depends(_build
                 """
             # legacy alias kept for backwards compat
             exclude_admin = exclude_staff
+            # kyc_verified filter — only return users with approved seller verification
+            kyc_filter = ""
+            if kyc_verified is True:
+                kyc_filter = "AND COALESCE(u.seller_verification_status, 'not_verified') = 'approved'"
+            elif kyc_verified is False:
+                kyc_filter = "AND COALESCE(u.seller_verification_status, 'not_verified') != 'approved'"
+
             if search:
                 s = f'%{search}%'
                 rows = (await db.execute(_text(f"""
                     SELECT u.id, u.email, u.phone, u.full_name, u.country_code,
                            u.is_active, u.phone_verified, u.created_at,
+                           COALESCE(u.seller_verification_status, 'not_verified') AS seller_verification_status,
                            STRING_AGG(r.role, ',') AS roles
                     FROM users u
                     LEFT JOIN user_roles r ON CAST(r.user_id AS TEXT) = CAST(u.id AS TEXT)
                     WHERE (u.full_name ILIKE :s0 OR u.email ILIKE :s0 OR u.phone ILIKE :s0)
-                    {exclude_admin}
+                    {exclude_admin} {kyc_filter}
                     GROUP BY u.id ORDER BY u.created_at DESC LIMIT :lim OFFSET :off
                     """), {'s0': s, 'lim': page_size, 'off': offset})).mappings().all()
                 count_rows = (await db.execute(_text(f"""
                     SELECT COUNT(*) AS cnt FROM users u
                     WHERE (u.full_name ILIKE :s0 OR u.email ILIKE :s0 OR u.phone ILIKE :s0)
-                    {exclude_admin}"""), {'s0': s})).mappings().all()
+                    {exclude_admin} {kyc_filter}"""), {'s0': s})).mappings().all()
             else:
                 rows = (await db.execute(_text(f"""
                     SELECT u.id, u.email, u.phone, u.full_name, u.country_code,
                            u.is_active, u.phone_verified, u.created_at,
+                           COALESCE(u.seller_verification_status, 'not_verified') AS seller_verification_status,
                            STRING_AGG(r.role, ',') AS roles
                     FROM users u
                     LEFT JOIN user_roles r ON CAST(r.user_id AS TEXT) = CAST(u.id AS TEXT)
-                    WHERE 1=1 {exclude_admin}
+                    WHERE 1=1 {exclude_admin} {kyc_filter}
                     GROUP BY u.id ORDER BY u.created_at DESC LIMIT :lim OFFSET :off
                     """), {'lim': page_size, 'off': offset})).mappings().all()
-                count_rows = (await db.execute(_text(f'SELECT COUNT(*) AS cnt FROM users u WHERE 1=1 {exclude_admin}'))).mappings().all()
+                count_rows = (await db.execute(_text(
+                    f'SELECT COUNT(*) AS cnt FROM users u WHERE 1=1 {exclude_admin} {kyc_filter}'
+                ))).mappings().all()
             total = count_rows[0]['cnt'] if count_rows else 0
-            data = [{'id': str(r['id']), 'email': r['email'], 'phone': r['phone'], 'full_name': r['full_name'], 'country_code': r['country_code'], 'is_active': bool(r['is_active']), 'is_phone_verified': bool(r['phone_verified']), 'created_at': str(r['created_at']), 'roles': r['roles'].split(',') if r['roles'] else []} for r in rows]
+            data = [
+                {
+                    'id': str(r['id']),
+                    'email': r['email'],
+                    'phone': r['phone'],
+                    'full_name': r['full_name'],
+                    'country_code': r['country_code'],
+                    'is_active': bool(r['is_active']),
+                    'is_phone_verified': bool(r['phone_verified']),
+                    'seller_verification_status': r.get('seller_verification_status', 'not_verified'),
+                    'created_at': str(r['created_at']),
+                    'roles': r['roles'].split(',') if r['roles'] else [],
+                }
+                for r in rows
+            ]
     except Exception:
         data, total = ([], 0)
     return SuccessResponse(message=f'{total} user(s) found.', data=data, meta=paginated_meta(page, page_size, total))

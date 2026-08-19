@@ -13,6 +13,7 @@ interface VerifiedUser {
   phone: string;
   country_code: string;
   created_at: string;
+  seller_verification_status?: string;
 }
 
 /* ── Avatar initials ─────────────────────────────────────── */
@@ -41,10 +42,17 @@ function UserCard({ u }: { u: VerifiedUser }) {
         <Avatar name={u.full_name} />
         <div className="flex-1 min-w-0">
           <p className="text-[14px] font-bold text-slate-900 truncate">{u.full_name || '—'}</p>
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border
-            border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-            <BadgeCheck className="h-3 w-3" /> Verified
-          </span>
+          {u.seller_verification_status === 'approved' ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border
+              border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+              <BadgeCheck className="h-3 w-3" /> Verified Seller
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border
+              border-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+              Not verified
+            </span>
+          )}
         </div>
       </div>
 
@@ -102,7 +110,7 @@ export default function VerifiedUsersPage() {
             <BadgeCheck className="h-6 w-6 text-emerald-600 flex-shrink-0" />
             Verified Users
           </h1>
-          <p className="text-[13px] text-slate-500 mt-0.5">KYC-verified accounts on the platform</p>
+          <p className="text-[13px] text-slate-500 mt-0.5">Users who have completed seller verification</p>
         </div>
 
         {/* Search */}
@@ -193,7 +201,7 @@ export default function VerifiedUsersPage() {
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
-                {['User', 'Email', 'Phone', 'Country', 'KYC Level', 'Joined'].map(h => (
+                {['User', 'Email', 'Phone', 'Country', 'Seller Status', 'Joined'].map(h => (
                   <th key={h}
                     className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-slate-400">
                     {h}
@@ -218,10 +226,17 @@ export default function VerifiedUsersPage() {
                   <td className="px-5 py-3.5 text-[13px] text-slate-600">{u.phone || '—'}</td>
                   <td className="px-5 py-3.5 text-[13px] text-slate-600">{u.country_code || '—'}</td>
                   <td className="px-5 py-3.5">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50
-                      border border-emerald-200 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-                      <BadgeCheck className="h-3 w-3" /> Verified
-                    </span>
+                    {u.seller_verification_status === 'approved' ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50
+                        border border-emerald-200 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                        <BadgeCheck className="h-3 w-3" /> Verified Seller
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100
+                        border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+                        Not verified
+                      </span>
+                    )}
                   </td>
                   <td className="px-5 py-3.5 text-[12px] text-slate-500">
                     {new Date(u.created_at).toLocaleDateString('en-NG', {
