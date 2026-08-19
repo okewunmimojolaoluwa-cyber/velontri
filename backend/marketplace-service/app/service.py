@@ -211,11 +211,21 @@ class MarketplaceService:
         if listing is None:
             raise NotFoundError("Listing not found.")
 
-        # Load all media in sort order
-        media_rows = await repo.get_listing_media(self.session, listing_id)
-        media_urls: list[str] = [m.s3_key for m in media_rows if m.media_type == "image" and m.s3_key]
+        # Load all media in sort order — use raw SQL with CAST to handle UUID/text mismatch
+        from sqlalchemy import text as _text_raw
+        media_rows_raw = (await self.session.execute(
+            _text_raw("""
+                SELECT s3_key, media_type, sort_order
+                FROM listing_media
+                WHERE CAST(listing_id AS TEXT) = :lid
+                  AND media_type = 'image'
+                ORDER BY sort_order ASC
+            """),
+            {"lid": str(listing_id)},
+        )).mappings().all()
+        media_urls: list[str] = [r["s3_key"] for r in media_rows_raw if r["s3_key"]]
 
-        # Deduplicate while preserving order (media_rows may contain the cover too)
+        # Deduplicate while preserving order
         seen: set[str] = set()
         deduped: list[str] = []
         for url in media_urls:
@@ -272,7 +282,17 @@ class MarketplaceService:
         if listing.seller_id != seller_id:
             raise ForbiddenError("You can only upload images to your own listings.")
 
-        current_count = await repo.count_listing_images(self.session, listing_id)
+        # Count existing images using raw SQL to avoid UUID/text mismatch
+        from sqlalchemy import text as _count_text
+        current_count_row = (await self.session.execute(
+            _count_text(
+                "SELECT COUNT(*) AS cnt FROM listing_media "
+                "WHERE CAST(listing_id AS TEXT) = :lid AND media_type = 'image'"
+            ),
+            {"lid": str(listing_id)},
+        )).mappings().first()
+        current_count = int(current_count_row["cnt"]) if current_count_row else 0
+
         if current_count >= 20:
             raise QuotaExceededError(
                 "Maximum of 20 images per listing. Remove an image before uploading."
