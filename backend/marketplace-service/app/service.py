@@ -194,15 +194,14 @@ class MarketplaceService:
         return _to_listing_response(listing)
 
     async def get_listing(self, listing_id: uuid.UUID) -> ListingResponse:
-        # Skip cache entirely — always re-fetch from DB
-        # This ensures media_urls is always current
+        # Always fetch fresh — never serve stale cached media_urls
         cache_key = RedisKeys.listing_cache(str(listing_id))
 
         listing = await repo.get_listing(self.session, listing_id)
         if listing is None:
             raise NotFoundError("Listing not found.")
 
-        # Load ALL media rows via raw SQL (avoids ORM UUID/text comparison issues)
+        # Load ALL media rows via raw SQL — CAST avoids UUID/text comparison issues
         from sqlalchemy import text as _text_raw
         media_rows_raw = (await self.session.execute(
             _text_raw("""
@@ -217,7 +216,7 @@ class MarketplaceService:
             {"lid": str(listing_id)},
         )).mappings().all()
 
-        # All unique s3_keys from listing_media, in sort order
+        # Deduplicate preserving sort order
         seen_keys: set[str] = set()
         media_urls: list[str] = []
         for row in media_rows_raw:
@@ -226,27 +225,39 @@ class MarketplaceService:
                 seen_keys.add(k)
                 media_urls.append(k)
 
-        # If the listing has a cover image_url not already in media_urls, prepend it
+        # Prepend cover image_url if not already in the list
         if listing.image_url and listing.image_url not in seen_keys:
             media_urls.insert(0, listing.image_url)
 
-        # If no media at all, fall back to image_url alone
+        # Absolute fallback
         if not media_urls and listing.image_url:
             media_urls = [listing.image_url]
+
+        db_row_count = len(media_rows_raw)
+        total_count = len(media_urls)
 
         logger.info(
             "get_listing_media",
             listing_id=str(listing_id),
-            media_count=len(media_urls),
-            db_rows=len(media_rows_raw),
+            media_count=total_count,
+            db_rows=db_row_count,
         )
 
         response = _to_listing_response(listing, media_urls)
-        # Cache for 30 seconds only
-        try:
-            await self.redis.setex(cache_key, 30, response.model_dump_json())
-        except Exception:
-            pass
+
+        # Only cache if we have more than 1 image — avoids serving stale
+        # single-image responses when uploads are still in progress
+        if total_count > 0:
+            try:
+                await self.redis.setex(cache_key, 30, response.model_dump_json())
+            except Exception:
+                pass
+        else:
+            # No images yet — delete any stale cache entry
+            try:
+                await self.redis.delete(cache_key)
+            except Exception:
+                pass
         return response
 
     async def update_listing(
