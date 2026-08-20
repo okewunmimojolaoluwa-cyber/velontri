@@ -34,6 +34,7 @@ class CreateListingRequest(BaseModel):
     specs: dict[str, str] | None = None
     variants: list["VariantRequest"] | None = None
     image_url: str | None = Field(default=None, description="Data URL or HTTPS URL for the primary image")
+    extra_image_urls: list[str] | None = Field(default=None, description="Additional image data URLs (index 1+). Stored atomically in listing_media.")
     whatsapp_number: str | None = Field(default=None, max_length=20, description="Seller WhatsApp number in E.164 format")
     contact_phone: str | None = Field(default=None, max_length=20, description="Optional extra contact phone")
 

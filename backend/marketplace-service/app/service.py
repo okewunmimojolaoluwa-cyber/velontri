@@ -182,6 +182,29 @@ class MarketplaceService:
                     self.session, listing.id, v.sku, v.attributes, v.price, v.stock_quantity
                 )
 
+        # Batch-insert extra images (index 1+) atomically so they are available
+        # immediately without any separate upload calls from the frontend.
+        extra_urls: list[str] = body.extra_image_urls or []
+        if extra_urls:
+            from sqlalchemy import text as _ins_text
+            import uuid as _uuid_mod
+            for i, img_url in enumerate(extra_urls[:19]):  # max 19 extras (+ 1 cover = 20)
+                if not img_url:
+                    continue
+                await self.session.execute(
+                    _ins_text("""
+                        INSERT INTO listing_media (id, listing_id, media_type, s3_key, sort_order, uploaded_at)
+                        VALUES (:mid, :lid, 'image', :s3key, :sorder, NOW())
+                    """),
+                    {
+                        "mid": str(_uuid_mod.uuid4()),
+                        "lid": str(listing.id),
+                        "s3key": img_url,
+                        "sorder": i,  # 0-indexed; cover is in listing.image_url
+                    },
+                )
+            await self.session.commit()
+
         # Invalidate quota cache so next check reads fresh DB count
         await self.redis.delete(RedisKeys.seller_listing_count(str(seller_id)))
 
@@ -190,7 +213,17 @@ class MarketplaceService:
             listing_id=str(listing.id),
             seller_id=str(seller_id),
             type=body.listing_type,
+            extra_images=len(extra_urls),
         )
+
+        # If extra images were added, build media_urls for the response
+        if extra_urls:
+            all_urls: list[str] = []
+            if listing.image_url:
+                all_urls.append(listing.image_url)
+            all_urls.extend([u for u in extra_urls if u])
+            return _to_listing_response(listing, all_urls)
+
         return _to_listing_response(listing)
 
     async def get_listing(self, listing_id: uuid.UUID) -> ListingResponse:
@@ -245,15 +278,15 @@ class MarketplaceService:
 
         response = _to_listing_response(listing, media_urls)
 
-        # Only cache if we have more than 1 image — avoids serving stale
-        # single-image responses when uploads are still in progress
-        if total_count > 0:
+        # Only cache if we have more than 1 image — a single-image response might
+        # represent an in-progress listing where extra images are still being committed.
+        if total_count > 1:
             try:
                 await self.redis.setex(cache_key, 30, response.model_dump_json())
             except Exception:
                 pass
         else:
-            # No images yet — delete any stale cache entry
+            # Ensure no stale cache entry misleads the client
             try:
                 await self.redis.delete(cache_key)
             except Exception:

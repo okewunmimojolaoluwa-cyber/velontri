@@ -23,6 +23,7 @@ export interface ListingSummary {
   contact_phone?: string;
   rejection_reason?: string;
   seller_verified?: boolean;
+  media_count?: number;
   created_at?: string;
   updated_at?: string;
 }

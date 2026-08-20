@@ -1,4 +1,6 @@
 import type { Config } from 'tailwindcss';
+import plugin from 'tailwindcss/plugin';
+import animatePlugin from 'tailwindcss-animate';
 
 const config: Config = {
   darkMode: ['class'],
@@ -126,8 +128,8 @@ const config: Config = {
     },
   },
   plugins: [
-    require('tailwindcss-animate'),
-    function({ addUtilities }) {
+    animatePlugin,
+    plugin(function({ addUtilities }) {
       addUtilities({
         '.scrollbar-hide': {
           '-ms-overflow-style': 'none',
@@ -137,7 +139,7 @@ const config: Config = {
           },
         },
       });
-    },
+    }),
   ],
 };
 

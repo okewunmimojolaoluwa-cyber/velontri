@@ -196,7 +196,6 @@ export default function CreateListingPage() {
     retryDelay: 3000,
     mutationFn: async () => {
       // ── Wake up Render free tier if cold ──────────────────────────────
-      // Poll /health until the server responds (up to 45s), then proceed.
       const apiBase = (process.env.NEXT_PUBLIC_API_URL ?? 'https://velontri.onrender.com/api/v1')
         .replace(/\/api\/v1\/?$/, '');
       const healthUrl = `${apiBase}/health`;
@@ -219,16 +218,26 @@ export default function CreateListingPage() {
         throw new Error('Server is unavailable. Please try again in a moment.');
       }
 
-      // 1. Compress first image upfront so we can embed it in the create request
+      // Compress all images up-front
+      // Cover (index 0): 800px 55% quality
+      // Extras (index 1+): 600px 45% quality
       let coverImageUrl: string | undefined = undefined;
+      const extraImageUrls: string[] = [];
+
       if (form.images.length > 0) {
+        try { coverImageUrl = await compressToJpeg(form.images[0], 800, 0.55); }
+        catch { /* proceed without cover */ }
+      }
+      for (let i = 1; i < form.images.length; i++) {
         try {
-          coverImageUrl = await compressToJpeg(form.images[0]);
-        } catch { /* proceed without image */ }
+          const compressed = await compressToJpeg(form.images[i], 600, 0.45);
+          extraImageUrls.push(compressed);
+        } catch { /* skip this image */ }
       }
 
-      // 2. Create the listing WITH the cover image embedded directly in JSON
-      // This guarantees image_url is set on the listing row immediately.
+      // Single request: create listing WITH all images embedded atomically.
+      // Backend stores cover in listing.image_url and extras in listing_media.
+      // No separate upload calls = no silent failures, no race conditions.
       const normalizedPhone = normalizePhoneNumber(form.whatsapp_number);
       const res = await sellerApi.createListing({
         title: form.title,
@@ -244,25 +253,13 @@ export default function CreateListingPage() {
         whatsapp_number: normalizedPhone || undefined,
         contact_phone: normalizedPhone || undefined,
         image_url: coverImageUrl,
-      });
+        extra_image_urls: extraImageUrls.length > 0 ? extraImageUrls : undefined,
+      } as any);
 
       const listingId = (res.data as any)?.id;
       if (!listingId) throw new Error('No listing ID returned from server.');
 
-      // 3. Upload remaining images (index 1+) sequentially so sort_order is correct
-      if (form.images.length > 1) {
-        for (let i = 1; i < form.images.length; i++) {
-          try {
-            const compressed = await compressToJpeg(form.images[i], 600, 0.45);
-            await sellerApi.uploadImage(listingId, compressed);
-          } catch (uploadErr: any) {
-            // Log but don't fail — cover image is always present
-            console.warn(`Image ${i + 1} upload failed:`, uploadErr?.message || uploadErr);
-          }
-        }
-      }
-
-      // 4. Publish so it goes live
+      // Publish so it goes live
       await sellerApi.publishListing(listingId);
       return res;
     },

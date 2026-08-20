@@ -31,24 +31,26 @@ async def browse_listings(service: MarketplaceService=Depends(_build_service), p
     from shared.errors import paginated_meta
     from sqlalchemy import text as _text
 
-    # For listings without image_url, try to get the first media row
-    listing_ids_without_image = [str(r.id) for r in results if not r.image_url]
+    # For listings without image_url, try to get the first media row + count all media
+    all_listing_ids = [str(r.id) for r in results]
     media_map: dict[str, str] = {}
-    if listing_ids_without_image:
+    media_count_map: dict[str, int] = {}
+    if all_listing_ids:
         try:
-            placeholders = ", ".join(f":id_{i}" for i in range(len(listing_ids_without_image)))
-            params = {f"id_{i}": lid for i, lid in enumerate(listing_ids_without_image)}
+            placeholders = ", ".join(f":id_{i}" for i in range(len(all_listing_ids)))
+            params = {f"id_{i}": lid for i, lid in enumerate(all_listing_ids)}
             media_rows = (await service.session.execute(_text(
-                f"SELECT CAST(listing_id AS TEXT) AS lid, s3_key FROM listing_media "
+                f"SELECT CAST(listing_id AS TEXT) AS lid, s3_key, sort_order "
+                f"FROM listing_media "
                 f"WHERE CAST(listing_id AS TEXT) IN ({placeholders}) AND media_type = 'image' "
                 f"ORDER BY sort_order ASC"
             ), params)).mappings().all()
-            seen: set = set()
+            # Build first-image map and count map in one pass
             for mr in media_rows:
                 lid = str(mr['lid'])
-                if lid not in seen:
+                media_count_map[lid] = media_count_map.get(lid, 0) + 1
+                if lid not in media_map:
                     media_map[lid] = mr['s3_key']
-                    seen.add(lid)
         except Exception:
             pass
 
@@ -74,7 +76,7 @@ async def browse_listings(service: MarketplaceService=Depends(_build_service), p
     data = []
     for r in results:
         img = r.image_url or media_map.get(str(r.id))
-        data.append({'id': str(r.id), 'seller_id': str(r.seller_id), 'listing_type': r.listing_type, 'title': r.title, 'description': r.description, 'price': float(r.price) if r.price is not None else None, 'currency': r.currency, 'country': r.country, 'state': r.state, 'city': r.city, 'category': r.category, 'condition': r.condition, 'status': r.status, 'image_url': img, 'avg_rating': float(r.avg_rating) if r.avg_rating else 0.0, 'review_count': r.review_count or 0, 'seller_verified': verified_sellers.get(str(r.seller_id), False), 'created_at': r.created_at.isoformat() if r.created_at else None})
+        data.append({'id': str(r.id), 'seller_id': str(r.seller_id), 'listing_type': r.listing_type, 'title': r.title, 'description': r.description, 'price': float(r.price) if r.price is not None else None, 'currency': r.currency, 'country': r.country, 'state': r.state, 'city': r.city, 'category': r.category, 'condition': r.condition, 'status': r.status, 'image_url': img, 'avg_rating': float(r.avg_rating) if r.avg_rating else 0.0, 'review_count': r.review_count or 0, 'seller_verified': verified_sellers.get(str(r.seller_id), False), 'media_count': (1 if img else 0) + media_count_map.get(str(r.id), 0) if r.image_url else media_count_map.get(str(r.id), 0), 'created_at': r.created_at.isoformat() if r.created_at else None})
     return SuccessResponse(message=f'{total} listing(s) found.', data=data, meta=paginated_meta(page, page_size, total))
 
 @router.get('/listings/my', response_model=SuccessResponse, summary="Get the authenticated seller's own listings (all statuses)")

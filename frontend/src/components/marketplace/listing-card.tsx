@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { MapPin, BadgeCheck } from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
+import { MapPin, BadgeCheck, Camera } from 'lucide-react';
 import { ListingImage } from '@/components/ui/listing-image';
 import type { ListingSummary } from '@/lib/api/endpoints/listings';
 
@@ -16,20 +15,31 @@ function fmt(n: number, currency: string) {
 }
 
 export function ListingCard({ listing }: { listing: ListingSummary }) {
+  const mediaCount = (listing as any).media_count as number | undefined;
+
   return (
     <Link
       href={`/listings/${listing.id}`}
       className="group block card-base card-hover overflow-hidden listing-card"
     >
       {/* ── Image — locked 4:3 on desktop, 1:1 on mobile ── */}
-      <ListingImage
-        src={listing.image_url}
-        alt={listing.title}
-        type={listing.listing_type}
-        category={listing.category}
-        ratio="4/3"
-        className="group-hover:scale-[1.03] transition-transform duration-500"
-      />
+      <div className="relative">
+        <ListingImage
+          src={listing.image_url}
+          alt={listing.title}
+          type={listing.listing_type}
+          category={listing.category}
+          ratio="4/3"
+          className="group-hover:scale-[1.03] transition-transform duration-500"
+        />
+        {/* Photo count badge — only when listing has 2+ images */}
+        {mediaCount != null && mediaCount > 1 && (
+          <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm pointer-events-none tabular-nums">
+            <Camera className="h-2.5 w-2.5 flex-shrink-0" />
+            {mediaCount}
+          </div>
+        )}
+      </div>
 
       {/* ── Content — fixed padding so every card is identical ── */}
       <div className="p-4 space-y-1.5">
