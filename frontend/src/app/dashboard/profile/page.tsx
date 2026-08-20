@@ -2,16 +2,93 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { BadgeCheck, Mail, Phone, Globe, Calendar, Camera, Loader2, CheckCircle2, X } from 'lucide-react';
+import { BadgeCheck, Mail, Phone, Globe, Calendar, Camera, Loader2, CheckCircle2, X, Shield, ArrowRight } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 import { usersApi, userKeys } from '@/lib/api/endpoints/users';
 import type { ApiResponse } from '@/types/api';
 import { useAuth } from '@/features/auth/auth-provider';
+import Link from 'next/link';
 
 interface UserProfile {
   id: string; email: string; phone: string; full_name: string;
   country_code: string; avatar_url?: string;
   is_phone_verified: boolean; is_email_verified: boolean; created_at: string;
+}
+
+/* ── Seller verification status widget ────────────────── */
+function SellerVerificationBadge() {
+  const { data } = useQuery({
+    queryKey: ['verification', 'me', 'status'],
+    queryFn: () => apiClient.get('/verification/me').then(r => r.data),
+    staleTime: 60_000,
+  });
+
+  const status: string = (data as any)?.data?.status ?? 'not_verified';
+
+  if (status === 'approved') {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100">
+          <BadgeCheck className="h-5 w-5 text-emerald-600" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-bold text-emerald-900">Verified Seller</p>
+          <p className="text-[11px] text-emerald-700">Your profile shows the Verified badge on listings</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'submitted' || status === 'under_review') {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-amber-100">
+          <Shield className="h-5 w-5 text-amber-600" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-bold text-amber-900">Verification Under Review</p>
+          <p className="text-[11px] text-amber-700">Our team is reviewing your application</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'rejected' || status === 'more_info_required') {
+    return (
+      <Link href="/dashboard/verification" className="no-underline">
+        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 hover:bg-red-100 transition-colors cursor-pointer">
+          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-red-100">
+            <Shield className="h-5 w-5 text-red-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-bold text-red-900">
+              {status === 'rejected' ? 'Verification Not Approved' : 'More Info Required'}
+            </p>
+            <p className="text-[11px] text-red-700">Tap to update and resubmit</p>
+          </div>
+          <ArrowRight className="h-4 w-4 text-red-400 flex-shrink-0" />
+        </div>
+      </Link>
+    );
+  }
+
+  // not_verified or draft — show CTA
+  return (
+    <Link href="/dashboard/verification" className="no-underline">
+      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 hover:bg-indigo-50 hover:border-indigo-200 transition-colors cursor-pointer group">
+        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 group-hover:bg-indigo-100 transition-colors">
+          <Shield className="h-5 w-5 text-slate-500 group-hover:text-indigo-600 transition-colors" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-bold text-slate-800 group-hover:text-indigo-700 transition-colors">
+            {status === 'draft' ? 'Continue Verification' : 'Get Verified Seller Badge'}
+          </p>
+          <p className="text-[11px] text-slate-500">Build buyer trust — get the verification badge</p>
+        </div>
+        <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-indigo-500 flex-shrink-0 transition-colors" />
+      </div>
+    </Link>
+  );
 }
 
 const inputCls =
@@ -324,6 +401,9 @@ export default function UserProfilePage() {
                     <p className="text-[13px] font-semibold text-emerald-600">{msg}</p>
                   </div>
                 )}
+
+                {/* ── Seller verification badge ─────────── */}
+                <SellerVerificationBadge />
 
                 <button
                   onClick={() => setEdit(true)}
