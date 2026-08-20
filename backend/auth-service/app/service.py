@@ -1015,9 +1015,9 @@ class AuthService:
                         logger.info('email_otp_sent_brevo', email=email, brevo_id=resp.json().get('messageId'))
                         return
                     else:
-                        logger.warning('brevo_api_failed', status=resp.status_code, body=resp.text)
+                        logger.warning('brevo_api_failed', status=resp.status_code, body=resp.text[:500], email=email)
             except Exception as _brevo_err:
-                logger.warning('brevo_api_exception', error=str(_brevo_err))
+                logger.warning('brevo_api_exception', error=str(_brevo_err), email=email)
 
         # 2. Secondary: Gmail SMTP (App Password) — SSL 465 or TLS 587
         if gmail_user and gmail_pass:

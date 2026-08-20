@@ -51,7 +51,7 @@ services:
         value: "40T5Idu3oVZchRBW_X8fgLFOCKSgCGF-TTQUFGe_h5k="
 
       # ── Brevo API (for real OTP emails to any address) ───────────────────
-      # Set BREVO_API_KEY in Render dashboard → Environment tab (not here — avoid committing secrets)
+      # Set BREVO_API_KEY manually in Render dashboard → Environment tab
       - key: BREVO_API_KEY
         sync: false
       - key: EMAIL_FROM
@@ -64,6 +64,9 @@ services:
         value: "okewunmimojolaoluwa@gmail.com"
       - key: GMAIL_APP_PASSWORD
         value: "scivvkgnkqmgqedt"
+      # Set RESEND_API_KEY manually in Render dashboard → Environment tab
+      - key: RESEND_API_KEY
+        sync: false
 
       # ── Paystack ─────────────────────────────────────────────────────────
       - key: PAYSTACK_SECRET_KEY
