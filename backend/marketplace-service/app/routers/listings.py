@@ -52,10 +52,29 @@ async def browse_listings(service: MarketplaceService=Depends(_build_service), p
         except Exception:
             pass
 
+    # Batch-fetch seller verification status to show badge on cards
+    seller_ids_all = list({str(r.seller_id) for r in results})
+    verified_sellers: dict[str, bool] = {}
+    if seller_ids_all:
+        try:
+            _vph = ", ".join(f":vsid_{i}" for i in range(len(seller_ids_all)))
+            _vpm = {f"vsid_{i}": s for i, s in enumerate(seller_ids_all)}
+            v_rows = (await service.session.execute(_text(
+                f"SELECT CAST(id AS TEXT) AS uid, "
+                f"COALESCE(seller_verification_status, 'not_verified') AS svs "
+                f"FROM users WHERE CAST(id AS TEXT) IN ({_vph})"
+            ), _vpm)).mappings().all()
+            verified_sellers = {
+                str(r['uid']): str(r['svs']) in ('approved', 'verified')
+                for r in v_rows
+            }
+        except Exception:
+            pass
+
     data = []
     for r in results:
         img = r.image_url or media_map.get(str(r.id))
-        data.append({'id': str(r.id), 'seller_id': str(r.seller_id), 'listing_type': r.listing_type, 'title': r.title, 'description': r.description, 'price': float(r.price) if r.price is not None else None, 'currency': r.currency, 'country': r.country, 'state': r.state, 'city': r.city, 'category': r.category, 'condition': r.condition, 'status': r.status, 'image_url': img, 'avg_rating': float(r.avg_rating) if r.avg_rating else 0.0, 'review_count': r.review_count or 0, 'created_at': r.created_at.isoformat() if r.created_at else None})
+        data.append({'id': str(r.id), 'seller_id': str(r.seller_id), 'listing_type': r.listing_type, 'title': r.title, 'description': r.description, 'price': float(r.price) if r.price is not None else None, 'currency': r.currency, 'country': r.country, 'state': r.state, 'city': r.city, 'category': r.category, 'condition': r.condition, 'status': r.status, 'image_url': img, 'avg_rating': float(r.avg_rating) if r.avg_rating else 0.0, 'review_count': r.review_count or 0, 'seller_verified': verified_sellers.get(str(r.seller_id), False), 'created_at': r.created_at.isoformat() if r.created_at else None})
     return SuccessResponse(message=f'{total} listing(s) found.', data=data, meta=paginated_meta(page, page_size, total))
 
 @router.get('/listings/my', response_model=SuccessResponse, summary="Get the authenticated seller's own listings (all statuses)")

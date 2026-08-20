@@ -22,6 +22,7 @@ export interface ListingSummary {
   whatsapp_number?: string;
   contact_phone?: string;
   rejection_reason?: string;
+  seller_verified?: boolean;
   created_at?: string;
   updated_at?: string;
 }

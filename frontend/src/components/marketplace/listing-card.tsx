@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { MapPin } from 'lucide-react';
+import { MapPin, BadgeCheck } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { ListingImage } from '@/components/ui/listing-image';
 import type { ListingSummary } from '@/lib/api/endpoints/listings';
@@ -33,10 +33,18 @@ export function ListingCard({ listing }: { listing: ListingSummary }) {
 
       {/* ── Content — fixed padding so every card is identical ── */}
       <div className="p-4 space-y-1.5">
-        {/* Category label */}
-        <p className="text-2xs text-muted-foreground uppercase tracking-wider font-medium truncate">
-          {listing.category}
-        </p>
+        {/* Category label + verified badge row */}
+        <div className="flex items-center justify-between gap-1">
+          <p className="text-2xs text-muted-foreground uppercase tracking-wider font-medium truncate">
+            {listing.category}
+          </p>
+          {(listing as any).seller_verified && (
+            <span className="flex items-center gap-0.5 flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">
+              <BadgeCheck className="h-2.5 w-2.5" />
+              Verified
+            </span>
+          )}
+        </div>
 
         {/* Title — always 2 lines max, never grows the card */}
         <h3 className="text-sm font-semibold leading-snug line-clamp-2 text-foreground

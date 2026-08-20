@@ -20,6 +20,7 @@ interface SearchResult {
   category: string; listing_type: string; condition?: string;
   city?: string; country?: string; image_url?: string; media_urls?: string[];
   avg_rating?: number; review_count?: number; seller_id?: string; status?: string;
+  seller_verified?: boolean;
 }
 
 type SortValue = 'newest' | 'price_asc' | 'price_desc';
