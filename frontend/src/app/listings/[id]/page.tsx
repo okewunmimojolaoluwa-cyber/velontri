@@ -631,23 +631,39 @@ export default function ListingDetailPage() {
 
               {/* Seller card */}
               <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4">
+                {/* Avatar */}
                 <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[15px] font-bold text-indigo-700 uppercase">
                   {sellerName.charAt(0)}
                 </div>
+
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-[13px] font-semibold text-slate-900 truncate">{sellerName}</p>
-                    {isVerifiedSeller && <BadgeCheck className="h-4 w-4 text-indigo-600 flex-shrink-0" aria-label="Verified Seller" />}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 mt-0.5 text-[12px] text-slate-400">
-                    {(listing.avg_rating ?? 0) > 0 ? (
-                      <span className="flex items-center gap-1">
-                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                        {Number(listing.avg_rating).toFixed(1)}
+                  {/* Name row */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="text-[14px] font-bold text-slate-900 truncate">{sellerName}</p>
+                    {isVerifiedSeller && (
+                      <span className="inline-flex items-center gap-0.5 rounded-full bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 flex-shrink-0">
+                        <BadgeCheck className="h-3 w-3" />
+                        Verified
                       </span>
-                    ) : <span className="text-slate-300">No ratings yet</span>}
-                    {(listing.review_count ?? 0) > 0 && (
-                      <><span>·</span><span className="flex items-center gap-1"><Star className="h-3 w-3" />{listing.review_count} review{listing.review_count !== 1 ? 's' : ''}</span></>
+                    )}
+                  </div>
+
+                  {/* Rating row */}
+                  <div className="flex items-center gap-2 mt-1 text-[12px] text-slate-400">
+                    {(listing.avg_rating ?? 0) > 0 ? (
+                      <>
+                        <span className="flex items-center gap-1 text-amber-500 font-semibold">
+                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                          {Number(listing.avg_rating).toFixed(1)}
+                        </span>
+                        {(listing.review_count ?? 0) > 0 && (
+                          <span className="text-slate-400">
+                            {listing.review_count} review{listing.review_count !== 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-slate-300 text-[11px]">No reviews yet</span>
                     )}
                   </div>
                 </div>

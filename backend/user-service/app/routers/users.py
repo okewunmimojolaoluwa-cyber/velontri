@@ -198,9 +198,10 @@ async def get_profile(user_id: uuid.UUID, service: UserService=Depends(_build_se
         )).fetchone()
         if row:
             if not profile_data.get('full_name'):
-                profile_data['full_name'] = row[0] or row[1] or 'Seller'
+                # Never expose email on public profile — use name only, fallback to 'Seller'
+                profile_data['full_name'] = row[0] or 'Seller'
             if not profile_data.get('display_name'):
-                profile_data['display_name'] = row[0] or row[1]
+                profile_data['display_name'] = row[0] or None
             profile_data['phone'] = row[2] or profile_data.get('phone') or ''
             profile_data['seller_verification_status'] = row[3] or 'not_verified'
     except Exception:
