@@ -69,8 +69,9 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
   },
-  // Uncomment and add your GSC token once you have it:
-  // verification: { google: 'YOUR_GSC_VERIFICATION_TOKEN' },
+  verification: {
+    google: 'ktrc0qoR91nvguTPGPlL35_-qR2hdUOd3K2sio-q82U',
+  },
 };
 
 export const viewport: Viewport = {
