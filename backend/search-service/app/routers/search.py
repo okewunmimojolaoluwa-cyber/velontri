@@ -363,6 +363,33 @@ async def _search_fallback(
             }
             for r in rows
         ]
+
+        # When results are empty, try broader single-term searches to give
+        # the user smart "Did you mean...?" suggestions
+        suggestions: list[str] = []
+        if total == 0:
+            try:
+                seen_sugg: set[str] = set()
+                for term in expanded[:10]:
+                    if len(term) < 3:
+                        continue
+                    sugg_rows = (await db.execute(_text(
+                        "SELECT DISTINCT title FROM listings "
+                        "WHERE (title ILIKE :t OR category ILIKE :t) AND status = 'active' "
+                        "ORDER BY title LIMIT 3"
+                    ), {"t": f"%{term}%"})).fetchall()
+                    for sr in sugg_rows:
+                        s = sr[0]
+                        if s and s not in seen_sugg:
+                            seen_sugg.add(s)
+                            suggestions.append(s)
+                        if len(suggestions) >= 6:
+                            break
+                    if len(suggestions) >= 6:
+                        break
+            except Exception:
+                pass
+
         return SuccessResponse(
             message=f"{total} result(s) found.",
             data=data,
@@ -373,6 +400,7 @@ async def _search_fallback(
                 "total_pages": total_pages,
                 "has_prev": page > 1,
                 "has_next": page < total_pages,
+                "suggestions": suggestions,
             },
         )
     except Exception:
@@ -380,7 +408,8 @@ async def _search_fallback(
             message="0 results found.",
             data=[],
             meta={"total": 0, "page": page, "page_size": page_size,
-                  "total_pages": 1, "has_prev": False, "has_next": False},
+                  "total_pages": 1, "has_prev": False, "has_next": False,
+                  "suggestions": []},
         )
 
 

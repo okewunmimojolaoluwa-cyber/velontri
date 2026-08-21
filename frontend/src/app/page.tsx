@@ -366,23 +366,22 @@ export default function HomePage() {
               {/* Category pills — navigate to filtered listings */}
               <div className="mb-8 flex flex-wrap gap-2">
                 {[
-                  { label: 'All',          href: '/listings' },
-                  { label: 'Vehicles',     href: '/listings?listing_type=vehicle' },
-                  { label: 'Property',     href: '/listings?listing_type=property' },
-                  { label: 'Electronics',  href: '/listings?category=Electronics' },
-                  { label: 'Fashion',      href: '/listings?category=Fashion' },
-                  { label: 'Jobs',         href: '/listings?listing_type=job' },
-                ].map(({ label, href }) => (
+                  { label: 'All',          href: '/listings',                        emoji: '🛍️' },
+                  { label: 'Vehicles',     href: '/listings?listing_type=vehicle',   emoji: '🚗' },
+                  { label: 'Property',     href: '/listings?listing_type=property',  emoji: '🏠' },
+                  { label: 'Electronics',  href: '/listings?category=Electronics',   emoji: '📱' },
+                  { label: 'Fashion',      href: '/listings?category=Fashion',       emoji: '👗' },
+                  { label: 'Jobs',         href: '/listings?listing_type=job',       emoji: '💼' },
+                  { label: 'Services',     href: '/listings?listing_type=service',   emoji: '🔧' },
+                ].map(({ label, href, emoji }) => (
                   <Link
                     key={label}
                     href={href}
-                    onClick={() => setCat(label)}
-                    className="cursor-pointer rounded-full border px-3.5 py-1.5 text-[12px] font-semibold transition-all no-underline"
-                    style={{
-                      background:  cat === label ? '#4F46E5' : '#F8FAFC',
-                      borderColor: cat === label ? '#4F46E5' : '#E2E8F0',
-                      color:       cat === label ? '#fff'    : '#475569',
-                    }}>
+                    className="flex items-center gap-1.5 cursor-pointer rounded-full border px-3.5 py-1.5 text-[12px] font-semibold transition-all no-underline
+                      border-slate-200 bg-white text-slate-600
+                      hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700
+                      active:scale-[0.97]">
+                    <span>{emoji}</span>
                     {label}
                   </Link>
                 ))}

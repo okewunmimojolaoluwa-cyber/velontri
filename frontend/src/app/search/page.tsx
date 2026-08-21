@@ -558,22 +558,83 @@ function SearchInner() {
 
         {/* No results */}
         {committed && !isLoading && !isError && listings.length === 0 && (
-          <div className="py-20 text-center space-y-3">
-            <p className="text-[20px] font-black text-slate-900 dark:text-slate-100">
-              Nothing found for &ldquo;{committed}&rdquo;
-            </p>
-            <p className="text-[13px] text-slate-400 max-w-sm mx-auto">
-              Try different keywords, check spelling, or browse by category.
-            </p>
-            <div className="flex flex-wrap gap-2 justify-center mt-4">
-              {TRENDING.map(t => (
-                <button key={t} onClick={() => commit(t)}
-                  className="rounded-full border border-slate-200 px-3.5 py-1.5 text-[12px]
-                    font-medium text-slate-500 hover:text-indigo-600 hover:border-indigo-300
-                    transition-all dark:border-[#333] dark:text-slate-400">
-                  {t}
-                </button>
-              ))}
+          <div className="py-16 text-center space-y-5">
+            {/* Icon */}
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 mx-auto dark:bg-[#242424]">
+              <Search className="h-8 w-8 text-slate-300" />
+            </div>
+
+            <div>
+              <p className="text-[20px] font-black text-slate-900 dark:text-slate-100 mb-1">
+                No results for &ldquo;{committed}&rdquo;
+              </p>
+              <p className="text-[13px] text-slate-400 max-w-sm mx-auto">
+                We searched across listings, categories and synonyms — nothing matched exactly.
+              </p>
+            </div>
+
+            {/* Smart suggestions from backend */}
+            {(meta?.suggestions ?? []).length > 0 && (
+              <div className="max-w-lg mx-auto">
+                <p className="text-[12px] font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-center gap-1.5">
+                  <Zap className="h-3 w-3 text-indigo-500" />
+                  Did you mean one of these?
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {(meta.suggestions as string[]).map((s: string) => (
+                    <button key={s} onClick={() => commit(s)}
+                      className="rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2
+                        text-[13px] font-semibold text-indigo-700
+                        hover:bg-indigo-100 hover:border-indigo-300 transition-all
+                        dark:bg-indigo-950/40 dark:border-indigo-800 dark:text-indigo-300">
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Browse by category */}
+            <div className="max-w-lg mx-auto">
+              <p className="text-[12px] font-bold uppercase tracking-wider text-slate-400 mb-3">
+                Or browse by category
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {[
+                  { label: 'Vehicles 🚗',     q: 'vehicle' },
+                  { label: 'Property 🏠',     q: 'property' },
+                  { label: 'Electronics 📱',  q: 'phone' },
+                  { label: 'Fashion 👗',      q: 'fashion' },
+                  { label: 'Jobs 💼',         q: 'jobs' },
+                  { label: 'Services 🔧',     q: 'services' },
+                ].map(({ label, q: cq }) => (
+                  <button key={label} onClick={() => commit(cq)}
+                    className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5
+                      text-[12px] font-medium text-slate-500
+                      hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50
+                      transition-all dark:bg-[#1c1c1c] dark:border-[#333] dark:text-slate-400">
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Trending fallback */}
+            <div className="max-w-lg mx-auto pt-2 border-t border-slate-100 dark:border-[#2a2a2a]">
+              <p className="text-[12px] font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-center gap-1.5">
+                <TrendingUp className="h-3 w-3" /> Trending right now
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {TRENDING.map(t => (
+                  <button key={t} onClick={() => commit(t)}
+                    className="rounded-full border border-slate-200 px-3.5 py-1.5 text-[12px]
+                      font-medium text-slate-500 hover:text-indigo-600 hover:border-indigo-300
+                      hover:bg-indigo-50 transition-all
+                      dark:border-[#333] dark:text-slate-400 dark:hover:text-indigo-400">
+                    {t}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
