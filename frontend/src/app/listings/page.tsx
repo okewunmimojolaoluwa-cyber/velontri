@@ -140,19 +140,45 @@ export default function ListingsPage() {
   const sellerIdParam   = searchParams.get('seller_id') || '';
   const sellerNameParam = searchParams.get('seller_name') || '';
 
+  // Read all filter params from URL on first load
+  const listingTypeParam = searchParams.get('listing_type') || '';
+  const categoryParam    = searchParams.get('category') || '';
+  const cityParam        = searchParams.get('city') || '';
+  const countryParam     = searchParams.get('country') || '';
+
   const [filters, setFilters] = useState<ListingFilters>(() => ({
     page: 1,
     page_size: 24,
-    seller_id: sellerIdParam || undefined,
+    seller_id:    sellerIdParam    || undefined,
+    listing_type: listingTypeParam || undefined,
+    category:     categoryParam    || undefined,
+    city:         cityParam        || undefined,
+    country:      countryParam     || undefined,
   }));
+
+  // Track active category pill for highlight state
+  const [activeCat, setActiveCat] = useState(() => {
+    if (listingTypeParam) return listingTypeParam;
+    if (categoryParam)    return categoryParam;
+    return '';
+  });
+
   const [filterOpen, setFilterOpen] = useState(false);
   const [search, setSearch]         = useState('');
-  const [activeCat, setActiveCat]   = useState('');
 
-  // Sync seller_id filter if URL param changes (e.g. browser back/forward)
+  // Sync all URL params when they change (back/forward navigation)
   useEffect(() => {
-    setFilters(p => ({ ...p, seller_id: sellerIdParam || undefined, page: 1 }));
-  }, [sellerIdParam]);
+    setFilters(p => ({
+      ...p,
+      seller_id:    sellerIdParam    || undefined,
+      listing_type: listingTypeParam || undefined,
+      category:     categoryParam    || undefined,
+      page: 1,
+    }));
+    if (listingTypeParam) setActiveCat(listingTypeParam);
+    else if (categoryParam) setActiveCat(categoryParam);
+    else if (!sellerIdParam) setActiveCat('');
+  }, [sellerIdParam, listingTypeParam, categoryParam]);
 
   const { data, isLoading, isError, refetch } = useListings(filters);
   const listings = Array.isArray(data?.data) ? data.data : [];
