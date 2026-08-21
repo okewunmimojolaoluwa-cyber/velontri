@@ -90,6 +90,9 @@ class ListingResponse(BaseModel):
     media_urls: list[str] = []          # all images in sort order
     whatsapp_number: str | None = None
     contact_phone: str | None = None
+    # Seller info — embedded at fetch time so no extra API call needed
+    seller_name: str | None = None
+    seller_verified: bool = False
     created_at: datetime
     updated_at: datetime
 

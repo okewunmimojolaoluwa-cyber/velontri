@@ -63,7 +63,12 @@ QUOTA_MAP = {
 }
 
 
-def _to_listing_response(listing: Listing, media_urls: list[str] | None = None) -> ListingResponse:
+def _to_listing_response(
+    listing: Listing,
+    media_urls: list[str] | None = None,
+    seller_name: str | None = None,
+    seller_verified: bool = False,
+) -> ListingResponse:
     urls = media_urls if media_urls is not None else (
         [listing.image_url] if listing.image_url else []
     )
@@ -89,6 +94,8 @@ def _to_listing_response(listing: Listing, media_urls: list[str] | None = None) 
         media_urls=urls,
         whatsapp_number=getattr(listing, 'whatsapp_number', None),
         contact_phone=getattr(listing, 'contact_phone', None),
+        seller_name=seller_name,
+        seller_verified=seller_verified,
         created_at=listing.created_at,
         updated_at=listing.updated_at,
     )
@@ -276,7 +283,30 @@ class MarketplaceService:
             db_rows=db_row_count,
         )
 
-        response = _to_listing_response(listing, media_urls)
+        # Fetch seller name + verification status in one query — avoids a
+        # separate frontend API call that might fail or return placeholder data.
+        seller_name: str | None = None
+        seller_verified: bool = False
+        try:
+            seller_row = (await self.session.execute(
+                _text_raw("""
+                    SELECT full_name,
+                           COALESCE(seller_verification_status, 'not_verified') AS svs
+                    FROM users
+                    WHERE CAST(id AS TEXT) = :uid
+                """),
+                {"uid": str(listing.seller_id)},
+            )).mappings().first()
+            if seller_row:
+                raw_name = seller_row["full_name"]
+                # Only use name if it's a real name (not blank, not an email)
+                if raw_name and '@' not in raw_name and raw_name.strip():
+                    seller_name = raw_name.strip()
+                seller_verified = str(seller_row["svs"]) in ("approved", "verified")
+        except Exception as _sel_err:
+            logger.warning("seller_info_fetch_failed", error=str(_sel_err))
+
+        response = _to_listing_response(listing, media_urls, seller_name=seller_name, seller_verified=seller_verified)
 
         # Only cache if we have more than 1 image — a single-image response might
         # represent an in-progress listing where extra images are still being committed.

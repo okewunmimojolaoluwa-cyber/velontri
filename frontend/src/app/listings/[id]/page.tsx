@@ -271,11 +271,11 @@ export default function ListingDetailPage() {
     staleTime: 5 * 60_000,
   });
 
-  const sellerName = sellerData?.data?.full_name || sellerData?.data?.display_name || 'Seller';
+  const sellerName = sellerData?.data?.full_name || sellerData?.data?.display_name || (listing as any)?.seller_name || 'Seller';
   const isVerifiedSeller = (
     ['approved', 'verified'].includes(sellerData?.data?.seller_verification_status ?? '') ||
     sellerData?.data?.trust_badge === 'verified' ||
-    // Immediate fallback from the listing row (set by browse endpoint)
+    // Embedded in the listing response from the backend — authoritative, no race condition
     (listing as any)?.seller_verified === true
   );
 
@@ -672,7 +672,7 @@ export default function ListingDetailPage() {
                 {/* Header */}
                 <div className="px-4 pt-4 pb-3 border-b border-slate-100">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    {sellerData?.data ? sellerName : 'Seller'}
+                    {sellerName !== 'Seller' ? sellerName : 'Seller'}
                   </p>
                 </div>
 
