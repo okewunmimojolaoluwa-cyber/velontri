@@ -73,16 +73,9 @@ export const metadata: Metadata = {
     google: 'ktrc0qoR91nvguTPGPlL35_-qR2hdUOd3K2sio-q82U',
   },
   icons: {
-    icon: [
-      { url: '/icon.png',  type: 'image/png', sizes: '32x32' },
-      { url: '/icon',      type: 'image/png', sizes: '32x32' },
-      { url: '/favicon.ico' },
-    ],
-    apple: [
-      { url: '/apple-icon.png', type: 'image/png', sizes: '180x180' },
-      { url: '/apple-icon',     type: 'image/png', sizes: '180x180' },
-    ],
-    shortcut: '/favicon.ico',
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
   },
 };
 
@@ -141,6 +134,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `(function(){try{var t=localStorage.getItem('velontri-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()`,
           }}
         />
+        {/* Favicon — explicit link tags ensure all browsers pick up the real logo */}
+        <link rel="icon" type="image/png" href="/logo.png" />
+        <link rel="shortcut icon" href="/logo.png" />
+        <link rel="apple-touch-icon" href="/logo.png" />
         {/* Organization structured data */}
         <script
           type="application/ld+json"
