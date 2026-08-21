@@ -1,64 +1,58 @@
 import type { MetadataRoute } from 'next';
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://velontri.pxxl.click';
-const API  = process.env.NEXT_PUBLIC_API_URL   ?? 'https://velontri.onrender.com/api/v1';
+// Hardcode the production URLs — env vars may not resolve in all Next.js build contexts
+const BASE = 'https://velontri.pxxl.click';
+const API  = 'https://velontri.onrender.com/api/v1';
 
-// Category slugs that have dedicated pages
 const CATEGORIES = [
   'vehicles', 'property', 'electronics', 'fashion',
   'furniture', 'jobs', 'services', 'agriculture',
   'health-beauty', 'sports', 'books',
 ];
 
-async function fetchActiveListings(): Promise<{ id: string; updated_at?: string }[]> {
+// Static routes — these NEVER fail
+const STATIC_ROUTES: MetadataRoute.Sitemap = [
+  { url: `${BASE}`,                       lastModified: new Date(), changeFrequency: 'daily',  priority: 1.0 },
+  { url: `${BASE}/listings`,              lastModified: new Date(), changeFrequency: 'hourly', priority: 0.9 },
+  { url: `${BASE}/search`,                lastModified: new Date(), changeFrequency: 'daily',  priority: 0.7 },
+  ...CATEGORIES.map(slug => ({
+    url: `${BASE}/categories/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'daily' as const,
+    priority: 0.8,
+  })),
+];
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // Always return static routes — dynamic listing URLs are a bonus if API responds
+  let listingRoutes: MetadataRoute.Sitemap = [];
+
   try {
     const controller = new AbortController();
-    // 8s timeout — if Render backend is sleeping, we skip listings gracefully
-    const timer = setTimeout(() => controller.abort(), 8000);
+    const timer = setTimeout(() => controller.abort(), 5000);
 
     const res = await fetch(`${API}/listings?page=1&page_size=500`, {
       signal: controller.signal,
-      next: { revalidate: 3600 }, // re-generate at most once per hour
+      cache: 'no-store',
     });
 
     clearTimeout(timer);
 
-    if (!res.ok) return [];
-    const json = await res.json();
-    return Array.isArray(json?.data) ? json.data : [];
+    if (res.ok) {
+      const json = await res.json();
+      const listings: { id: string; updated_at?: string }[] =
+        Array.isArray(json?.data) ? json.data : [];
+
+      listingRoutes = listings.map(l => ({
+        url: `${BASE}/listings/${l.id}`,
+        lastModified: l.updated_at ? new Date(l.updated_at) : new Date(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.6,
+      }));
+    }
   } catch {
-    // Backend unreachable (cold start, network error) — return empty list
-    // sitemap will still include static routes and categories
-    return [];
+    // API unreachable — return static routes only. This is fine.
   }
-}
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
-
-  // ── 1. Static / structural pages (always present) ─────────────────────
-  const staticRoutes: MetadataRoute.Sitemap = [
-    { url: `${BASE}`,             lastModified: now, changeFrequency: 'daily',  priority: 1.0 },
-    { url: `${BASE}/listings`,    lastModified: now, changeFrequency: 'hourly', priority: 0.9 },
-    { url: `${BASE}/search`,      lastModified: now, changeFrequency: 'daily',  priority: 0.7 },
-  ];
-
-  // ── 2. Category pages (always present) ────────────────────────────────
-  const categoryRoutes: MetadataRoute.Sitemap = CATEGORIES.map(slug => ({
-    url: `${BASE}/categories/${slug}`,
-    lastModified: now,
-    changeFrequency: 'daily' as const,
-    priority: 0.8,
-  }));
-
-  // ── 3. Dynamic listing pages (best-effort — empty if backend is down) ─
-  const listings = await fetchActiveListings();
-  const listingRoutes: MetadataRoute.Sitemap = listings.map(l => ({
-    url: `${BASE}/listings/${l.id}`,
-    lastModified: l.updated_at ? new Date(l.updated_at) : now,
-    changeFrequency: 'weekly' as const,
-    priority: 0.6,
-  }));
-
-  return [...staticRoutes, ...categoryRoutes, ...listingRoutes];
+  return [...STATIC_ROUTES, ...listingRoutes];
 }
