@@ -190,22 +190,45 @@ async def get_profile(user_id: uuid.UUID, service: UserService=Depends(_build_se
         row = (await service.session.execute(
             text("""
                 SELECT u.full_name, u.email, u.phone,
-                       COALESCE(u.seller_verification_status, 'not_verified') AS seller_verification_status
+                       COALESCE(u.seller_verification_status, 'not_verified') AS seller_verification_status,
+                       p.profile_photo_url,
+                       p.city, p.state, p.country, p.bio
                 FROM users u
-                WHERE id = :uid
+                LEFT JOIN user_profiles p ON CAST(p.user_id AS TEXT) = CAST(u.id AS TEXT)
+                WHERE CAST(u.id AS TEXT) = :uid
             """),
             {'uid': str(user_id)}
         )).fetchone()
         if row:
             if not profile_data.get('full_name'):
-                # Never expose email on public profile — use name only, fallback to 'Seller'
                 profile_data['full_name'] = row[0] or 'Seller'
             if not profile_data.get('display_name'):
                 profile_data['display_name'] = row[0] or None
             profile_data['phone'] = row[2] or profile_data.get('phone') or ''
             profile_data['seller_verification_status'] = row[3] or 'not_verified'
+            if not profile_data.get('profile_photo_url'):
+                profile_data['profile_photo_url'] = row[4] or None
+            if not profile_data.get('city'):
+                profile_data['city'] = row[5] or None
+            if not profile_data.get('state'):
+                profile_data['state'] = row[6] or None
+            if not profile_data.get('country'):
+                profile_data['country'] = row[7] or None
+            if not profile_data.get('bio'):
+                profile_data['bio'] = row[8] or None
     except Exception:
         pass
+
+    # Active listing count — useful for seller card on listing detail page
+    try:
+        count_row = (await service.session.execute(
+            text("SELECT COUNT(*) AS cnt FROM listings WHERE CAST(seller_id AS TEXT) = :uid AND status = 'active'"),
+            {'uid': str(user_id)}
+        )).fetchone()
+        profile_data['active_listing_count'] = int(count_row[0]) if count_row else 0
+    except Exception:
+        profile_data['active_listing_count'] = 0
+
     return SuccessResponse(data=profile_data)
 
 @router.post('/users/me/avatar', response_model=SuccessResponse, summary='Upload a profile avatar image')
