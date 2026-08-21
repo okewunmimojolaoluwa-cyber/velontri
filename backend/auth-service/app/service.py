@@ -722,29 +722,32 @@ class AuthService:
         Send OTP verification email.
 
         Priority:
-          1. Resend      (RESEND_API_KEY)                  - primary: reliable REST API
-          2. Gmail SMTP  (GMAIL_USER + GMAIL_APP_PASSWORD) - secondary: direct SMTP
-          3. Gmail API   (GMAIL_REFRESH_TOKEN)             - tertiary: OAuth-based Gmail API
-          4. SendGrid    (SENDGRID_API_KEY)                - last resort
-          5. Terminal print                                - dev fallback only
+          1. Brevo       (BREVO_API_KEY)                   - primary: REST API, works from Render
+          2. Resend      (RESEND_API_KEY)                   - secondary: REST API
+          3. SendGrid    (SENDGRID_API_KEY)                 - tertiary: REST API
+          4. Gmail SMTP  (GMAIL_USER + GMAIL_APP_PASSWORD)  - quaternary: SMTP (blocked on most cloud hosts)
+          5. Terminal print                                  - dev fallback only
+
+        NOTE: Gmail SMTP (ports 465/587) is intentionally last because Render and most
+        cloud platforms block outbound SMTP. Prefer REST-based providers.
         """
         import sys
-        import smtplib
-        import ssl
         import asyncio
         from email.mime.multipart import MIMEMultipart
         from email.mime.text import MIMEText
-        first_name = full_name.split()[0] if full_name else 'there'
         import os
-        gmail_user = (self.settings.GMAIL_USER or os.environ.get('GMAIL_USER', '')).strip()
-        gmail_pass = (self.settings.GMAIL_APP_PASSWORD or os.environ.get('GMAIL_APP_PASSWORD', '')).strip()
-        gmail_refresh = (self.settings.GMAIL_REFRESH_TOKEN or os.environ.get('GMAIL_REFRESH_TOKEN', '')).strip()
-        client_id = (self.settings.GOOGLE_CLIENT_ID or os.environ.get('GOOGLE_CLIENT_ID', '')).strip()
-        client_secret = (self.settings.GOOGLE_CLIENT_SECRET or os.environ.get('GOOGLE_CLIENT_SECRET', '')).strip()
-        resend_key = (self.settings.RESEND_API_KEY or '').strip()
+
+        first_name = full_name.split()[0] if full_name else 'there'
+
+        brevo_key   = (getattr(self.settings, 'BREVO_API_KEY', '') or os.environ.get('BREVO_API_KEY', '')).strip()
+        resend_key  = (self.settings.RESEND_API_KEY or '').strip()
         sendgrid_key = (self.settings.SENDGRID_API_KEY or '').strip()
-        from_name = self.settings.EMAIL_FROM_NAME or 'Velontri'
-        subject = f'Your Velontri verification code: {otp}'
+        gmail_user  = (self.settings.GMAIL_USER or os.environ.get('GMAIL_USER', '')).strip()
+        gmail_pass  = (self.settings.GMAIL_APP_PASSWORD or os.environ.get('GMAIL_APP_PASSWORD', '')).strip()
+        from_name   = self.settings.EMAIL_FROM_NAME or 'Velontri'
+        from_email  = (self.settings.EMAIL_FROM or gmail_user or 'noreply@velontri.pxxl.click').strip()
+
+        subject    = f'Your Velontri verification code: {otp}'
         plain_body = (
             f'Hi {first_name},\n\n'
             f'Your Velontri verification code is: {otp}\n\n'
@@ -753,7 +756,34 @@ class AuthService:
         )
         html_body = self._build_otp_email_html(first_name=first_name, otp=otp, ttl_minutes=ttl_minutes)
 
-        # ── 1. Resend (primary — pure HTTPS REST, works from any cloud host) ──
+        # ── 1. Brevo (primary — pure HTTPS REST, zero SMTP, works from Render) ─
+        if brevo_key:
+            try:
+                async with httpx.AsyncClient(timeout=12.0) as client:
+                    resp = await client.post(
+                        'https://api.brevo.com/v3/smtp/email',
+                        headers={
+                            'api-key': brevo_key,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                        },
+                        json={
+                            'sender': {'name': from_name, 'email': from_email},
+                            'to': [{'email': email, 'name': full_name or first_name}],
+                            'subject': subject,
+                            'htmlContent': html_body,
+                            'textContent': plain_body,
+                        },
+                    )
+                if resp.status_code in (200, 201):
+                    logger.info('email_otp_sent_brevo', email=email)
+                    return
+                logger.warning('email_otp_brevo_failed',
+                               email=email, status=resp.status_code, body=resp.text[:400])
+            except Exception as exc:
+                logger.warning('email_otp_brevo_exception', email=email, error=str(exc))
+
+        # ── 2. Resend (secondary — pure HTTPS REST) ───────────────────────────
         if resend_key:
             try:
                 resend_from = f'{from_name} <noreply@velontri.pxxl.click>'
@@ -772,23 +802,50 @@ class AuthService:
                 if resp.status_code in (200, 201):
                     logger.info('email_otp_sent_resend', email=email)
                     return
-                logger.warning('email_otp_resend_failed', email=email, status=resp.status_code, body=resp.text[:300])
+                logger.warning('email_otp_resend_failed',
+                               email=email, status=resp.status_code, body=resp.text[:300])
             except Exception as exc:
                 logger.warning('email_otp_resend_exception', email=email, error=str(exc))
 
-        # ── 2. Gmail SMTP App Password (secondary — free, no domain needed) ──
+        # ── 3. SendGrid (tertiary — pure HTTPS REST) ──────────────────────────
+        if sendgrid_key:
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    resp = await client.post(
+                        'https://api.sendgrid.com/v3/mail/send',
+                        headers={'Authorization': f'Bearer {sendgrid_key}', 'Content-Type': 'application/json'},
+                        json={
+                            'personalizations': [{'to': [{'email': email, 'name': full_name}]}],
+                            'from': {'email': from_email, 'name': from_name},
+                            'subject': subject,
+                            'content': [
+                                {'type': 'text/plain', 'value': plain_body},
+                                {'type': 'text/html',  'value': html_body},
+                            ],
+                        },
+                    )
+                if resp.status_code in (200, 201, 202):
+                    logger.info('email_otp_sent_sendgrid', email=email)
+                    return
+                logger.warning('email_otp_sendgrid_failed',
+                               email=email, status=resp.status_code, body=resp.text[:300])
+            except Exception as exc:
+                logger.warning('email_otp_sendgrid_exception', email=email, error=str(exc))
+
+        # ── 4. Gmail SMTP (last resort — blocked on Render/AWS/GCP) ──────────
         if gmail_user and gmail_pass:
+            import smtplib
+            import ssl
             try:
                 msg = MIMEMultipart('alternative')
                 msg['Subject'] = subject
-                msg['From'] = f'{from_name} <{gmail_user}>'
-                msg['To'] = email
+                msg['From']    = f'{from_name} <{gmail_user}>'
+                msg['To']      = email
                 msg.attach(MIMEText(plain_body, 'plain'))
                 msg.attach(MIMEText(html_body, 'html'))
                 ctx = ssl.create_default_context()
 
                 def _send_smtp():
-                    # Try SSL 465 first, fall back to STARTTLS 587
                     try:
                         with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=ctx, timeout=12.0) as srv:
                             srv.login(gmail_user, gmail_pass)
@@ -808,63 +865,16 @@ class AuthService:
             except Exception as exc:
                 logger.warning('email_otp_gmail_smtp_failed', email=email, error=str(exc))
 
-        # ── 3. Gmail API via OAuth2 refresh token (tertiary) ──────────────────
-        if gmail_user and gmail_refresh and client_id and client_secret:
-            try:
-                msg = MIMEMultipart('alternative')
-                msg['Subject'] = subject
-                msg['From'] = f'{from_name} <{gmail_user}>'
-                msg['To'] = email
-                msg.attach(MIMEText(plain_body, 'plain'))
-                msg.attach(MIMEText(html_body, 'html'))
-                import base64
-                raw_msg = base64.urlsafe_b64encode(msg.as_bytes()).decode()
-                async with httpx.AsyncClient(timeout=10.0) as client:
-                    token_resp = await client.post(
-                        'https://oauth2.googleapis.com/token',
-                        data={
-                            'client_id': client_id,
-                            'client_secret': client_secret,
-                            'refresh_token': gmail_refresh,
-                            'grant_type': 'refresh_token',
-                        },
-                    )
-                    token_resp.raise_for_status()
-                    access_token = token_resp.json()['access_token']
-                    send_resp = await client.post(
-                        'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
-                        headers={'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'},
-                        json={'raw': raw_msg},
-                    )
-                    send_resp.raise_for_status()
-                logger.info('email_otp_sent_gmail_api', email=email)
-                return
-            except Exception as exc:
-                logger.warning('email_otp_gmail_api_failed', email=email, error=str(exc))
-        if sendgrid_key:
-            try:
-                from_email = self.settings.EMAIL_FROM or gmail_user or 'noreply@velontri.pxxl.click'
-                async with httpx.AsyncClient(timeout=10.0) as client:
-                    resp = await client.post(
-                        'https://api.sendgrid.com/v3/mail/send',
-                        headers={'Authorization': f'Bearer {sendgrid_key}', 'Content-Type': 'application/json'},
-                        json={
-                            'personalizations': [{'to': [{'email': email, 'name': full_name}]}],
-                            'from': {'email': from_email, 'name': from_name},
-                            'subject': subject,
-                            'content': [{'type': 'text/plain', 'value': plain_body}, {'type': 'text/html', 'value': html_body}],
-                        },
-                    )
-                if resp.status_code in (200, 201, 202):
-                    logger.info('email_otp_sent_sendgrid', email=email)
-                    return
-                raise ExternalServiceError(f'SendGrid {resp.status_code}: {resp.text[:200]}')
-            except Exception as exc:
-                logger.warning('email_otp_sendgrid_failed', email=email, error=str(exc))
-        logger.warning('email_otp_no_provider', email=email)
+        # ── 5. No provider available — print to logs (dev only) ──────────────
+        logger.error(
+            'email_otp_no_provider_configured',
+            email=email,
+            hint='Set BREVO_API_KEY in Render dashboard environment variables',
+        )
         dev_msg = (
-            f"\n{'=' * 64}\n  [EMAIL OTP] No email provider configured\n"
-            f"  To:   {email}\n  CODE: {otp}  (expires {ttl_minutes} min)\n{'=' * 64}\n"
+            f"\n{'=' * 64}\n  [EMAIL OTP — NO PROVIDER CONFIGURED]\n"
+            f"  To:   {email}\n  CODE: {otp}  (expires {ttl_minutes} min)\n"
+            f"  Fix:  Set BREVO_API_KEY in Render dashboard\n{'=' * 64}\n"
         )
         try:
             print(dev_msg, flush=True)

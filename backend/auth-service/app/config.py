@@ -35,9 +35,9 @@ class AuthSettings(BaseServiceSettings):
     APPLE_PRIVATE_KEY: str = Field(default="", description="Apple private key (PEM)")
 
     # Email providers — set ONE of these to enable real email sending
-    BREVO_API_KEY: str = Field(default="", description="Brevo API key for transactional email (api.brevo.com)")
+    BREVO_API_KEY: str = Field(default="", description="Brevo (Sendinblue) API key — primary for Render deployments")
+    RESEND_API_KEY: str = Field(default="", description="Resend API key (resend.com)")
     SENDGRID_API_KEY: str = Field(default="", description="SendGrid API key for transactional email")
-    RESEND_API_KEY: str = Field(default="", description="Resend API key (resend.com) — alternative to SendGrid")
     EMAIL_FROM: str = Field(default="", description="From address (your Gmail address)")
     EMAIL_FROM_NAME: str = Field(default="Velontri", description="From name for transactional emails")
 
