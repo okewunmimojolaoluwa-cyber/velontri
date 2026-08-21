@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   SlidersHorizontal, X, Search, MapPin, Car, Home,
   Smartphone, Shirt, Briefcase, ShoppingBag, Zap,
-  ChevronRight, Package,
+  ChevronRight, Package, ArrowLeft,
 } from 'lucide-react';
 import { useListings } from '@/features/listings/hooks/use-listings';
 import { Navbar } from '@/components/layout/navbar';
@@ -135,10 +136,23 @@ function BrowseSkeleton() {
 
 /* ── Page ─────────────────────────────────────────────────── */
 export default function ListingsPage() {
-  const [filters, setFilters] = useState<ListingFilters>({ page: 1, page_size: 24 });
+  const searchParams = useSearchParams();
+  const sellerIdParam   = searchParams.get('seller_id') || '';
+  const sellerNameParam = searchParams.get('seller_name') || '';
+
+  const [filters, setFilters] = useState<ListingFilters>(() => ({
+    page: 1,
+    page_size: 24,
+    seller_id: sellerIdParam || undefined,
+  }));
   const [filterOpen, setFilterOpen] = useState(false);
-  const [search, setSearch]       = useState('');
-  const [activeCat, setActiveCat] = useState('');
+  const [search, setSearch]         = useState('');
+  const [activeCat, setActiveCat]   = useState('');
+
+  // Sync seller_id filter if URL param changes (e.g. browser back/forward)
+  useEffect(() => {
+    setFilters(p => ({ ...p, seller_id: sellerIdParam || undefined, page: 1 }));
+  }, [sellerIdParam]);
 
   const { data, isLoading, isError, refetch } = useListings(filters);
   const listings = Array.isArray(data?.data) ? data.data : [];
@@ -151,7 +165,7 @@ export default function ListingsPage() {
   }
 
   function clear() {
-    setFilters({ page: 1, page_size: 24 });
+    setFilters({ page: 1, page_size: 24, seller_id: sellerIdParam || undefined });
     setActiveCat('');
     setSearch('');
   }
@@ -177,41 +191,64 @@ export default function ListingsPage() {
       <Navbar />
 
       {/* ── Hero Banner ─────────────────────────────────────── */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] py-14 sm:py-20">
-        {/* Decorative blur blobs */}
-        <div className="pointer-events-none absolute -top-20 -left-20 h-64 w-64 rounded-full bg-indigo-600/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-violet-600/20 blur-3xl" />
-
-        <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 text-center">
-          <h1 className="mb-3 font-black text-white"
-            style={{ fontSize: 'clamp(1.8rem, 4vw, 3rem)', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
-            Browse listings
-          </h1>
-          <p className="mb-8 text-[15px] text-white/60 max-w-md mx-auto">
-            Vehicles, property, electronics, fashion and more — direct from sellers via WhatsApp.
-          </p>
-
-          {/* Search bar */}
-          <form onSubmit={handleSearch}
-            className="mx-auto flex max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl shadow-black/30">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search listings…"
-                className="h-14 w-full bg-transparent pl-11 pr-4 text-[15px] text-slate-800
-                  placeholder-slate-400 outline-none"
-              />
-            </div>
-            <button type="submit"
-              className="flex items-center gap-2 bg-indigo-600 px-6 text-[14px] font-bold
-                text-white transition-colors hover:bg-indigo-700 flex-shrink-0">
-              <Search className="h-4 w-4" /> Search
+      {sellerIdParam ? (
+        /* Seller store banner */
+        <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-violet-900 py-10 sm:py-14">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6">
+            <button
+              onClick={() => window.history.back()}
+              className="mb-4 flex items-center gap-1.5 text-indigo-300 hover:text-white transition-colors text-[13px] font-semibold"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back
             </button>
-          </form>
+            <div className="flex items-center gap-4">
+              {/* Seller initial avatar */}
+              <div className="h-16 w-16 flex-shrink-0 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center text-white text-[22px] font-black uppercase shadow-lg">
+                {sellerNameParam ? sellerNameParam.split(' ').map(w => w[0]).slice(0, 2).join('') : 'S'}
+              </div>
+              <div>
+                <p className="text-indigo-300 text-[11px] font-bold uppercase tracking-widest mb-0.5">Seller Store</p>
+                <h1 className="text-white font-black text-[1.6rem] leading-tight tracking-tight">
+                  {sellerNameParam || 'Seller'}
+                </h1>
+                <p className="text-indigo-300 text-[13px] mt-0.5">All active listings</p>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        /* Default hero */
+        <div className="relative overflow-hidden bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] py-14 sm:py-20">
+          <div className="pointer-events-none absolute -top-20 -left-20 h-64 w-64 rounded-full bg-indigo-600/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-violet-600/20 blur-3xl" />
+          <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 text-center">
+            <h1 className="mb-3 font-black text-white"
+              style={{ fontSize: 'clamp(1.8rem, 4vw, 3rem)', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+              Browse listings
+            </h1>
+            <p className="mb-8 text-[15px] text-white/60 max-w-md mx-auto">
+              Vehicles, property, electronics, fashion and more — direct from sellers via WhatsApp.
+            </p>
+            {/* Search bar */}
+            <form onSubmit={handleSearch}
+              className="mx-auto flex max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl shadow-black/30">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search listings…"
+                  className="h-14 w-full bg-transparent pl-11 pr-4 text-[15px] text-slate-800 placeholder-slate-400 outline-none"
+                />
+              </div>
+              <button type="submit"
+                className="flex items-center gap-2 bg-indigo-600 px-6 text-[14px] font-bold text-white transition-colors hover:bg-indigo-700 flex-shrink-0">
+                <Search className="h-4 w-4" /> Search
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ── Category pills ───────────────────────────────────── */}
       <div className="sticky top-0 z-20 border-b border-slate-200 bg-white shadow-sm">

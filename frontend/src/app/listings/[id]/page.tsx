@@ -272,7 +272,12 @@ export default function ListingDetailPage() {
   });
 
   const sellerName = sellerData?.data?.full_name || sellerData?.data?.display_name || 'Seller';
-  const isVerifiedSeller = ['approved', 'verified'].includes(sellerData?.data?.seller_verification_status ?? '') || sellerData?.data?.trust_badge === 'verified';
+  const isVerifiedSeller = (
+    ['approved', 'verified'].includes(sellerData?.data?.seller_verification_status ?? '') ||
+    sellerData?.data?.trust_badge === 'verified' ||
+    // Immediate fallback from the listing row (set by browse endpoint)
+    (listing as any)?.seller_verified === true
+  );
 
   const { data: reviewsData } = useQuery({
     queryKey: ['listing-reviews', id],
@@ -666,7 +671,9 @@ export default function ListingDetailPage() {
               <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
                 {/* Header */}
                 <div className="px-4 pt-4 pb-3 border-b border-slate-100">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Seller</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    {sellerData?.data ? sellerName : 'Seller'}
+                  </p>
                 </div>
 
                 <div className="p-4 space-y-4">
@@ -739,13 +746,13 @@ export default function ListingDetailPage() {
                   {/* Navigation actions */}
                   <div className="flex gap-2 pt-1">
                     <button
-                      onClick={() => router.push(`/listings?seller_id=${listing.seller_id}`)}
+                      onClick={() => router.push(`/listings?seller_id=${listing.seller_id}&seller_name=${encodeURIComponent(sellerName)}`)}
                       className="flex-1 h-9 rounded-xl border border-slate-200 bg-white text-[12px] font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 active:scale-[0.99] transition-all"
                     >
                       View Listings
                     </button>
                     <button
-                      onClick={() => router.push(`/listings?seller_id=${listing.seller_id}`)}
+                      onClick={() => router.push(`/listings?seller_id=${listing.seller_id}&seller_name=${encodeURIComponent(sellerName)}`)}
                       className="flex-1 h-9 rounded-xl border border-indigo-200 bg-indigo-50 text-[12px] font-semibold text-indigo-700 hover:bg-indigo-100 active:scale-[0.99] transition-all"
                     >
                       View Store
