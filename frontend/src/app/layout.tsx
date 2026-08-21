@@ -72,6 +72,15 @@ export const metadata: Metadata = {
   verification: {
     google: 'ktrc0qoR91nvguTPGPlL35_-qR2hdUOd3K2sio-q82U',
   },
+  icons: {
+    icon: [
+      { url: '/icon', type: 'image/png', sizes: '32x32' },
+    ],
+    apple: [
+      { url: '/apple-icon', type: 'image/png', sizes: '180x180' },
+    ],
+    shortcut: '/icon',
+  },
 };
 
 export const viewport: Viewport = {
