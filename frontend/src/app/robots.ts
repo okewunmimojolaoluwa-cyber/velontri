@@ -1,19 +1,14 @@
 import type { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://velontri.pxxl.click';
-
   return {
     rules: [
       {
         userAgent: '*',
         allow: [
           '/',
-          '/listings',
           '/listings/',
           '/categories/',
-          '/search',
-          '/stores/',
         ],
         disallow: [
           '/dashboard/',
@@ -25,23 +20,12 @@ export default function robots(): MetadataRoute.Robots {
           '/forgot-password',
           '/verify-phone',
           '/verify-2fa',
-          '/dashboard/messages/',
-          '/dashboard/settings/',
-          '/dashboard/security/',
-        ],
-      },
-      {
-        userAgent: 'Googlebot',
-        allow: '/',
-        disallow: [
-          '/dashboard/',
-          '/admin/',
-          '/mod/',
-          '/api/',
+          '/auth/',
+          '/search',    // search result pages should not be indexed
         ],
       },
     ],
-    sitemap: `${base}/sitemap.xml`,
-    host: base,
+    // Hardcoded — never rely on env vars here
+    sitemap: 'https://velontri.pxxl.click/sitemap.xml',
   };
 }
