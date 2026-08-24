@@ -66,6 +66,8 @@ const PUBLIC: RegExp[] = [
   /^\/favicon/,
   /^\/static\//,
   /^\/images\//,
+  /^\/sitemap\.xml$/,    // sitemap must be unconditionally public
+  /^\/robots\.txt$/,    // robots.txt must be unconditionally public
   /^\/$/, // home page
   /^\/listings(\/products|\/services|\/jobs|\/property|\/vehicles)?$/,
   /^\/listings\/[^/]+$/,
@@ -353,7 +355,9 @@ export const config = {
      *   favicon.ico   — browser icon
      *   image files   — .png .jpg .jpeg .gif .svg .ico .webp
      *   font files    — .woff .woff2 .ttf .eot
+     *   sitemap.xml   — must reach Googlebot unmodified
+     *   robots.txt    — must reach Googlebot unmodified
      */
-    '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|woff2?|ttf|eot)).*)',
+    '/((?!_next/static|_next/image|favicon\\.ico|sitemap\\.xml|robots\\.txt|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|woff2?|ttf|eot)).*)',
   ],
 };
