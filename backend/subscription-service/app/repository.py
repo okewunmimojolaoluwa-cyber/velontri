@@ -11,12 +11,23 @@ from .models import Invoice, Subscription
 
 
 async def get_or_create_subscription(session: AsyncSession, user_id: uuid.UUID) -> Subscription:
-    result = await session.execute(select(Subscription).where(Subscription.user_id == user_id))
-    sub = result.scalars().first()
-    if sub is None:
-        sub = Subscription(user_id=user_id, tier="starter", is_active=True)
-        session.add(sub)
-        await session.flush()
+    # Use CAST to handle text vs UUID type mismatch in the DB
+    from sqlalchemy import text as _text
+    row = (await session.execute(
+        _text("SELECT id FROM subscriptions WHERE CAST(user_id AS TEXT) = :uid ORDER BY created_at DESC LIMIT 1"),
+        {"uid": str(user_id)},
+    )).fetchone()
+
+    if row is not None:
+        result = await session.execute(select(Subscription).where(Subscription.id == str(row[0])))
+        sub = result.scalars().first()
+        if sub:
+            return sub
+
+    # No existing subscription — create starter
+    sub = Subscription(user_id=str(user_id), tier="starter", is_active=True)
+    session.add(sub)
+    await session.flush()
     return sub
 
 
