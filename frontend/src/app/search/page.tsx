@@ -284,6 +284,7 @@ function SearchInner() {
 
   const [query,      setQuery]      = useState(sp.get('q') ?? '');
   const [committed,  setCommitted]  = useState(sp.get('q') ?? '');
+  const cityParam = sp.get('city') ?? '';
   const [page,       setPage]       = useState(1);
   const [sort,       setSort]       = useState<SortValue>('newest');
   const [dropOpen,   setDropOpen]   = useState(false);
@@ -338,6 +339,7 @@ function SearchInner() {
     ...(condition  ? { condition }  : {}),
     ...(minPrice   ? { price_min: Number(minPrice) } : {}),
     ...(maxPrice   ? { price_max: Number(maxPrice) } : {}),
+    ...(cityParam  ? { city: cityParam } : {}),
   };
 
   const { data, isLoading, isError, isFetching } = useQuery({

@@ -535,15 +535,38 @@ export default function CreateListingPage() {
                 <label className="block text-xs font-bold text-slate-600 mb-1.5">
                   Price <span className="text-red-500">*</span>
                 </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500">₦</span>
+                <div className="flex gap-2">
+                  <select
+                    value={form.currency}
+                    onChange={e => setForm(f => ({ ...f, currency: e.target.value }))}
+                    className="h-10 rounded-xl border border-slate-200 px-2 text-sm text-slate-700
+                      focus:border-indigo-400 focus:outline-none w-24 flex-shrink-0"
+                  >
+                    <option value="NGN">₦ NGN</option>
+                    <option value="GHS">₵ GHS</option>
+                    <option value="KES">Ksh KES</option>
+                    <option value="ZAR">R ZAR</option>
+                    <option value="XOF">XOF</option>
+                    <option value="XAF">XAF</option>
+                    <option value="EGP">£ EGP</option>
+                    <option value="MAD">MAD</option>
+                    <option value="TZS">TZS</option>
+                    <option value="UGX">UGX</option>
+                    <option value="ETB">ETB</option>
+                    <option value="RWF">RWF</option>
+                    <option value="AOA">AOA</option>
+                    <option value="ZMW">ZMW</option>
+                    <option value="USD">$ USD</option>
+                    <option value="EUR">€ EUR</option>
+                    <option value="GBP">£ GBP</option>
+                  </select>
                   <Input
                     type="number"
                     value={form.price}
                     onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
                     placeholder="0"
-                    className="pl-8"
                     min="0"
+                    className="flex-1"
                   />
                 </div>
               </div>
@@ -786,7 +809,7 @@ export default function CreateListingPage() {
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-base font-bold text-slate-900">{form.title}</p>
                   <span className="text-lg font-black text-indigo-600 whitespace-nowrap">
-                    ₦{parseFloat(form.price || '0').toLocaleString()}
+                    {form.currency} {parseFloat(form.price || '0').toLocaleString()}
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-2">

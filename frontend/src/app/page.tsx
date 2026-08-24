@@ -62,7 +62,62 @@ function getSectionVisibility(): Record<string, boolean> {
 }
 
 
-/* ── Testimonials (static — marketing copy) ────────── */
+/* ── African locations ─────────────────────────────────── */
+const AFRICA_LOCATIONS = [
+  { label: '🌍 All Africa', value: '' },
+  // Nigeria
+  { label: '🇳🇬 Lagos', value: 'Lagos' },
+  { label: '🇳🇬 Abuja', value: 'Abuja' },
+  { label: '🇳🇬 Port Harcourt', value: 'Port Harcourt' },
+  { label: '🇳🇬 Kano', value: 'Kano' },
+  { label: '🇳🇬 Ibadan', value: 'Ibadan' },
+  { label: '🇳🇬 Abeokuta', value: 'Abeokuta' },
+  { label: '🇳🇬 Enugu', value: 'Enugu' },
+  { label: '🇳🇬 Benin City', value: 'Benin City' },
+  { label: '🇳🇬 Kaduna', value: 'Kaduna' },
+  { label: '🇳🇬 Warri', value: 'Warri' },
+  // Ghana
+  { label: '🇬🇭 Accra', value: 'Accra' },
+  { label: '🇬🇭 Kumasi', value: 'Kumasi' },
+  { label: '🇬🇭 Tamale', value: 'Tamale' },
+  // Kenya
+  { label: '🇰🇪 Nairobi', value: 'Nairobi' },
+  { label: '🇰🇪 Mombasa', value: 'Mombasa' },
+  { label: '🇰🇪 Kisumu', value: 'Kisumu' },
+  // South Africa
+  { label: '🇿🇦 Johannesburg', value: 'Johannesburg' },
+  { label: '🇿🇦 Cape Town', value: 'Cape Town' },
+  { label: '🇿🇦 Durban', value: 'Durban' },
+  { label: '🇿🇦 Pretoria', value: 'Pretoria' },
+  // Tanzania
+  { label: '🇹🇿 Dar es Salaam', value: 'Dar es Salaam' },
+  { label: '🇹🇿 Dodoma', value: 'Dodoma' },
+  // Uganda
+  { label: '🇺🇬 Kampala', value: 'Kampala' },
+  // Rwanda
+  { label: '🇷🇼 Kigali', value: 'Kigali' },
+  // Cameroon
+  { label: '🇨🇲 Douala', value: 'Douala' },
+  { label: '🇨🇲 Yaoundé', value: 'Yaoundé' },
+  // Senegal
+  { label: '🇸🇳 Dakar', value: 'Dakar' },
+  // Côte d'Ivoire
+  { label: '🇨🇮 Abidjan', value: 'Abidjan' },
+  // Ethiopia
+  { label: '🇪🇹 Addis Ababa', value: 'Addis Ababa' },
+  // Egypt
+  { label: '🇪🇬 Cairo', value: 'Cairo' },
+  { label: '🇪🇬 Alexandria', value: 'Alexandria' },
+  // Morocco
+  { label: '🇲🇦 Casablanca', value: 'Casablanca' },
+  { label: '🇲🇦 Rabat', value: 'Rabat' },
+  // Angola
+  { label: '🇦🇴 Luanda', value: 'Luanda' },
+  // Zambia
+  { label: '🇿🇲 Lusaka', value: 'Lusaka' },
+  // Zimbabwe
+  { label: '🇿🇼 Harare', value: 'Harare' },
+] as const;
 const REVIEWS = [
   {
     q: 'I listed my iPhone and got a WhatsApp message within 10 minutes. The buyer came, inspected it, and paid cash. Simple and fast.',
@@ -118,6 +173,8 @@ export default function HomePage() {
   const [cat,      setCat]      = useState('All');
   const [open,     setOpen]     = useState(false);
   const [appStore, setAppStore] = useState<'google' | 'apple' | null>(null);
+  const [location, setLocation] = useState('');
+  const [locOpen,  setLocOpen]  = useState(false);
 
   // Read homepage section visibility from admin settings
   const [sectionVis, setSectionVis] = useState<Record<string, boolean>>({});
@@ -169,6 +226,17 @@ export default function HomePage() {
     window.addEventListener('resize', fn);
     return () => window.removeEventListener('resize', fn);
   }, []);
+
+  /* close location dropdown on outside click */
+  useEffect(() => {
+    if (!locOpen) return;
+    const fn = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-loc-picker]')) setLocOpen(false);
+    };
+    document.addEventListener('mousedown', fn);
+    return () => document.removeEventListener('mousedown', fn);
+  }, [locOpen]);
 
   /* ── Hamburger: premium indigo gradient pill ── */
   const barBase: React.CSSProperties = {
@@ -336,26 +404,64 @@ export default function HomePage() {
               {/* Search bar */}
               <div className="mb-4 flex items-stretch overflow-hidden rounded-xl border-2 border-slate-200
                 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.07)] transition-colors focus-within:border-indigo-400">
-                <div className="hidden items-center gap-1.5 border-r border-slate-200 px-3.5
-                  text-slate-400 transition-colors hover:bg-slate-50 sm:flex">
-                  <MapPin size={13} />
-                  <span className="whitespace-nowrap text-[12px]">Lagos</span>
-                  <ChevronDown size={12} className="text-slate-300" />
+
+                {/* Location selector */}
+                <div className="relative hidden sm:flex" data-loc-picker>
+                  <button
+                    type="button"
+                    onClick={() => setLocOpen(v => !v)}
+                    className="flex items-center gap-1.5 border-r border-slate-200 px-3.5
+                      text-slate-500 hover:bg-slate-50 transition-colors whitespace-nowrap text-[12px]
+                      min-w-[110px] max-w-[140px] truncate"
+                  >
+                    <MapPin size={13} className="flex-shrink-0 text-indigo-500" />
+                    <span className="truncate">
+                      {location || 'All Africa'}
+                    </span>
+                    <ChevronDown size={12} className="flex-shrink-0 text-slate-300 ml-auto" />
+                  </button>
+                  {locOpen && (
+                    <div
+                      className="absolute left-0 top-full z-50 mt-1 w-56 max-h-72 overflow-y-auto
+                        rounded-xl border border-slate-200 bg-white shadow-xl"
+                      style={{ scrollbarWidth: 'thin' }}
+                    >
+                      {AFRICA_LOCATIONS.map(loc => (
+                        <button
+                          key={loc.value}
+                          type="button"
+                          onClick={() => { setLocation(loc.value); setLocOpen(false); }}
+                          className={`w-full text-left px-4 py-2.5 text-[13px] transition-colors
+                            hover:bg-indigo-50 hover:text-indigo-700
+                            ${location === loc.value ? 'bg-indigo-50 font-semibold text-indigo-700' : 'text-slate-700'}`}
+                        >
+                          {loc.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
                 <input
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && query.trim())
-                      window.location.href = `/search?q=${encodeURIComponent(query.trim())}`;
+                    if (e.key === 'Enter' && query.trim()) {
+                      const loc = location ? `&city=${encodeURIComponent(location)}` : '';
+                      window.location.href = `/search?q=${encodeURIComponent(query.trim())}${loc}`;
+                    }
                   }}
                   placeholder="Search cars, phones, properties, jobs…"
                   className="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-[14px] text-slate-800
                     placeholder-slate-400 outline-none"
                 />
                 <Link
-                  href={query.trim() ? `/search?q=${encodeURIComponent(query.trim())}` : ROUTES.search}
+                  href={
+                    query.trim()
+                      ? `/search?q=${encodeURIComponent(query.trim())}${location ? `&city=${encodeURIComponent(location)}` : ''}`
+                      : `${ROUTES.search}${location ? `?city=${encodeURIComponent(location)}` : ''}`
+                  }
                   className="m-1.5 flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600
                     px-4 text-[13px] font-bold text-white no-underline transition-colors hover:bg-indigo-700">
                   <Search size={13} />

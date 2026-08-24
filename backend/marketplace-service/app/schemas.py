@@ -8,7 +8,58 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-VALID_CURRENCIES = {"NGN", "GHS", "KES", "ZAR", "XOF"}
+VALID_CURRENCIES = {
+    # West Africa
+    "NGN",  # Nigerian Naira
+    "GHS",  # Ghanaian Cedi
+    "XOF",  # CFA Franc BCEAO (Senegal, Côte d'Ivoire, Mali, Burkina Faso, Niger, Togo, Benin, Guinea-Bissau)
+    "XAF",  # CFA Franc BEAC (Cameroon, Chad, CAR, Congo, Gabon, Equatorial Guinea)
+    "GMD",  # Gambian Dalasi
+    "GNF",  # Guinean Franc
+    "LRD",  # Liberian Dollar
+    "MRU",  # Mauritanian Ouguiya
+    "SLL",  # Sierra Leonean Leone
+    "CVE",  # Cape Verdean Escudo
+    # East Africa
+    "KES",  # Kenyan Shilling
+    "TZS",  # Tanzanian Shilling
+    "UGX",  # Ugandan Shilling
+    "RWF",  # Rwandan Franc
+    "BIF",  # Burundian Franc
+    "ETB",  # Ethiopian Birr
+    "SOS",  # Somali Shilling
+    "DJF",  # Djiboutian Franc
+    "ERN",  # Eritrean Nakfa
+    "SCR",  # Seychellois Rupee
+    "KMF",  # Comorian Franc
+    "MUR",  # Mauritian Rupee
+    "MGA",  # Malagasy Ariary
+    # Southern Africa
+    "ZAR",  # South African Rand
+    "BWP",  # Botswana Pula
+    "NAD",  # Namibian Dollar
+    "ZMW",  # Zambian Kwacha
+    "ZWL",  # Zimbabwean Dollar
+    "MWK",  # Malawian Kwacha
+    "MOZ",  # Mozambican Metical (MZN)
+    "MZN",  # Mozambican Metical
+    "LSL",  # Lesotho Loti
+    "SZL",  # Swazi Lilangeni
+    # North Africa
+    "EGP",  # Egyptian Pound
+    "MAD",  # Moroccan Dirham
+    "TND",  # Tunisian Dinar
+    "DZD",  # Algerian Dinar
+    "LYD",  # Libyan Dinar
+    "SDG",  # Sudanese Pound
+    # Central Africa
+    "AOA",  # Angolan Kwanza
+    "CDF",  # Congolese Franc
+    # International (widely used on the continent)
+    "USD",  # US Dollar
+    "EUR",  # Euro
+    "GBP",  # British Pound
+}
 VALID_LISTING_TYPES = {"physical", "digital", "job", "property", "vehicle", "service"}
 VALID_CONDITIONS = {"new", "used", "refurbished"}
 VALID_TIERS_WITH_360 = {"pro", "enterprise"}
