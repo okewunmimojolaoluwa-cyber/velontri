@@ -21,11 +21,10 @@ export default function robots(): MetadataRoute.Robots {
           '/verify-phone',
           '/verify-2fa',
           '/auth/',
-          '/search',    // search result pages should not be indexed
+          '/search',
         ],
       },
     ],
-    // Hardcoded — never rely on env vars here
     sitemap: 'https://velontri.pxxl.click/sitemap.xml',
   };
 }
