@@ -167,15 +167,37 @@ export default function CreateListingPage() {
     staleTime: 30_000,
   });
 
-  // Get plan from localStorage (set by subscription page after "upgrading")
-  const storedPlan = typeof window !== 'undefined'
-    ? (localStorage.getItem('velontri_plan') ?? 'free')
-    : 'free';
+  // ── Fetch real subscription tier from API (never trust localStorage) ─
+  const { data: subData, isLoading: subLoading } = useQuery({
+    queryKey: [uid, 'subscription'],
+    queryFn: async () => {
+      const { apiClient } = await import('@/lib/api/client');
+      const res = await apiClient.get<{ data: { tier: string; is_active: boolean } }>('/subscriptions/me');
+      return res.data?.data ?? null;
+    },
+    enabled: !!session.isAuthenticated,
+    staleTime: 60_000,
+  });
+
+  // Map internal tier names (growth/pro) back to frontend plan names
+  const TIER_TO_PLAN: Record<string, string> = {
+    starter: 'free',   // internal 'starter' = free plan
+    growth:  'starter', // internal 'growth'  = Starter plan (₦2,500/mo)
+    pro:     'business', // internal 'pro'     = Business plan (₦7,500/mo)
+    enterprise: 'enterprise',
+  };
+
+  const apiTier    = subData?.tier ?? 'starter';
+  const effectivePlan = TIER_TO_PLAN[apiTier] ?? 'free';
+
+  // Sync localStorage so other parts of the app stay consistent
+  if (typeof window !== 'undefined' && subData?.tier) {
+    try { localStorage.setItem('velontri_plan', effectivePlan); } catch {}
+  }
 
   const activeCount   = listingsData?.meta?.total ?? 0;
-  const planLimit     = getPlanLimit(storedPlan);
+  const planLimit     = getPlanLimit(effectivePlan);
   const atLimit       = activeCount >= planLimit;
-  const effectivePlan = storedPlan;
   const [form, setForm] = useState({
     listing_type: '',
     title: '',
@@ -362,7 +384,7 @@ export default function CreateListingPage() {
       </div>
 
       {/* ── Quota loading ── */}
-      {quotaLoading && (
+      {(quotaLoading || subLoading) && (
         <div className="flex items-center justify-center py-12">
           <svg className="h-8 w-8 animate-spin text-indigo-600" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
@@ -372,7 +394,7 @@ export default function CreateListingPage() {
       )}
 
       {/* ── Limit gate — shown when at/over quota ── */}
-      {!quotaLoading && atLimit && (
+      {!quotaLoading && !subLoading && atLimit && (
         <ListingLimitGate
           current={activeCount}
           limit={planLimit}
@@ -381,7 +403,7 @@ export default function CreateListingPage() {
       )}
 
       {/* ── Create wizard — only shown when under quota ── */}
-      {!quotaLoading && !atLimit && (
+      {!quotaLoading && !subLoading && !atLimit && (
         <>
           {/* Usage bar */}
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
