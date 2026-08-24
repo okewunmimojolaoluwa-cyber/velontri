@@ -1,153 +1,213 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, Menu, X, ChevronDown, LogOut, LayoutDashboard, User, CreditCard, Store } from 'lucide-react';
+import {
+  Menu, X, ChevronDown, LogOut, LayoutDashboard,
+  User, CreditCard, Store, Plus, Bell,
+} from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/features/auth/auth-provider';
 import { ROUTES, resolveHomePath } from '@/config/routes';
-import { clearTokens, getRefreshToken } from '@/lib/auth/token-refresh';
+import { getRefreshToken } from '@/lib/auth/token-refresh';
 import { authApi } from '@/lib/api/endpoints/auth';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { VelontriLogo } from '@/components/ui/velontri-logo';
 
+/* ── Nav items — visible to all guests ── */
 const NAV_LINKS = [
-  { label: 'Browse',  href: ROUTES.listings },
-  { label: 'Search',  href: ROUTES.search },
-  { label: 'Pricing', href: '/subscriptions/tiers' },
-];
+  { label: 'Browse',     href: ROUTES.listings },
+  { label: 'Vehicles',   href: '/listings?listing_type=vehicle' },
+  { label: 'Property',   href: '/listings?listing_type=property' },
+  { label: 'Electronics',href: '/listings?category=Electronics' },
+  { label: 'Pricing',    href: '/subscriptions/tiers' },
+] as const;
 
 export function Navbar() {
   const { session, logout: authLogout } = useAuth();
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
-  // Use mounted state so SSR always renders guest state — prevents hydration mismatch
   const isAuth = mounted && session?.isAuthenticated;
-  const pathname = usePathname();
-  const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [userOpen, setUserOpen] = useState(false);
 
-  const isHomePage = (pathname as string) === ROUTES.home;
+  const pathname = usePathname();
+  const [scrolled,  setScrolled]  = useState(false);
+  const [menuOpen,  setMenuOpen]  = useState(false);
+  const [userOpen,  setUserOpen]  = useState(false);
+  const userRef = useRef<HTMLDivElement>(null);
+
+  const isHomePage  = pathname === ROUTES.home;
   const transparent = isHomePage && !scrolled && !menuOpen;
 
+  /* Scroll listener */
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 48);
+    const fn = () => setScrolled(window.scrollY > 40);
     window.addEventListener('scroll', fn, { passive: true });
     fn();
     return () => window.removeEventListener('scroll', fn);
   }, []);
 
+  /* Close everything on route change */
   useEffect(() => { setMenuOpen(false); setUserOpen(false); }, [pathname]);
+
+  /* Close user dropdown on outside click */
+  useEffect(() => {
+    if (!userOpen) return;
+    const fn = (e: MouseEvent) => {
+      if (userRef.current && !userRef.current.contains(e.target as Node)) {
+        setUserOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', fn);
+    return () => document.removeEventListener('mousedown', fn);
+  }, [userOpen]);
 
   async function logout() {
     try { const rt = getRefreshToken(); if (rt) await authApi.logout(rt); } catch (_) {}
-    authLogout(); window.location.href = '/';
+    authLogout();
+    window.location.href = '/';
   }
 
-  const dashPath = session ? resolveHomePath(session.role) : ROUTES.dashboard;
-  const initials = session?.userId?.slice(0, 2).toUpperCase() ?? 'V';
-  const roleName = session?.role ?? 'account';
+  const dashPath  = session ? resolveHomePath(session.role) : ROUTES.dashboard;
+  const initials  = (session?.userId?.slice(0, 2) ?? 'V').toUpperCase();
+  const roleName  = session?.role ?? 'account';
+
+  /* ── Active link check ── */
+  function isActive(href: string) {
+    if (href === ROUTES.listings) return pathname === ROUTES.listings;
+    return pathname.startsWith(href.split('?')[0]);
+  }
 
   return (
     <>
       <header
         className={cn(
-          'fixed inset-x-0 top-0 z-50 transition-all duration-300 ease-out',
+          'fixed inset-x-0 top-0 z-50 transition-all duration-300',
           transparent
             ? 'bg-transparent'
-            : 'bg-[hsl(var(--background)/0.94)] backdrop-blur-xl border-b border-[hsl(var(--border)/0.8)] shadow-[0_1px_0_0_hsl(var(--border)/0.6)]',
+            : 'bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl shadow-[0_1px_0_0_rgba(0,0,0,0.07)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)]',
         )}
       >
-        <div className="mx-auto flex h-[64px] max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-12">
+        <div className="mx-auto flex h-[62px] max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-10">
 
-          {/* ── Logo ── */}
-          <Link href="/" className="flex flex-shrink-0 items-center gap-2.5 no-underline" aria-label="Velontri home">
-            <VelontriLogo size={34} showWordmark wordmarkSize="md"
+          {/* ── Logo ─────────────────────────────── */}
+          <Link
+            href="/"
+            className="flex flex-shrink-0 items-center gap-2.5 no-underline"
+            aria-label="Velontri home"
+          >
+            <VelontriLogo
+              size={32}
+              showWordmark
+              wordmarkSize="md"
               wordmarkClassName={cn(
-                'transition-colors',
-                transparent ? 'text-white' : 'text-[hsl(var(--foreground))]',
-              )} />
+                'transition-colors font-black tracking-tight',
+                transparent ? 'text-white' : 'text-slate-900 dark:text-white',
+              )}
+            />
           </Link>
 
-          {/* ── Desktop centre nav ── */}
-          <nav className="hidden items-center gap-0.5 md:flex" aria-label="Primary">
+          {/* ── Divider (desktop) ─────────────────── */}
+          <div className={cn(
+            'hidden md:block h-5 w-px flex-shrink-0 transition-colors',
+            transparent ? 'bg-white/20' : 'bg-slate-200 dark:bg-slate-700',
+          )} />
+
+          {/* ── Desktop nav links ─────────────────── */}
+          <nav className="hidden md:flex items-center gap-0" aria-label="Primary navigation">
             {NAV_LINKS.map(({ label, href }) => {
-              const active = (pathname as string) === href;
+              const active = isActive(href);
               return (
                 <Link
                   key={href}
                   href={href}
                   className={cn(
-                    'relative rounded-lg px-3.5 py-2 text-[0.8125rem] font-medium transition-colors',
+                    'relative flex items-center px-3.5 py-2 text-[13px] font-medium rounded-lg transition-colors duration-150',
                     transparent
                       ? active
                         ? 'text-white'
-                        : 'text-white/65 hover:text-white'
+                        : 'text-white/60 hover:text-white hover:bg-white/10'
                       : active
-                        ? 'text-[hsl(var(--foreground))] bg-[hsl(var(--muted))]'
-                        : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]',
+                        ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800'
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/60',
                   )}
                 >
                   {label}
                   {active && !transparent && (
-                    <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-0.5 w-4 rounded-full bg-[hsl(var(--primary))]" />
+                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 h-[2px] w-3.5 rounded-full bg-indigo-500" />
                   )}
                 </Link>
               );
             })}
           </nav>
 
-          {/* ── Desktop right actions ── */}
-          <div className="hidden items-center gap-2 md:flex">
-            {/* Theme toggle — always visible */}
-            <ThemeToggle variant="icon" className={transparent ? 'bg-white/10 text-white hover:bg-white/20' : ''} />
+          {/* ── Spacer ───────────────────────────── */}
+          <div className="flex-1" />
+
+          {/* ── Desktop right ─────────────────────── */}
+          <div className="hidden md:flex items-center gap-1.5">
+
+            <ThemeToggle
+              variant="icon"
+              className={cn(
+                'rounded-lg',
+                transparent ? 'text-white/70 hover:bg-white/10 hover:text-white' : '',
+              )}
+            />
 
             {isAuth ? (
               <>
-                {/* Sell CTA */}
+                {/* Post listing CTA */}
                 <Link
                   href={ROUTES.user.create}
                   className={cn(
-                    'rounded-lg px-4 py-2 text-[0.8125rem] font-semibold transition-colors',
+                    'flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[13px] font-semibold transition-colors',
                     transparent
-                      ? 'border border-white/25 text-white/80 hover:bg-white/10 hover:text-white'
-                      : 'border border-[hsl(var(--border))] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]',
+                      ? 'text-white/80 border border-white/20 hover:bg-white/10 hover:text-white hover:border-white/40'
+                      : 'text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800',
                   )}
                 >
-                  + List item
+                  <Plus className="h-3.5 w-3.5" />
+                  Post listing
                 </Link>
 
                 {/* User dropdown */}
-                <div className="relative">
+                <div className="relative" ref={userRef}>
                   <button
-                    onClick={() => setUserOpen((v) => !v)}
-                    className={cn(
-                      'flex items-center gap-2 rounded-xl px-3 py-1.5 text-[0.8125rem] font-medium transition-colors',
-                      transparent
-                        ? 'text-white/80 hover:bg-white/10 hover:text-white'
-                        : 'hover:bg-[hsl(var(--muted))] text-[hsl(var(--foreground))]',
-                    )}
+                    onClick={() => setUserOpen(v => !v)}
                     aria-expanded={userOpen}
                     aria-haspopup="true"
+                    className={cn(
+                      'flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-[13px] font-medium transition-all duration-150',
+                      transparent
+                        ? 'text-white/80 hover:bg-white/10'
+                        : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200',
+                    )}
                   >
-                    {/* Avatar */}
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[hsl(var(--primary))] text-xs font-bold text-white">
+                    {/* Avatar circle */}
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-[11px] font-black text-white shadow-sm flex-shrink-0">
                       {initials}
                     </span>
-                    <span className="capitalize">{roleName}</span>
-                    <ChevronDown className={cn('h-3 w-3 opacity-50 transition-transform duration-200', userOpen && 'rotate-180')} />
+                    <span className="capitalize hidden lg:block">{roleName}</span>
+                    <ChevronDown className={cn(
+                      'h-3.5 w-3.5 opacity-40 transition-transform duration-200',
+                      userOpen ? 'rotate-180' : '',
+                      transparent ? 'text-white' : 'text-slate-500',
+                    )} />
                   </button>
 
+                  {/* Dropdown panel */}
                   {userOpen && (
-                    <>
-                      {/* Backdrop */}
-                      <div className="fixed inset-0 z-10" onClick={() => setUserOpen(false)} />
-                      {/* Menu */}
-                      <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-52 overflow-hidden rounded-2xl border border-[hsl(var(--border)/0.7)] bg-[hsl(var(--popover))] shadow-xl">
+                    <div className="absolute right-0 top-[calc(100%+6px)] z-50 w-56 overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-2xl shadow-black/10 dark:shadow-black/40">
+                      {/* Account info header */}
+                      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+                        <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Account</p>
+                        <p className="text-[13px] font-bold text-slate-900 dark:text-white capitalize mt-0.5">{roleName}</p>
+                      </div>
+
+                      <div className="py-1.5">
                         {[
-                          { icon: LayoutDashboard, label: 'Dashboard',  href: dashPath },
+                          { icon: LayoutDashboard, label: 'Dashboard',   href: dashPath },
                           { icon: Store,           label: 'My listings', href: ROUTES.user.listings },
                           { icon: User,            label: 'Profile',     href: ROUTES.user.profile },
                           { icon: CreditCard,      label: 'Plans',       href: ROUTES.user.subscription },
@@ -156,22 +216,24 @@ export function Navbar() {
                             key={href}
                             href={href}
                             onClick={() => setUserOpen(false)}
-                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-[hsl(var(--foreground))] transition-colors hover:bg-[hsl(var(--muted))]"
+                            className="flex items-center gap-3 px-4 py-2.5 text-[13px] text-slate-700 dark:text-slate-200 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60"
                           >
-                            <Icon className="h-4 w-4 text-[hsl(var(--muted-foreground))]" />
+                            <Icon className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
                             {label}
                           </Link>
                         ))}
-                        <div className="mx-4 border-t border-[hsl(var(--border))]" />
+                      </div>
+
+                      <div className="border-t border-slate-100 dark:border-slate-800 py-1.5">
                         <button
                           onClick={logout}
-                          className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-destructive transition-colors hover:bg-destructive/5"
+                          className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-950/40"
                         >
-                          <LogOut className="h-4 w-4" />
+                          <LogOut className="h-4 w-4 flex-shrink-0" />
                           Sign out
                         </button>
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
               </>
@@ -180,17 +242,21 @@ export function Navbar() {
                 <Link
                   href={ROUTES.login}
                   className={cn(
-                    'rounded-lg px-4 py-2 text-[0.8125rem] font-medium transition-colors',
+                    'rounded-lg px-4 py-2 text-[13px] font-medium transition-colors',
                     transparent
-                      ? 'text-white/70 hover:text-white'
-                      : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]',
+                      ? 'text-white/70 hover:text-white hover:bg-white/10'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800',
                   )}
                 >
                   Sign in
                 </Link>
+
+                {/* Divider */}
+                <div className={cn('h-4 w-px', transparent ? 'bg-white/20' : 'bg-slate-200 dark:bg-slate-700')} />
+
                 <Link
                   href={ROUTES.register}
-                  className="rounded-lg bg-[hsl(var(--primary))] px-4 py-2 text-[0.8125rem] font-semibold text-white shadow-sm transition-colors hover:bg-[hsl(var(--primary-hover))]"
+                  className="rounded-lg bg-indigo-600 hover:bg-indigo-700 px-4 py-2 text-[13px] font-semibold text-white shadow-sm shadow-indigo-500/20 transition-all hover:shadow-indigo-500/30 hover:-translate-y-px active:translate-y-0"
                 >
                   Get started
                 </Link>
@@ -198,75 +264,100 @@ export function Navbar() {
             )}
           </div>
 
-          {/* ── Mobile hamburger ── */}
+          {/* ── Mobile hamburger ─────────────────── */}
           <button
-            onClick={() => setMenuOpen((v) => !v)}
-            className={cn('rounded-lg p-2 transition-colors md:hidden', transparent ? 'text-white hover:bg-white/10' : 'text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]')}
+            onClick={() => setMenuOpen(v => !v)}
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            className={cn(
+              'md:hidden flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 active:scale-95',
+              transparent
+                ? 'text-white hover:bg-white/10'
+                : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800',
+            )}
           >
-            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {menuOpen
+              ? <X className="h-5 w-5" />
+              : <Menu className="h-5 w-5" />
+            }
           </button>
         </div>
 
-        {/* ── Mobile drawer ── */}
-        {menuOpen && (
-          <div className="border-t border-[hsl(var(--border)/0.6)] bg-[hsl(var(--background)/0.98)] backdrop-blur-xl md:hidden">
-            <div className="mx-auto max-w-7xl space-y-1 px-5 py-4">
-              {NAV_LINKS.map(({ label, href }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="block rounded-lg px-4 py-2.5 text-sm font-medium text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
-                >
-                  {label}
-                </Link>
-              ))}
-
-              <div className="pt-3 border-t border-[hsl(var(--border)/0.6)]">
-                {/* Theme toggle in mobile drawer */}
-                <div className="flex items-center justify-between mb-3 px-1">
-                  <span className="text-[13px] font-medium text-[hsl(var(--muted-foreground))]">Appearance</span>
-                  <ThemeToggle variant="switch" />
-                </div>
-                {isAuth ? (
-                  <div className="flex gap-2">
-                    <Link
-                      href={dashPath}
-                      className="flex-1 rounded-xl bg-[hsl(var(--primary))] px-4 py-2.5 text-center text-sm font-semibold text-white"
-                    >
-                      Dashboard
-                    </Link>
-                    <button
-                      onClick={logout}
-                      className="rounded-xl border border-[hsl(var(--border))] px-4 py-2.5 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-destructive transition-colors"
-                    >
-                      Sign out
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <Link
-                      href={ROUTES.login}
-                      className="flex-1 rounded-xl border border-[hsl(var(--border))] px-4 py-2.5 text-center text-sm font-medium text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]"
-                    >
-                      Sign in
-                    </Link>
-                    <Link
-                      href={ROUTES.register}
-                      className="flex-1 rounded-xl bg-[hsl(var(--primary))] px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-[hsl(var(--primary-hover))]"
-                    >
-                      Get started
-                    </Link>
-                  </div>
-                )}
-              </div>
+        {/* ── Mobile drawer ───────────────────── */}
+        <div
+          className={cn(
+            'md:hidden overflow-hidden transition-all duration-300',
+            menuOpen ? 'max-h-[520px] opacity-100' : 'max-h-0 opacity-0',
+          )}
+          style={{ transitionTimingFunction: 'cubic-bezier(0.4,0,0.2,1)' }}
+        >
+          <div className="border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 pb-6 pt-3">
+            {/* Nav links */}
+            <div className="space-y-0.5 mb-4">
+              {NAV_LINKS.map(({ label, href }) => {
+                const active = isActive(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={cn(
+                      'flex items-center gap-3 rounded-xl px-4 py-3 text-[14px] font-medium transition-colors',
+                      active
+                        ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-400'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60',
+                    )}
+                  >
+                    {active && <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 flex-shrink-0" />}
+                    {label}
+                  </Link>
+                );
+              })}
             </div>
+
+            {/* Theme */}
+            <div className="flex items-center justify-between px-4 py-2.5 mb-3 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+              <span className="text-[13px] font-medium text-slate-500 dark:text-slate-400">Appearance</span>
+              <ThemeToggle variant="switch" />
+            </div>
+
+            {/* Auth actions */}
+            {isAuth ? (
+              <div className="flex gap-2">
+                <Link
+                  href={dashPath}
+                  className="flex-1 rounded-xl bg-indigo-600 py-3 text-center text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors"
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={logout}
+                  className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 text-[13px] font-medium text-slate-500 dark:text-slate-400 hover:text-red-500 hover:border-red-200 transition-colors"
+                >
+                  Sign out
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Link
+                  href={ROUTES.login}
+                  className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 py-3 text-center text-[13px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href={ROUTES.register}
+                  className="flex-1 rounded-xl bg-indigo-600 py-3 text-center text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors"
+                >
+                  Get started
+                </Link>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </header>
 
-      {/* Push page content below fixed nav — only on non-hero pages */}
-      {!isHomePage && <div className="h-16" />}
+      {/* ── Spacer — push content below fixed navbar on non-hero pages ── */}
+      {!isHomePage && <div className="h-[62px]" />}
     </>
   );
 }

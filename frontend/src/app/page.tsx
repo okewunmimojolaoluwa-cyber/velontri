@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Search, ChevronDown, ChevronRight, MapPin,
-  Shield, BadgeCheck, Zap, TrendingUp, Sparkles, Star, Quote,
+  Shield, BadgeCheck, Zap, TrendingUp, Sparkles, Star, Quote, Menu, X,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { listingsApi, listingKeys } from '@/lib/api/endpoints/listings';
@@ -238,63 +238,52 @@ export default function HomePage() {
     return () => document.removeEventListener('mousedown', fn);
   }, [locOpen]);
 
-  /* ── Hamburger: premium indigo gradient pill ── */
-  const barBase: React.CSSProperties = {
-    display: 'block',
-    height: 2,
-    borderRadius: 99,
-    background: open ? '#fff' : '#4F46E5',
-    transition: 'transform 300ms cubic-bezier(0.34,1.56,0.64,1), opacity 200ms ease, width 200ms ease, background 200ms ease',
-    transformOrigin: 'center',
-  };
-  const bar1: React.CSSProperties = open
-    ? { ...barBase, width: 18, transform: 'translateY(7px) rotate(45deg)' }
-    : { ...barBase, width: 22, transform: 'none' };
-  const bar2: React.CSSProperties = open
-    ? { ...barBase, width: 18, opacity: 0, transform: 'scaleX(0)' }
-    : { ...barBase, width: 14, opacity: 1, transform: 'none' };
-  const bar3: React.CSSProperties = open
-    ? { ...barBase, width: 18, transform: 'translateY(-7px) rotate(-45deg)' }
-    : { ...barBase, width: 18, transform: 'none' };
-
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#F8F9FA] text-slate-900">
 
       {/* ══════════════════════════════════════════
-          NAVBAR
+          NAVBAR — classic, polished
       ══════════════════════════════════════════ */}
-      <header className="sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[hsl(222_40%_8%/0.97)] backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-50 bg-white/96 dark:bg-slate-950/96 backdrop-blur-xl shadow-[0_1px_0_0_rgba(0,0,0,0.07)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)]">
+        <div className="mx-auto flex h-[62px] max-w-7xl items-center gap-5 px-4 sm:px-6 lg:px-10">
 
           {/* Logo */}
           <Link href="/" className="flex shrink-0 items-center gap-2.5 no-underline">
             <VelontriLogo size={32} showWordmark wordmarkSize="md"
-              wordmarkClassName="text-slate-900 dark:text-white" />
+              wordmarkClassName="text-slate-900 dark:text-white font-black tracking-tight" />
           </Link>
 
+          {/* Divider */}
+          <div className="hidden md:block h-5 w-px bg-slate-200 dark:bg-slate-700 flex-shrink-0" />
+
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-0.5">
+          <nav className="hidden md:flex items-center gap-0" aria-label="Primary navigation">
             {NAV_LINKS.map(([l, h]) => (
               <Link key={l} href={h}
-                className="rounded-lg px-3 py-2 text-[13px] font-medium text-slate-500 no-underline
-                  transition-colors hover:bg-slate-100 hover:text-slate-900">
+                className="rounded-lg px-3.5 py-2 text-[13px] font-medium text-slate-500 dark:text-slate-400 no-underline
+                  transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white">
                 {l}
               </Link>
             ))}
           </nav>
 
+          {/* Spacer */}
+          <div className="flex-1" />
+
           {/* Desktop actions */}
-          <div className="hidden md:flex shrink-0 items-center gap-2">
+          <div className="hidden md:flex shrink-0 items-center gap-1.5">
             <ThemeToggle variant="icon" />
             <Link href={ROUTES.login}
-              className="rounded-lg px-4 py-2 text-[13px] font-medium text-slate-500 no-underline
-                transition-colors hover:bg-slate-100 hover:text-slate-900">
+              className="rounded-lg px-4 py-2 text-[13px] font-medium text-slate-500 dark:text-slate-400 no-underline
+                transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white">
               Sign in
             </Link>
+            {/* Divider */}
+            <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
             <Link href={ROUTES.register}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-[13px] font-bold text-white
-                no-underline shadow-sm transition-colors hover:bg-indigo-700">
-              Post a listing
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-[13px] font-semibold text-white no-underline
+                shadow-sm shadow-indigo-500/20 transition-all hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:-translate-y-px active:translate-y-0">
+              Get started
             </Link>
           </div>
 
@@ -303,71 +292,50 @@ export default function HomePage() {
             onClick={() => setOpen((v) => !v)}
             aria-label={open ? 'Close menu' : 'Open menu'}
             aria-expanded={open}
-            className="md:hidden relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
+            className="md:hidden flex h-9 w-9 shrink-0 items-center justify-center rounded-xl
+              text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800
               transition-all duration-200 active:scale-95"
-            style={{
-              background: open
-                ? 'linear-gradient(135deg, #4F46E5, #7C3AED)'
-                : 'linear-gradient(135deg, #EEF2FF, #F5F3FF)',
-              boxShadow: open
-                ? '0 4px 14px rgba(79,70,229,0.4)'
-                : '0 1px 4px rgba(0,0,0,0.08)',
-            }}
           >
-            <div className="flex flex-col items-center gap-[6px]">
-              <span style={bar1} />
-              <span style={bar2} />
-              <span style={bar3} />
-            </div>
+            {open ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
 
         {/* Mobile drawer */}
         <div
+          className="md:hidden overflow-hidden transition-all duration-300"
           style={{
-            maxHeight: open ? 480 : 0,
-            overflow: 'hidden',
-            transition: 'max-height 320ms cubic-bezier(0.4,0,0.2,1)',
+            maxHeight: open ? 500 : 0,
+            transitionTimingFunction: 'cubic-bezier(0.4,0,0.2,1)',
           }}
-          className="border-t border-slate-100 bg-white md:hidden"
         >
-          <div className="px-4 pb-6 pt-4 space-y-1">
-            <div className="mb-3 flex items-center gap-2 rounded-xl border border-slate-200
-              bg-slate-50 px-4 py-3">
-              <Search size={14} className="shrink-0 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search listings…"
-                className="flex-1 bg-transparent text-[14px] text-slate-800 placeholder-slate-400 outline-none"
-              />
-            </div>
+          <div className="border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 pb-6 pt-3 space-y-0.5">
             {NAV_LINKS.map(([l, h]) => (
               <Link key={l} href={h} onClick={() => setOpen(false)}
                 className="flex items-center gap-3 rounded-xl px-4 py-3 text-[14px] font-medium
-                  text-slate-600 no-underline transition-colors hover:bg-slate-50 hover:text-slate-900">
-                <ChevronRight size={14} className="text-slate-400" />
+                  text-slate-600 dark:text-slate-300 no-underline transition-colors
+                  hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white">
+                <ChevronRight size={14} className="text-slate-300 dark:text-slate-600" />
                 {l}
               </Link>
             ))}
-            <div className="flex gap-2 border-t border-slate-100 pt-3">
-              {/* Theme toggle in mobile drawer */}
-              <div className="flex items-center justify-between w-full px-1 mb-2">
-                <span className="text-[13px] font-medium text-slate-500">Appearance</span>
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between px-4 py-2.5 mb-3 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+                <span className="text-[13px] font-medium text-slate-500 dark:text-slate-400">Appearance</span>
                 <ThemeToggle variant="switch" />
               </div>
-            </div>
-            <div className="flex gap-2">
-              <Link href={ROUTES.login} onClick={() => setOpen(false)}
-                className="flex-1 rounded-xl border border-slate-200 py-3 text-center
-                  text-[13px] font-semibold text-slate-700 no-underline transition-colors hover:bg-slate-50">
-                Sign in
-              </Link>
-              <Link href={ROUTES.register} onClick={() => setOpen(false)}
-                className="flex-1 rounded-xl bg-indigo-600 py-3 text-center
-                  text-[13px] font-bold text-white no-underline transition-colors hover:bg-indigo-700">
-                Post listing
-              </Link>
+              <div className="flex gap-2">
+                <Link href={ROUTES.login} onClick={() => setOpen(false)}
+                  className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 py-3 text-center
+                    text-[13px] font-semibold text-slate-700 dark:text-slate-200 no-underline
+                    transition-colors hover:bg-slate-50 dark:hover:bg-slate-800">
+                  Sign in
+                </Link>
+                <Link href={ROUTES.register} onClick={() => setOpen(false)}
+                  className="flex-1 rounded-xl bg-indigo-600 py-3 text-center
+                    text-[13px] font-bold text-white no-underline transition-colors hover:bg-indigo-700">
+                  Get started
+                </Link>
+              </div>
             </div>
           </div>
         </div>

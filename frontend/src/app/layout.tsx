@@ -25,15 +25,16 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Velontri Nigeria | Buy & Sell Products, Cars, Property & Services',
+    default: 'Velontri — Africa\'s Marketplace | Buy & Sell Cars, Property, Electronics & More',
     template: `%s | Velontri`,
   },
   description:
-    'Velontri is Nigeria\'s leading marketplace. Buy and sell cars, property, phones, fashion, furniture, jobs and services across Lagos, Abuja, Port Harcourt, Kano, Ibadan and all Nigerian states. Connect directly with sellers on WhatsApp — no agent fees, no commissions.',
+    'Velontri is Africa\'s premier marketplace. Buy and sell cars, property, phones, fashion, furniture, jobs and services across Nigeria, Ghana, Kenya, South Africa and 12+ African countries. Connect directly with sellers on WhatsApp — no agent fees, no commissions.',
   keywords: [
-    'marketplace Nigeria', 'buy and sell Nigeria', 'Velontri', 'Velontri Nigeria',
-    'cars for sale Nigeria', 'property Lagos', 'phones for sale Abuja',
-    'fashion Nigeria', 'jobs Nigeria', 'services Nigeria', 'tokunbo cars',
+    'marketplace Africa', 'buy and sell Africa', 'Velontri', 'African marketplace',
+    'cars for sale Nigeria', 'property Lagos', 'phones for sale Nairobi',
+    'fashion Africa', 'jobs Africa', 'services Africa', 'tokunbo cars',
+    'sell online Africa', 'marketplace Nigeria Ghana Kenya',
   ],
   authors: [{ name: 'Velontri', url: 'https://velontri.pxxl.click' }],
   creator: 'Velontri',
@@ -44,9 +45,9 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_NG',
     url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://velontri.pxxl.click',
-    title: 'Velontri Nigeria | Buy & Sell Products, Cars, Property & Services',
+    title: 'Velontri — Africa\'s Marketplace | Buy & Sell Cars, Property & More',
     description:
-      'Nigeria\'s premier marketplace — buy and sell cars, property, phones, fashion and services. Connect with verified sellers directly on WhatsApp.',
+      'Africa\'s premier marketplace — buy and sell cars, property, phones, fashion and services across 12+ countries. Connect with verified sellers directly on WhatsApp.',
     siteName: 'Velontri',
     images: [
       {
@@ -59,8 +60,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Velontri Nigeria | Buy & Sell Products, Cars, Property & Services',
-    description: 'Nigeria\'s premier marketplace — no agent fees, direct WhatsApp contact.',
+    title: 'Velontri — Africa\'s Marketplace | Buy & Sell Cars, Property & More',
+    description: 'Africa\'s premier marketplace — no agent fees, direct WhatsApp contact. 12+ countries.',
     creator: '@velontri',
     images: ['/og-image.png'],
   },
