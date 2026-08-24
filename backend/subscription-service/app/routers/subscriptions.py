@@ -172,6 +172,22 @@ async def paystack_verify(request: Request, payload: Annotated[dict, Depends(get
         raise
     finally:
         await session.close()
+
+    # ── Immediately update user_profiles.subscription_tier ────────────────
+    # This ensures the NEXT token refresh picks up the correct tier in the JWT.
+    try:
+        async with request.app.state.session_factory() as _pdb:
+            from sqlalchemy import text as _ptext
+            await _pdb.execute(_ptext("""
+                INSERT INTO user_profiles (id, user_id, subscription_tier, updated_at)
+                VALUES (gen_random_uuid(), :uid, :tier, NOW())
+                ON CONFLICT (user_id) DO UPDATE
+                  SET subscription_tier = :tier, updated_at = NOW()
+            """), {'uid': str(user_id), 'tier': tier})
+            await _pdb.commit()
+    except Exception as _pe:
+        import logging as _plog
+        _plog.getLogger(__name__).warning(f'subscription_tier_profile_update_failed: {_pe}')
     try:
         from pathlib import Path as _Path
         _new_limit = TIER_LISTING_LIMITS.get(tier, 0)

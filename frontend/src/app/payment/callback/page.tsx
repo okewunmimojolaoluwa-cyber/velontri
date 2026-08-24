@@ -91,8 +91,33 @@ export default function PaymentCallbackPage() {
     }
 
     verifyPayment(ref, pid, token)
-      .then(() => {
-        // Activate plan locally
+      .then(async () => {
+        // ── Force token refresh so new JWT has updated subscription_tier ──
+        // Without this, the old JWT still has the old tier and the listing
+        // quota enforcement on the backend will still use the old limit.
+        try {
+          const rt = document.cookie.match(`(?:^|;)\\s*velontri_refresh=([^;]*)`)?.[1];
+          if (rt) {
+            const refreshRes = await fetch(`${API_BASE}/auth/token/refresh`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refresh_token: decodeURIComponent(rt) }),
+            });
+            if (refreshRes.ok) {
+              const refreshData = await refreshRes.json();
+              const newAccessToken = refreshData?.data?.access_token;
+              if (newAccessToken) {
+                // Overwrite the access token cookie with the fresh one
+                const maxAge = 8 * 60 * 60;
+                document.cookie = `velontri_access=${encodeURIComponent(newAccessToken)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+              }
+            }
+          }
+        } catch {
+          // Token refresh failure is non-fatal — plan is still activated in DB
+        }
+
+        // Activate plan locally in localStorage
         try { localStorage.removeItem('velontri_pending_payment'); } catch {}
         try { localStorage.setItem('velontri_plan', pid); } catch {}
         setStatus('success');
