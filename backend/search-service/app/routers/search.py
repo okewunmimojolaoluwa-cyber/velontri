@@ -244,20 +244,71 @@ async def _search_fallback(
         "second hand":["second hand", "used", "fairly used"],
     }
 
-    def _fuzzy_variants(word: str) -> list[str]:
+    # Known listing_type values in the DB — used for exact matching
+    LISTING_TYPE_MAP: dict[str, list[str]] = {
+        "car":      ["vehicle"],
+        "cars":     ["vehicle"],
+        "auto":     ["vehicle"],
+        "vehicle":  ["vehicle"],
+        "vehicles": ["vehicle"],
+        "truck":    ["vehicle"],
+        "bus":      ["vehicle"],
+        "bike":     ["vehicle"],
+        "motor":    ["vehicle"],
+        "tokunbo":  ["vehicle"],
+        "house":    ["property"],
+        "flat":     ["property"],
+        "land":     ["property"],
+        "property": ["property"],
+        "apartment":["property"],
+        "duplex":   ["property"],
+        "job":      ["job"],
+        "jobs":     ["job"],
+        "vacancy":  ["job"],
+        "hiring":   ["job"],
+        "work":     ["job"],
+        "service":  ["service"],
+        "services": ["service"],
+        "repair":   ["service"],
+    }
+
+    def _expand_query(raw: str) -> tuple[list[str], list[str]]:
         """
-        Generate common typo variants of a word using simple edit-distance rules.
-        Keeps it fast (no heavy libraries) while covering the most common mistakes.
+        Returns (text_terms, listing_type_exact_terms).
+        text_terms: used in ILIKE against title/description/category/listing_type.
+        listing_type_exact_terms: used in exact listing_type IN (...) match.
         """
-        variants = {word}
-        # Transpose adjacent chars: "phoen" -> "phone"
-        for i in range(len(word) - 1):
-            t = list(word)
-            t[i], t[i+1] = t[i+1], t[i]
-            variants.add("".join(t))
-        # Remove one char: "carrs" -> "cars"
-        for i in range(len(word)):
-            variants.add(word[:i] + word[i+1:])
+        q_lower = raw.lower().strip()
+        all_terms: set[str] = {q_lower}
+        exact_types: set[str] = set()
+
+        # Check full phrase first
+        if q_lower in SYNONYMS:
+            all_terms.update(SYNONYMS[q_lower])
+        if q_lower in LISTING_TYPE_MAP:
+            exact_types.update(LISTING_TYPE_MAP[q_lower])
+
+        # Then expand each word
+        for word in q_lower.split():
+            all_terms.add(word)
+            if word in SYNONYMS:
+                all_terms.update(SYNONYMS[word])
+            if word in LISTING_TYPE_MAP:
+                exact_types.update(LISTING_TYPE_MAP[word])
+            # Fuzzy variants for words >= 4 chars
+            if len(word) >= 4:
+                for v in _fuzzy_variants(word):
+                    if len(v) >= 3:
+                        all_terms.add(v)
+                        if v in SYNONYMS:
+                            all_terms.update(SYNONYMS[v])
+                        if v in LISTING_TYPE_MAP:
+                            exact_types.update(LISTING_TYPE_MAP[v])
+
+        return (
+            [t for t in all_terms if t and len(t) >= 2],
+            list(exact_types),
+        )
         # Double-letter collapse: "caar" -> "car"
         import re
         variants.add(re.sub(r'(.)\1+', r'\1', word))
@@ -291,8 +342,20 @@ async def _search_fallback(
         # Filter out empty strings and very short noise words
         return [t for t in all_terms if t and len(t) >= 2]
 
+    def _fuzzy_variants(word: str) -> list[str]:
+        variants = {word}
+        for i in range(len(word) - 1):
+            t = list(word)
+            t[i], t[i+1] = t[i+1], t[i]
+            variants.add("".join(t))
+        for i in range(len(word)):
+            variants.add(word[:i] + word[i+1:])
+        import re
+        variants.add(re.sub(r'(.)\1+', r'\1', word))
+        return list(variants)
+
     try:
-        expanded = _expand_query(q)
+        expanded, exact_types = _expand_query(q)
 
         search_clauses = []
         all_params: dict = {}
@@ -302,6 +365,13 @@ async def _search_fallback(
                 f"(title ILIKE :q_{i} OR description ILIKE :q_{i} OR category ILIKE :q_{i} OR listing_type ILIKE :q_{i})"
             )
             all_params[f"q_{i}"] = like
+
+        # Add exact listing_type matches — this catches "cars" → vehicle
+        if exact_types:
+            type_placeholders = ", ".join(f":et_{i}" for i in range(len(exact_types)))
+            search_clauses.append(f"listing_type IN ({type_placeholders})")
+            for i, et in enumerate(exact_types):
+                all_params[f"et_{i}"] = et
 
         search_condition = "(" + " OR ".join(search_clauses) + ")"
 
