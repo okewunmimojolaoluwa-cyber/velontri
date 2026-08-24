@@ -6,12 +6,13 @@ import Link from 'next/link';
 import {
   SlidersHorizontal, X, Search, MapPin, Car, Home,
   Smartphone, Shirt, Briefcase, ShoppingBag, Zap,
-  ChevronRight, Package, ArrowLeft,
+  ChevronRight, Package, ArrowLeft, Store,
 } from 'lucide-react';
 import { useListings } from '@/features/listings/hooks/use-listings';
 import { Navbar } from '@/components/layout/navbar';
 import { cn } from '@/lib/utils/cn';
 import { AutoScrollRow } from '@/components/marketplace/auto-scroll-row';
+import { apiClient } from '@/lib/api/client';
 import type { ListingFilters } from '@/lib/api/endpoints/listings';
 
 /* ── Config ───────────────────────────────────────────────── */
@@ -166,6 +167,22 @@ export default function ListingsPage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [search, setSearch]         = useState('');
 
+  // Fetch seller's store name when browsing a seller's store
+  const [storeName, setStoreName] = useState('');
+  const [storeLogoUrl, setStoreLogoUrl] = useState('');
+  useEffect(() => {
+    if (!sellerIdParam) { setStoreName(''); setStoreLogoUrl(''); return; }
+    apiClient.get(`/stores/public/${sellerIdParam}`)
+      .then((r: any) => {
+        const d = r?.data?.data;
+        if (d?.store_name) setStoreName(d.store_name);
+        if (d?.logo_url) setStoreLogoUrl(d.logo_url);
+      })
+      .catch(() => {
+        // fallback: try the mine endpoint won't work for other sellers, ignore
+      });
+  }, [sellerIdParam]);
+
   // Sync all URL params when they change (back/forward navigation)
   useEffect(() => {
     setFilters(p => ({
@@ -228,14 +245,22 @@ export default function ListingsPage() {
               <ArrowLeft className="h-4 w-4" /> Back
             </button>
             <div className="flex items-center gap-4">
-              {/* Seller initial avatar */}
-              <div className="h-16 w-16 flex-shrink-0 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center text-white text-[22px] font-black uppercase shadow-lg">
-                {sellerNameParam ? sellerNameParam.split(' ').map(w => w[0]).slice(0, 2).join('') : 'S'}
+              {/* Seller/store avatar */}
+              <div className="h-16 w-16 flex-shrink-0 rounded-full overflow-hidden bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center shadow-lg">
+                {storeLogoUrl ? (
+                  <img src={storeLogoUrl} alt={storeName || sellerNameParam} className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-white text-[22px] font-black uppercase">
+                    {(storeName || sellerNameParam) ? (storeName || sellerNameParam).split(' ').map((w: string) => w[0]).slice(0, 2).join('') : 'S'}
+                  </span>
+                )}
               </div>
               <div>
-                <p className="text-indigo-300 text-[11px] font-bold uppercase tracking-widest mb-0.5">Seller Store</p>
+                <p className="text-indigo-300 text-[11px] font-bold uppercase tracking-widest mb-0.5 flex items-center gap-1">
+                  <Store className="h-3 w-3" /> Seller Store
+                </p>
                 <h1 className="text-white font-black text-[1.6rem] leading-tight tracking-tight">
-                  {sellerNameParam || 'Seller'}
+                  {storeName || sellerNameParam || 'Seller'}
                 </h1>
                 <p className="text-indigo-300 text-[13px] mt-0.5">All active listings</p>
               </div>

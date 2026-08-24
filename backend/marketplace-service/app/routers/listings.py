@@ -345,6 +345,34 @@ async def get_my_store(service: MarketplaceService=Depends(_build_service), curr
         return SuccessResponse(message='No store found.', data=None)
     return SuccessResponse(message='Store retrieved.', data={'id': str(store.id), 'seller_id': str(store.seller_id), 'store_name': store.store_name, 'logo_url': store.logo_url, 'banner_url': store.banner_url, 'theme': store.theme, 'custom_domain': store.custom_domain, 'domain_verified': store.domain_verified, 'is_active': True, 'created_at': store.created_at.isoformat() if store.created_at else None})
 
+@router.get('/stores/public/{seller_id}', response_model=SuccessResponse, summary="Get a seller's public store info (no auth required)")
+async def get_public_store(seller_id: uuid.UUID, service: MarketplaceService=Depends(_build_service)) -> SuccessResponse:
+    """Returns the public-facing store info for a seller. No authentication required."""
+    from sqlalchemy import text as _text
+    try:
+        row = (await service.session.execute(
+            _text("""
+                SELECT id, seller_id, store_name, logo_url, banner_url, theme, created_at
+                FROM stores
+                WHERE CAST(seller_id AS TEXT) = :sid
+                LIMIT 1
+            """),
+            {'sid': str(seller_id)}
+        )).mappings().first()
+        if row is None:
+            return SuccessResponse(message='No store found.', data=None)
+        return SuccessResponse(message='Store retrieved.', data={
+            'id': str(row['id']),
+            'seller_id': str(row['seller_id']),
+            'store_name': row['store_name'],
+            'logo_url': row['logo_url'],
+            'banner_url': row['banner_url'],
+            'theme': row['theme'],
+            'created_at': str(row['created_at']) if row['created_at'] else None,
+        })
+    except Exception:
+        return SuccessResponse(message='No store found.', data=None)
+
 @router.post('/stores', response_model=SuccessResponse, summary='Create or update seller store')
 async def upsert_store(body: UpsertStoreRequest, service: MarketplaceService=Depends(_build_service), current_user_id: uuid.UUID=Depends(get_current_user_id), tier: str=Depends(get_subscription_tier)) -> SuccessResponse:
     result = await service.upsert_store(current_user_id, body, tier)

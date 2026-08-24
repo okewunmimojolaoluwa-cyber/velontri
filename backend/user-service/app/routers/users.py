@@ -34,7 +34,7 @@ def _build_service(session=Depends(get_db_session), redis=Depends(get_redis), ch
     return UserService(session=session, redis=redis, settings=settings, rabbitmq_channel=channel)
 
 @router.get('/users/me', response_model=SuccessResponse, summary="Get the authenticated user's own profile + account info")
-async def get_my_profile(service: UserService=Depends(_build_service), current_user_id: uuid.UUID=Depends(get_current_user_id), payload: dict=Depends(get_current_user_payload)) -> SuccessResponse:
+async def get_my_profile(request: Request, service: UserService=Depends(_build_service), current_user_id: uuid.UUID=Depends(get_current_user_id), payload: dict=Depends(get_current_user_payload)) -> SuccessResponse:
     """Returns the logged-in user's profile data merged with auth account info."""
     from sqlalchemy import text
     uid_str = str(current_user_id)
@@ -232,14 +232,12 @@ async def get_profile(user_id: uuid.UUID, service: UserService=Depends(_build_se
     return SuccessResponse(data=profile_data)
 
 @router.post('/users/me/avatar', response_model=SuccessResponse, summary='Upload a profile avatar image')
-async def upload_avatar(file: UploadFile=File(..., description='Profile image (JPEG or PNG, max 5MB)'), service: UserService=Depends(_build_service), current_user_id: uuid.UUID=Depends(get_current_user_id)) -> SuccessResponse:
+async def upload_avatar(request: Request, file: UploadFile=File(..., description='Profile image (JPEG or PNG, max 5MB)'), service: UserService=Depends(_build_service), current_user_id: uuid.UUID=Depends(get_current_user_id)) -> SuccessResponse:
     """
     Accepts a JPEG/PNG image, encodes it as a base64 data-URL, and stores it
-    in the user_profiles.profile_photo_url column (or users table fallback).
-    No external storage needed for development.
+    in the user_profiles.profile_photo_url column via PostgreSQL upsert.
     """
     import base64
-    from pathlib import Path
     from shared.errors import InvalidInputError
     allowed = {'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'}
     ct = (file.content_type or '').lower()
@@ -248,29 +246,35 @@ async def upload_avatar(file: UploadFile=File(..., description='Profile image (J
     content = await file.read()
     if len(content) > 5 * 1024 * 1024:
         raise InvalidInputError('Image must be smaller than 5 MB.')
-    ext = ct.split('/')[-1]
     data_url = f'data:{ct};base64,{base64.b64encode(content).decode()}'
     uid_str = str(current_user_id)
+    saved = False
+    # Primary path: use app session_factory (PostgreSQL)
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            schema = (await db.execute(_text('PRAGMA table_info(user_profiles)'))).mappings().all()
-            col_names = [r[1] for r in schema]
-            if 'profile_photo_url' in col_names:
-                existing = (await db.execute(_text('SELECT id FROM user_profiles WHERE user_id = :p0'), {'p0': uid_str})).mappings().all()
-                if existing:
-                    await db.execute(_text('UPDATE user_profiles SET profile_photo_url = :p0 WHERE user_id = :p1'), {'p0': data_url, 'p1': uid_str})
-                else:
-                    await db.execute(_text('INSERT INTO user_profiles (id, user_id, profile_photo_url) VALUES (:p0, :p1, :p2)'), {'p0': str(uuid.uuid4()), 'p1': uid_str, 'p2': data_url})
-            else:
-                user_schema = (await db.execute(_text('PRAGMA table_info(users)'))).mappings().all()
-                user_cols = [r[1] for r in user_schema]
-                if 'avatar_url' not in user_cols:
-                    await db.execute(_text('ALTER TABLE users ADD COLUMN avatar_url TEXT'))
-                await db.execute(_text('UPDATE users SET avatar_url = :p0 WHERE id = :p1'), {'p0': data_url, 'p1': uid_str})
+            await db.execute(_text("""
+                INSERT INTO user_profiles (id, user_id, profile_photo_url)
+                VALUES (:new_id, :uid, :url)
+                ON CONFLICT (user_id) DO UPDATE SET profile_photo_url = EXCLUDED.profile_photo_url
+            """), {'new_id': str(uuid.uuid4()), 'uid': uid_str, 'url': data_url})
             await db.commit()
-    except Exception as exc:
-        raise InvalidInputError(f'Failed to save avatar: {exc}') from exc
+            saved = True
+    except Exception:
+        pass
+    # Fallback: use the service session directly
+    if not saved:
+        try:
+            from sqlalchemy import text as _text2
+            await service.session.execute(_text2("""
+                INSERT INTO user_profiles (id, user_id, profile_photo_url)
+                VALUES (:new_id, :uid, :url)
+                ON CONFLICT (user_id) DO UPDATE SET profile_photo_url = EXCLUDED.profile_photo_url
+            """), {'new_id': str(uuid.uuid4()), 'uid': uid_str, 'url': data_url})
+            await service.session.commit()
+            saved = True
+        except Exception as exc:
+            raise InvalidInputError(f'Failed to save avatar: {exc}') from exc
     return SuccessResponse(message='Avatar updated.', data={'avatar_url': data_url})
 
 @router.patch('/users/me/profile', response_model=SuccessResponse, summary="Update authenticated user's profile")
