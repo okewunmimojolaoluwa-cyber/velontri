@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
-import { User, CheckCircle, AlertCircle } from 'lucide-react';
+import { User, CheckCircle, WarningCircle } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
@@ -77,7 +77,7 @@ export default function ModProfilePage() {
             onClick={() => setIsEditing(true)}
             className="h-9 rounded-xl bg-amber-500 px-4 text-[13px] font-bold text-white hover:bg-amber-600 transition-colors"
           >
-            Edit Profile
+            PencilSimple Profile
           </button>
         )}
       </div>
@@ -87,7 +87,7 @@ export default function ModProfilePage() {
           isError ? 'border-red-200 bg-red-50' : 'border-emerald-200 bg-emerald-50'
         }`}>
           {isError
-            ? <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+            ? <WarningCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
             : <CheckCircle className="h-4 w-4 text-emerald-600 flex-shrink-0" />}
           <p className={`text-[13px] font-medium ${isError ? 'text-red-600' : 'text-emerald-700'}`}>
             {message}
@@ -98,7 +98,7 @@ export default function ModProfilePage() {
       {isEditing ? (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 bg-slate-50 px-5 py-3.5">
-            <h2 className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">Edit Profile</h2>
+            <h2 className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">PencilSimple Profile</h2>
           </div>
           <div className="p-5 space-y-4">
             <div className="space-y-1.5">
@@ -126,7 +126,7 @@ export default function ModProfilePage() {
                 disabled={updateMutation.isPending || !form.full_name.trim()}
                 className="h-10 rounded-xl bg-amber-500 px-5 text-[13px] font-bold text-white hover:bg-amber-600 transition-colors disabled:opacity-50"
               >
-                {updateMutation.isPending ? 'Saving…' : 'Save Changes'}
+                {updateMutation.isPending ? 'Saving…' : 'FloppyDisk Changes'}
               </button>
               <button
                 onClick={() => setIsEditing(false)}

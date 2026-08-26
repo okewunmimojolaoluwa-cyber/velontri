@@ -1,12 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Plus, Package, MapPin, Trash2, Eye, Search,
-  AlertCircle, RotateCcw, Pencil, X, Check,
-} from 'lucide-react';
+import { Plus, Package, MapPin, Trash, Eye, MagnifyingGlass, WarningCircle, ArrowCounterClockwise, PencilSimple, X, Check } from '@phosphor-icons/react';
 import { sellerApi } from '@/lib/api/endpoints/seller';
 import { apiClient } from '@/lib/api/client';
 import { listingKeys } from '@/lib/api/endpoints/listings';
@@ -118,7 +115,7 @@ function EditModal({
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 flex-shrink-0">
           <div>
             <h2 className="text-[15px] font-black text-slate-900">
-              {mode === 'price' ? 'Update Price' : 'Edit Listing'}
+              {mode === 'price' ? 'Update Price' : 'PencilSimple Listing'}
             </h2>
             <p className="text-[12px] text-slate-400 mt-0.5 truncate max-w-[260px]">{listing.title}</p>
           </div>
@@ -218,7 +215,7 @@ function EditModal({
 
           {err && (
             <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5">
-              <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+              <WarningCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
               <p className="text-[12px] font-medium text-red-600">{err}</p>
             </div>
           )}
@@ -234,10 +231,10 @@ function EditModal({
               className="flex-1 h-11 rounded-xl bg-indigo-600 text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
               {isPending ? (
                 <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
                 </svg>
               ) : <Check className="h-4 w-4" />}
-              {isPending ? 'Saving…' : listing.status === 'rejected' && resubmit ? 'Save & Resubmit' : 'Save Changes'}
+              {isPending ? 'Saving…' : listing.status === 'rejected' && resubmit ? 'FloppyDisk & Resubmit' : 'FloppyDisk Changes'}
             </button>
           </div>
         </form>
@@ -303,7 +300,7 @@ export default function UserListingsPage() {
   return (
     <div className="space-y-5">
 
-      {/* Edit modal */}
+      {/* PencilSimple modal */}
       {editState && (
         <EditModal
           editState={editState}
@@ -330,12 +327,12 @@ export default function UserListingsPage() {
         </Link>
       </div>
 
-      {/* Search */}
+      {/* MagnifyingGlass */}
       <div className="relative max-w-sm">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <MagnifyingGlass className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <input
           type="text"
-          placeholder="Search listings…"
+          placeholder="MagnifyingGlass listings…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full h-10 rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-[14px]
@@ -349,7 +346,7 @@ export default function UserListingsPage() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4 pb-[84px] sm:pb-0 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100">
-              <AlertCircle className="h-6 w-6 text-red-600" />
+              <WarningCircle className="h-6 w-6 text-red-600" />
             </div>
             <h3 className="text-[16px] font-black text-slate-900 mb-1">Delete listing?</h3>
             <p className="text-[13px] text-slate-500 mb-5 leading-relaxed">
@@ -469,10 +466,10 @@ export default function UserListingsPage() {
                     {canEdit && (
                       <button
                         onClick={() => openEdit(listing)}
-                        title={isActive ? 'Update price' : 'Edit listing'}
+                        title={isActive ? 'Update price' : 'PencilSimple listing'}
                         className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 transition-all"
                       >
-                        <Pencil className="h-3.5 w-3.5" />
+                        <PencilSimple className="h-3.5 w-3.5" />
                       </button>
                     )}
                     <button
@@ -483,9 +480,9 @@ export default function UserListingsPage() {
                     >
                       {isDeleting ? (
                         <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
                         </svg>
-                      ) : <Trash2 className="h-3.5 w-3.5" />}
+                      ) : <Trash className="h-3.5 w-3.5" />}
                     </button>
                   </div>
                 </div>
@@ -493,7 +490,7 @@ export default function UserListingsPage() {
                 {/* Rejection reason banner */}
                 {isRejected && (
                   <div className="mx-4 mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 flex items-start gap-2">
-                    <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                    <WarningCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-[11px] font-bold text-red-700 uppercase tracking-wide mb-0.5">Listing Rejected</p>
                       <p className="text-[12px] text-red-600">
@@ -504,7 +501,7 @@ export default function UserListingsPage() {
                       onClick={() => openEdit(listing)}
                       className="flex-shrink-0 flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-red-700 transition-colors"
                     >
-                      <Pencil className="h-3 w-3" /> Edit & Resubmit
+                      <PencilSimple className="h-3 w-3" /> PencilSimple & Resubmit
                     </button>
                   </div>
                 )}
@@ -522,7 +519,7 @@ export default function UserListingsPage() {
                       onClick={() => openEdit(listing)}
                       className="flex-shrink-0 flex items-center gap-1 rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 transition-colors"
                     >
-                      <Pencil className="h-3 w-3" /> Edit
+                      <PencilSimple className="h-3 w-3" /> PencilSimple
                     </button>
                   </div>
                 )}
@@ -535,7 +532,7 @@ export default function UserListingsPage() {
                       onClick={() => openEdit(listing)}
                       className="flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:underline"
                     >
-                      <Pencil className="h-3 w-3" /> Update price
+                      <PencilSimple className="h-3 w-3" /> Update price
                     </button>
                   </div>
                 )}

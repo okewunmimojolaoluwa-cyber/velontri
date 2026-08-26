@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { List } from 'lucide-react';
+import { Rows } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -30,7 +30,7 @@ export default function AdminTransactionsPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <List className="h-6 w-6 text-indigo-600" /> All Transactions
+            <Rows className="h-6 w-6 text-indigo-600" /> All Transactions
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">Complete transaction ledger across the platform</p>
         </div>
@@ -40,7 +40,7 @@ export default function AdminTransactionsPage() {
             <div className="p-6 space-y-3">{[...Array(10)].map((_, i) => <div key={i} className="h-12 rounded-xl bg-slate-100 animate-pulse" />)}</div>
           ) : txns.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <List className="h-12 w-12 text-slate-200 mb-3" />
+              <Rows className="h-12 w-12 text-slate-200 mb-3" />
               <p className="text-sm font-semibold text-slate-900">No transactions yet</p>
             </div>
           ) : (

@@ -1,4 +1,4 @@
-import { Star, Quote } from 'lucide-react';
+﻿import { Star, Quotes } from '@phosphor-icons/react';
 
 const TESTIMONIALS = [
   {
@@ -53,7 +53,7 @@ const TESTIMONIALS = [
   },
   {
     name: 'Fatima Al-Hassan',
-    role: 'Fashion Store Owner',
+    role: 'Fashion Storefront Owner',
     location: 'Kano, Nigeria',
     text: "Running a fashion business in Kano while reaching customers in Lagos and Accra felt impossible before. Velontri made it simple. The platform handles everything beautifully.",
     avatar: 'FA',
@@ -80,8 +80,8 @@ export function TestimonialsSection() {
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {TESTIMONIALS.map(({ name, role, location, text, avatar, gradient, stars, metric }) => (
             <div key={name} className="card-premium p-6 space-y-4 flex flex-col">
-              {/* Quote icon */}
-              <Quote className="h-6 w-6 text-primary/30" />
+              {/* Quotes icon */}
+              <Quotes className="h-6 w-6 text-primary/30" />
 
               {/* Stars */}
               <div className="flex gap-0.5">

@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { ShoppingCart, TrendingUp, Package, Users, BarChart2 } from 'lucide-react';
+import { ShoppingCart, TrendUp, Package, Users, ChartBar } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -70,7 +70,7 @@ export default function AdminSalesPage() {
   const KPI_CARDS = safeStats
     ? [
         { label: "Today's Sales", value: fmt(safeStats.today_sales,  currency), icon: ShoppingCart, color: 'text-indigo-600',  bg: 'bg-indigo-50'  },
-        { label: 'Weekly Sales',  value: fmt(safeStats.week_sales,   currency), icon: TrendingUp,   color: 'text-emerald-600', bg: 'bg-emerald-50' },
+        { label: 'Weekly Sales',  value: fmt(safeStats.week_sales,   currency), icon: TrendUp,   color: 'text-emerald-600', bg: 'bg-emerald-50' },
         { label: 'Total Orders',  value: safeStats.total_orders.toLocaleString(),                   icon: Package,      color: 'text-violet-600', bg: 'bg-violet-50' },
         { label: 'Avg. Order',    value: fmt(safeStats.avg_order,    currency), icon: Users,        color: 'text-amber-600',  bg: 'bg-amber-50'   },
       ]
@@ -123,7 +123,7 @@ export default function AdminSalesPage() {
           </div>
         ) : categories.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-14 text-center">
-            <BarChart2 className="h-12 w-12 text-slate-200 mb-3" />
+            <ChartBar className="h-12 w-12 text-slate-200 mb-3" />
             <p className="text-sm font-semibold text-slate-900">No sales data yet</p>
             <p className="text-xs text-slate-400 mt-1">Sales by category will appear after your first successful orders</p>
           </div>

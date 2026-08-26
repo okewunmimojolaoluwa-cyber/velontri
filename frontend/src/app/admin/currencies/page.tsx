@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { DollarSign, Plus, CheckCircle, AlertCircle } from 'lucide-react';
+import { CurrencyDollar, Plus, CheckCircle, WarningCircle } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -52,7 +52,7 @@ export default function AdminCurrenciesPage() {
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <DollarSign className="h-6 w-6 text-emerald-600" /> Currencies
+            <CurrencyDollar className="h-6 w-6 text-emerald-600" /> Currencies
           </h1>
           <p className="text-[13px] text-slate-400 mt-0.5">Manage supported listing currencies</p>
         </div>
@@ -94,7 +94,7 @@ export default function AdminCurrenciesPage() {
             </div>
             {formErr && (
               <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5">
-                <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                <WarningCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
                 <p className="text-[12px] font-medium text-red-600">{formErr}</p>
               </div>
             )}
@@ -121,7 +121,7 @@ export default function AdminCurrenciesPage() {
         <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-14 rounded-2xl bg-slate-100 animate-pulse" />)}</div>
       ) : currencies.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-20 text-center">
-          <DollarSign className="h-12 w-12 text-slate-200 mb-3" />
+          <CurrencyDollar className="h-12 w-12 text-slate-200 mb-3" />
           <p className="text-[15px] font-semibold text-slate-900">No currencies configured</p>
         </div>
       ) : (

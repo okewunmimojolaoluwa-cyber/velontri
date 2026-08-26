@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
-import { MapPin, BadgeCheck, Camera } from 'lucide-react';
+import { MapPin, SealCheck, Camera } from '@phosphor-icons/react';
 import { ListingImage } from '@/components/ui/listing-image';
 import type { ListingSummary } from '@/lib/api/endpoints/listings';
 
@@ -50,7 +50,7 @@ export function ListingCard({ listing }: { listing: ListingSummary }) {
           </p>
           {(listing as any).seller_verified && (
             <span className="flex items-center gap-0.5 flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">
-              <BadgeCheck className="h-2.5 w-2.5" />
+              <SealCheck className="h-2.5 w-2.5" />
               Verified
             </span>
           )}

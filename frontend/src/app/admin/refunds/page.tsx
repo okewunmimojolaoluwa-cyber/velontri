@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { RefreshCw } from 'lucide-react';
+import { ArrowClockwise } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -26,7 +26,7 @@ export default function AdminRefundsPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <RefreshCw className="h-6 w-6 text-indigo-600" /> Refunds
+            <ArrowClockwise className="h-6 w-6 text-indigo-600" /> Refunds
           </h1>
           {pending.length > 0 && (
             <p className="text-sm font-medium text-amber-600 mt-0.5">{pending.length} pending refund{pending.length !== 1 ? 's' : ''}</p>
@@ -38,7 +38,7 @@ export default function AdminRefundsPage() {
             <div className="p-6 space-y-3">{[...Array(6)].map((_, i) => <div key={i} className="h-12 rounded-xl bg-slate-100 animate-pulse" />)}</div>
           ) : refunds.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <RefreshCw className="h-12 w-12 text-slate-200 mb-3" />
+              <ArrowClockwise className="h-12 w-12 text-slate-200 mb-3" />
               <p className="text-sm font-semibold text-slate-900">No refunds</p>
             </div>
           ) : (

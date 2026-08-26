@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
-import { Lock, Eye, EyeOff, Mail, CheckCircle, RefreshCw, Shield } from 'lucide-react';
+import { Lock, Eye, EyeSlash, EnvelopeSimple, CheckCircle, ArrowClockwise, Shield } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import { userKeys } from '@/lib/api/endpoints/users';
@@ -91,7 +91,7 @@ export default function AdminSecurityPage() {
     <div className="space-y-6 max-w-xl">
       <div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-          <Shield className="h-6 w-6 text-indigo-600" /> Security Settings
+          <Shield className="h-6 w-6 text-indigo-600" /> Security Gear
         </h1>
         <p className="text-sm text-slate-500 mt-0.5">Change your email address or password</p>
       </div>
@@ -99,7 +99,7 @@ export default function AdminSecurityPage() {
       {/* ── Email Change ─────────────────────────── */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center gap-2.5 border-b border-slate-100 px-5 py-4">
-          <Mail className="h-4 w-4 text-indigo-600" />
+          <EnvelopeSimple className="h-4 w-4 text-indigo-600" />
           <h2 className="text-[14px] font-bold text-slate-900">Change Email Address</h2>
         </div>
         <form onSubmit={handleEmailSave} className="p-5 space-y-4">
@@ -132,7 +132,7 @@ export default function AdminSecurityPage() {
               hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed
               flex items-center justify-center gap-2"
           >
-            {savingEmail ? <><RefreshCw className="h-3.5 w-3.5 animate-spin" />Saving…</> : 'Update Email'}
+            {savingEmail ? <><ArrowClockwise className="h-3.5 w-3.5 animate-spin" />Saving…</> : 'Update Email'}
           </button>
         </form>
       </div>
@@ -175,7 +175,7 @@ export default function AdminSecurityPage() {
                 />
                 <button type="button" onClick={() => setShowCur(v => !v)} tabIndex={-1}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                  {showCur ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showCur ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
@@ -193,7 +193,7 @@ export default function AdminSecurityPage() {
                 />
                 <button type="button" onClick={() => setShowNew(v => !v)} tabIndex={-1}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                  {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showNew ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               <PwStrength pw={newPw} />
@@ -228,7 +228,7 @@ export default function AdminSecurityPage() {
                 flex items-center justify-center gap-2"
             >
               {changingPw
-                ? <><RefreshCw className="h-4 w-4 animate-spin" />Changing password…</>
+                ? <><ArrowClockwise className="h-4 w-4 animate-spin" />Changing password…</>
                 : 'Change Password'}
             </button>
           </form>

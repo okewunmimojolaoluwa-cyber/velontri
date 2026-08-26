@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -46,7 +46,7 @@ export default function AdminSettingsPage() {
     mutationFn: (data: Partial<AdminSettings>) =>
       apiClient.put('/admin/settings', data),
     onSuccess: () => {
-      setMessage('Settings updated successfully');
+      setMessage('Gear updated successfully');
       setTimeout(() => setMessage(''), 3000);
       queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
     },
@@ -72,7 +72,7 @@ export default function AdminSettingsPage() {
     
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Platform Settings</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Platform Gear</h1>
           <p className="text-gray-600 dark:text-gray-400">Configure platform-wide settings</p>
         </div>
 
@@ -154,14 +154,14 @@ export default function AdminSettingsPage() {
             </div>
 
             <Button type="submit" disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+              {updateMutation.isPending ? 'Saving...' : 'FloppyDisk Changes'}
             </Button>
           </form>
         )}
 
         {activeTab === 'security' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 space-y-6">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Security Settings</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">Security Gear</h3>
             
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">

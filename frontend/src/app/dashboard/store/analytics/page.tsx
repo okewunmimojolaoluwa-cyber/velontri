@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { BarChart3, TrendingUp, Package, CheckCircle, Clock, XCircle, ArrowLeft } from 'lucide-react';
+import { ChartBar, TrendUp, Package, CheckCircle, Clock, XCircle, ArrowLeft } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useAuth } from '@/features/auth/auth-provider';
 import { sellerApi } from '@/lib/api/endpoints/seller';
@@ -44,7 +44,7 @@ export default function StoreAnalyticsPage() {
     { icon: CheckCircle, label: 'Active',           value: activeListings.toLocaleString(),   color: '#059669', bg: '#ecfdf5' },
     { icon: Clock,       label: 'Pending / Draft',  value: pendingListings.toLocaleString(),  color: '#D97706', bg: '#fffbeb' },
     { icon: XCircle,     label: 'Rejected',         value: rejectedListings.toLocaleString(), color: '#DC2626', bg: '#fef2f2' },
-    { icon: TrendingUp,  label: 'Active Rate',      value: listingRate,                       color: '#7C3AED', bg: '#f5f3ff' },
+    { icon: TrendUp,  label: 'Active Rate',      value: listingRate,                       color: '#7C3AED', bg: '#f5f3ff' },
   ];
 
   const statusColors: Record<string, string> = {
@@ -66,7 +66,7 @@ export default function StoreAnalyticsPage() {
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
-          <h1 className="text-[1.4rem] font-black text-slate-900 tracking-tight">Store Analytics</h1>
+          <h1 className="text-[1.4rem] font-black text-slate-900 tracking-tight">Storefront Analytics</h1>
           <p className="text-[12px] text-slate-400 mt-0.5">Live data from your listings</p>
         </div>
       </div>
@@ -155,7 +155,7 @@ export default function StoreAnalyticsPage() {
       {!isLoading && listings.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed
           border-slate-200 py-16 text-center">
-          <BarChart3 className="h-12 w-12 text-slate-200 mb-3" />
+          <ChartBar className="h-12 w-12 text-slate-200 mb-3" />
           <p className="text-[15px] font-semibold text-slate-900 mb-1">No listings yet</p>
           <p className="text-[13px] text-slate-400 mb-4">
             Post your first listing to start tracking analytics.

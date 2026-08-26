@@ -1,12 +1,10 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Store, Package, Star, BarChart3, Plus, MapPin, Trash2, Eye,
-} from 'lucide-react';
+import { Storefront, Package, Star, BarChart3, Plus, MapPin, Trash, Eye } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import { sellerApi, sellerKeys } from '@/lib/api/endpoints/seller';
 import type { ApiResponse } from '@/types/api';
@@ -54,7 +52,7 @@ export default function UserStorePage() {
     enabled: session.isAuthenticated,
   });
 
-  /* ── Store ─────────────────────────────────────── */
+  /* ── Storefront ─────────────────────────────────────── */
   const { data: storeData, isLoading: storeLoading } = useQuery({
     queryKey: [uid, 'my-store'],
     queryFn: () =>
@@ -92,7 +90,7 @@ export default function UserStorePage() {
       {/* ── Header ──────────────────────────────────── */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-[1.4rem] font-black text-slate-900 tracking-tight">My Store</h1>
+          <h1 className="text-[1.4rem] font-black text-slate-900 tracking-tight">My Storefront</h1>
           <p className="text-[12px] text-slate-400 mt-0.5">
             {meta?.total ?? listings.length} listing{(meta?.total ?? listings.length) !== 1 ? 's' : ''}
           </p>
@@ -104,7 +102,7 @@ export default function UserStorePage() {
         </Link>
       </div>
 
-      {/* ── Store brand card ────────────────────────── */}
+      {/* ── Storefront brand card ────────────────────────── */}
       {storeLoading ? (
         <div className="h-20 rounded-2xl bg-slate-100 animate-pulse" />
       ) : store ? (
@@ -134,7 +132,7 @@ export default function UserStorePage() {
           </div>
           <div>
             <label className="block text-[12px] font-bold text-slate-600 mb-1.5">
-              Store name <span className="text-red-500">*</span>
+              Storefront name <span className="text-red-500">*</span>
             </label>
             <Input
               value={storeName}
@@ -167,10 +165,10 @@ export default function UserStorePage() {
             >
               {creating_ ? (
                 <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+                  <circle cx="12" cy="12" r="10" stroke="currentColor"
                     strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
                 </svg>
-              ) : <Store className="h-4 w-4" />}
+              ) : <Storefront className="h-4 w-4" />}
               {creating_ ? 'Creating…' : 'Create store'}
             </button>
             <button onClick={() => { setCreating(false); setStoreName(''); setStoreDesc(''); }}
@@ -185,7 +183,7 @@ export default function UserStorePage() {
         <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
           <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl
             bg-white border border-slate-200">
-            <Store className="h-4.5 w-4.5 text-slate-400" style={{ height: 18, width: 18 }} />
+            <Storefront className="h-4.5 w-4.5 text-slate-400" style={{ height: 18, width: 18 }} />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[13px] font-semibold text-slate-700">You don't have a store yet</p>
@@ -294,10 +292,10 @@ export default function UserStorePage() {
                   >
                     {isDeleting
                       ? <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+                          <circle cx="12" cy="12" r="10" stroke="currentColor"
                             strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
                         </svg>
-                      : <Trash2 className="h-3.5 w-3.5" />}
+                      : <Trash className="h-3.5 w-3.5" />}
                   </button>
                 </div>
               </div>

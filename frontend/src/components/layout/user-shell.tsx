@@ -1,14 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard, PlusCircle, Package, Activity,
-  Bookmark, Store, BarChart3,
-  MessageCircle, Bell, User, Settings, Lock,
-  HelpCircle, LogOut, Menu, X, CreditCard, AlertTriangle, BadgeCheck,
-} from 'lucide-react';
+import { SquaresFour, PlusCircle, Package, Activity, BookmarkSimple, Storefront, BarChart3, ChatCircle, Bell, User, Gear, Lock, Question, SignOut, List, X, CreditCard, Warning, SealCheck } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 import { useAuth } from '@/features/auth/auth-provider';
@@ -19,12 +14,12 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { VelontriLogo } from '@/components/ui/velontri-logo';
 import { useUnreadCount } from '@/lib/hooks/use-notifications';
 
-/* ── Navigation structure — one item per destination ─────────────── */
+/* ── NavigationArrow structure — one item per destination ─────────────── */
 const NAV = [
   {
     label: 'MAIN',
     items: [
-      { icon: LayoutDashboard, label: 'Overview',      href: ROUTES.user.overview },
+      { icon: SquaresFour, label: 'Overview',      href: ROUTES.user.overview },
     ],
   },
   {
@@ -32,20 +27,20 @@ const NAV = [
     items: [
       { icon: Package,         label: 'My Listings',  href: ROUTES.user.listings },
       { icon: Activity,        label: 'Activity',     href: ROUTES.user.orders },
-      { icon: Bookmark,        label: 'Saved',        href: ROUTES.user.saved },
+      { icon: BookmarkSimple,        label: 'Saved',        href: ROUTES.user.saved },
     ],
   },
   {
     label: 'MY STORE',
     items: [
-      { icon: Store,           label: 'Store',        href: ROUTES.user.store },
+      { icon: Storefront,           label: 'Storefront',        href: ROUTES.user.store },
       { icon: BarChart3,       label: 'Analytics',    href: ROUTES.user.storeAnalytics },
     ],
   },
   {
     label: 'MESSAGES',
     items: [
-      { icon: MessageCircle,   label: 'Messages',     href: ROUTES.user.messages },
+      { icon: ChatCircle,   label: 'Messages',     href: ROUTES.user.messages },
       { icon: Bell,            label: 'Notifications',href: ROUTES.user.notifications },
     ],
   },
@@ -54,11 +49,11 @@ const NAV = [
     items: [
       { icon: User,            label: 'Profile',      href: ROUTES.user.profile },
       { icon: Lock,            label: 'Security',     href: ROUTES.user.security },
-      { icon: Settings,        label: 'Settings',     href: ROUTES.user.settings },
+      { icon: Gear,        label: 'Gear',     href: ROUTES.user.settings },
       { icon: CreditCard,      label: 'Subscription', href: ROUTES.user.subscription },
-      { icon: BadgeCheck,      label: 'Verification',  href: '/dashboard/verification' },
-      { icon: AlertTriangle,   label: 'Disputes',     href: '/dashboard/disputes' },
-      { icon: HelpCircle,      label: 'Help',         href: ROUTES.user.help },
+      { icon: SealCheck,      label: 'Verification',  href: '/dashboard/verification' },
+      { icon: Warning,   label: 'Disputes',     href: '/dashboard/disputes' },
+      { icon: Question,      label: 'Help',         href: ROUTES.user.help },
     ],
   },
 ];
@@ -67,7 +62,7 @@ const NAV = [
 function NavItem({
   icon: Icon, label, href,
 }: {
-  icon: typeof LayoutDashboard; label: string; href: string;
+  icon: typeof SquaresFour; label: string; href: string;
 }) {
   const pathname = usePathname() as string;
   // Mark active: exact match for overview, prefix match for sub-pages
@@ -90,7 +85,6 @@ function NavItem({
           'h-[17px] w-[17px] flex-shrink-0 transition-colors',
           active ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600',
         )}
-        strokeWidth={active ? 2.2 : 1.75}
       />
       <span className="flex-1 truncate">{label}</span>
       {active && (
@@ -141,7 +135,7 @@ export function UserShell({ children }: { children: ReactNode }) {
             no-underline shadow-sm shadow-indigo-200 hover:bg-indigo-700
             active:scale-[0.98] transition-all"
         >
-          <PlusCircle className="h-4 w-4" strokeWidth={2.25} />
+          <PlusCircle className="h-4 w-4" />
           Post a listing
         </Link>
       </div>
@@ -174,7 +168,7 @@ export function UserShell({ children }: { children: ReactNode }) {
             {initials}
           </div>
           <span className="flex-1 text-left truncate">My Account</span>
-          <LogOut className="h-3.5 w-3.5 text-slate-300 group-hover:text-red-400 transition-colors" />
+          <SignOut className="h-3.5 w-3.5 text-slate-300 group-hover:text-red-400 transition-colors" />
         </button>
       </div>
     </div>
@@ -222,7 +216,7 @@ export function UserShell({ children }: { children: ReactNode }) {
             >
               {open
                 ? <X className="h-4 w-4 text-white" />
-                : <Menu className="h-4 w-4 text-indigo-600" />
+                : <List className="h-4 w-4 text-indigo-600" />
               }
             </button>
 
@@ -278,7 +272,7 @@ export function UserShell({ children }: { children: ReactNode }) {
                     className="flex h-8 w-8 items-center justify-center rounded-lg
                       text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
                   >
-                    <LogOut className="h-4 w-4" />
+                    <SignOut className="h-4 w-4" />
                   </button>
                 </div>
               </div>

@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Search, Sparkles, ArrowRight, CheckCircle, ChevronRight } from 'lucide-react';
+import { MagnifyingGlass, Sparkle, ArrowRight, CheckCircle, CaretRight } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { useRouter } from 'next/navigation';
@@ -92,7 +92,7 @@ export function HeroSection() {
 
         {/* Eyebrow */}
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/6 backdrop-blur-sm px-5 py-2 text-sm text-white/75">
-          <Sparkles className="h-3.5 w-3.5 text-amber-400 animate-pulse" />
+          <Sparkle className="h-3.5 w-3.5 text-amber-400 animate-pulse" />
           <span>Africa's #1 AI-powered commerce platform</span>
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-xs text-emerald-400">Live</span>
@@ -112,14 +112,14 @@ export function HeroSection() {
           protected by escrow and powered by AI.
         </p>
 
-        {/* Search bar */}
+        {/* MagnifyingGlass bar */}
         <div className="mx-auto mb-8 max-w-2xl">
           <form
             onSubmit={(e) => { e.preventDefault(); if (query.trim()) router.push(`/search?q=${encodeURIComponent(query.trim())}`); }}
             className="flex items-center gap-2 rounded-2xl bg-white/8 backdrop-blur-xl border border-white/12 p-2 shadow-2xl"
           >
             <div className="flex flex-1 items-center gap-3 px-4">
-              <Search className="h-5 w-5 text-white/40 flex-shrink-0" />
+              <MagnifyingGlass className="h-5 w-5 text-white/40 flex-shrink-0" />
               <input
                 type="text"
                 placeholder="iPhone 15, Toyota Camry, 3-bed Lagos…"
@@ -128,12 +128,12 @@ export function HeroSection() {
                 className="flex-1 bg-transparent text-white placeholder:text-white/35 text-base focus:outline-none"
               />
               <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-white/12 bg-white/6 px-2.5 py-1 text-xs text-white/40">
-                <Sparkles className="h-3 w-3 text-amber-400" />
-                AI Search
+                <Sparkle className="h-3 w-3 text-amber-400" />
+                AI MagnifyingGlass
               </div>
             </div>
             <Button size="md" className="flex-shrink-0 rounded-xl" type="submit">
-              Search
+              MagnifyingGlass
             </Button>
           </form>
 
@@ -160,7 +160,7 @@ export function HeroSection() {
           </Button>
           <Button size="lg" variant="glass" asChild>
             <Link href={ROUTES.listings} className="gap-2">
-              Browse listings <ChevronRight className="h-4 w-4" />
+              Browse listings <CaretRight className="h-4 w-4" />
             </Link>
           </Button>
         </div>

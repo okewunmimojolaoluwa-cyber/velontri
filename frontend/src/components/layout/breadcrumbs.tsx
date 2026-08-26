@@ -1,4 +1,4 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
 
@@ -40,7 +40,7 @@ export function useBreadcrumbs(): BreadcrumbItem[] {
   // Generate breadcrumbs from pathname
   const segments = pathname.split('/').filter(Boolean);
   const items: BreadcrumbItem[] = [
-    { label: 'Home', href: '/' },
+    { label: 'House', href: '/' },
   ];
 
   let currentPath = '';

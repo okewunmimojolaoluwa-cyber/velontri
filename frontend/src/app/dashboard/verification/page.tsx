@@ -1,12 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  BadgeCheck, ChevronRight, Upload, X, Check,
-  AlertCircle, Clock, CheckCircle, XCircle, Info,
-  User, FileText, Store, Shield, Building2,
-} from 'lucide-react';
+import { SealCheck, CaretRight, UploadSimple, X, Check, WarningCircle, Clock, CheckCircle, XCircle, Info, User, FileText, Storefront, Shield, Buildings } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/features/auth/auth-provider';
 
@@ -30,15 +26,15 @@ const STATUS_CONFIG: Record<VStatus, { label: string; color: string; bg: string;
   under_review:      { label: 'Under Review',          color: 'text-amber-600',   bg: 'bg-amber-50',    icon: Clock },
   approved:          { label: 'Verified Seller ✓',     color: 'text-emerald-700', bg: 'bg-emerald-50',  icon: CheckCircle },
   rejected:          { label: 'Not Approved',          color: 'text-red-600',     bg: 'bg-red-50',      icon: XCircle },
-  more_info_required:{ label: 'More Information Needed',color: 'text-amber-700',  bg: 'bg-amber-50',    icon: AlertCircle },
+  more_info_required:{ label: 'More Information Needed',color: 'text-amber-700',  bg: 'bg-amber-50',    icon: WarningCircle },
   suspended:         { label: 'Suspended',             color: 'text-red-700',     bg: 'bg-red-100',     icon: XCircle },
 };
 
 const STEPS = [
   { id: 1, label: 'Personal Info',    icon: User },
   { id: 2, label: 'ID Verification',  icon: FileText },
-  { id: 3, label: 'Seller Info',      icon: Store },
-  { id: 4, label: 'Seller Profile',   icon: Building2 },
+  { id: 3, label: 'Seller Info',      icon: Storefront },
+  { id: 4, label: 'Seller Profile',   icon: Buildings },
   { id: 5, label: 'Declaration',      icon: Shield },
 ];
 
@@ -51,7 +47,7 @@ const ID_TYPES = [
 ];
 
 const BUSINESS_CATEGORIES = [
-  'Electronics', 'Fashion & Clothing', 'Furniture & Home',
+  'Electronics', 'Fashion & Clothing', 'Furniture & House',
   'Vehicles & Automotive', 'Property & Real Estate', 'Food & Beverages',
   'Health & Beauty', 'Sports & Fitness', 'Books & Education',
   'Services & Freelancing', 'Agriculture', 'Other',
@@ -102,7 +98,7 @@ function ImageUpload({
           onClick={() => ref.current?.click()}
           className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 py-8 hover:border-indigo-300 hover:bg-indigo-50 transition-all"
         >
-          <Upload className="h-8 w-8 text-slate-300" />
+          <UploadSimple className="h-8 w-8 text-slate-300" />
           <span className="text-[13px] font-semibold text-slate-500">Click to upload</span>
           {hint && <span className="text-[11px] text-slate-400">{hint}</span>}
         </button>
@@ -341,7 +337,7 @@ export default function VerificationPage() {
         {status === 'more_info_required' && app?.additional_notes && (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
             <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <WarningCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-[14px] font-bold text-amber-900 mb-1">Additional Information Required</p>
                 <p className="text-[13px] text-amber-700">{app.additional_notes}</p>
@@ -360,7 +356,7 @@ export default function VerificationPage() {
         {status === 'approved' && (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 mx-auto mb-3">
-              <BadgeCheck className="h-9 w-9 text-emerald-600" />
+              <SealCheck className="h-9 w-9 text-emerald-600" />
             </div>
             <p className="text-[18px] font-black text-emerald-900">Verified Seller</p>
             <p className="text-[13px] text-emerald-700 mt-1">
@@ -456,7 +452,7 @@ export default function VerificationPage() {
                 <span className="hidden sm:inline">{s.label}</span>
                 <span className="sm:hidden">{s.id}</span>
               </button>
-              {i < STEPS.length - 1 && <ChevronRight className="h-3.5 w-3.5 text-slate-300 flex-shrink-0" />}
+              {i < STEPS.length - 1 && <CaretRight className="h-3.5 w-3.5 text-slate-300 flex-shrink-0" />}
             </div>
           );
         })}
@@ -465,7 +461,7 @@ export default function VerificationPage() {
       {/* Error */}
       {err && (
         <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-          <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+          <WarningCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
           <p className="text-[13px] font-medium text-red-600">{err}</p>
         </div>
       )}
@@ -556,7 +552,7 @@ export default function VerificationPage() {
       {step === 3 && (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
           <h2 className="text-[15px] font-bold text-slate-900 flex items-center gap-2">
-            <Store className="h-4 w-4 text-indigo-600" /> Seller Information
+            <Storefront className="h-4 w-4 text-indigo-600" /> Seller Information
           </h2>
           <div>
             <label className={labelCls}>Seller Type *</label>
@@ -650,11 +646,11 @@ export default function VerificationPage() {
       {step === 4 && (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
           <h2 className="text-[15px] font-bold text-slate-900 flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-indigo-600" /> Seller Profile
+            <Buildings className="h-4 w-4 text-indigo-600" /> Seller Profile
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Store Name</label>
+              <label className={labelCls}>Storefront Name</label>
               <input value={form.store_name} onChange={e => setField('store_name', e.target.value)} placeholder="Your store name" className={inputCls} />
             </div>
             <div>
@@ -663,7 +659,7 @@ export default function VerificationPage() {
             </div>
           </div>
           <div>
-            <label className={labelCls}>Store Description</label>
+            <label className={labelCls}>Storefront Description</label>
             <textarea value={form.store_description} onChange={e => setField('store_description', e.target.value)}
               placeholder="Describe your store and what makes you special…"
               rows={3}
@@ -671,7 +667,7 @@ export default function VerificationPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <ImageUpload label="Profile Photo" value={form.profile_photo_url} onChange={v => setField('profile_photo_url', v)} hint="Square photo recommended" />
-            <ImageUpload label="Store Logo" value={form.store_logo_url} onChange={v => setField('store_logo_url', v)} hint="Your business/store logo" />
+            <ImageUpload label="Storefront Logo" value={form.store_logo_url} onChange={v => setField('store_logo_url', v)} hint="Your business/store logo" />
           </div>
 
           {/* Preview */}
@@ -690,7 +686,7 @@ export default function VerificationPage() {
                   <div className="flex items-center gap-1.5">
                     <p className="text-[14px] font-bold text-slate-900">{form.store_name || form.display_name || form.business_name}</p>
                     <span className="flex items-center gap-0.5 rounded-full bg-indigo-600 px-1.5 py-0.5 text-[9px] font-bold text-white">
-                      <BadgeCheck className="h-2.5 w-2.5" /> VERIFIED
+                      <SealCheck className="h-2.5 w-2.5" /> VERIFIED
                     </span>
                   </div>
                   <p className="text-[12px] text-slate-500">{form.location || 'Nigeria'}</p>
@@ -742,7 +738,7 @@ export default function VerificationPage() {
         </div>
       )}
 
-      {/* Navigation */}
+      {/* NavigationArrow */}
       {!successMsg && (
         <div className="flex gap-3">
           {step > 1 && (
@@ -767,8 +763,8 @@ export default function VerificationPage() {
               disabled={saving}
               className="flex-1 h-11 rounded-xl bg-indigo-600 text-[14px] font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
-              {saving ? 'Saving…' : 'Save & Continue'}
-              {!saving && <ChevronRight className="h-4 w-4" />}
+              {saving ? 'Saving…' : 'FloppyDisk & Continue'}
+              {!saving && <CaretRight className="h-4 w-4" />}
             </button>
           ) : (
             <button

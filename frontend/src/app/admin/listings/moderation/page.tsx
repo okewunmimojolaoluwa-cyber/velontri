@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ShieldCheck, ShieldOff, Package, CheckCircle, XCircle, MapPin } from 'lucide-react';
+import { ShieldCheck, ShieldOff, Package, CheckCircle, XCircle, MapPin } from '@phosphor-icons/react';
 import { RoleGate } from '@/components/rbac/role-gate';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
@@ -146,7 +146,7 @@ export default function ModerationPage() {
                             font-bold text-white transition-all hover:bg-emerald-700 disabled:opacity-40 active:scale-95">
                           {actionId === listing.id ? (
                             <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
+                              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
                             </svg>
                           ) : <CheckCircle className="h-3.5 w-3.5" />}
                           Approve
@@ -158,7 +158,7 @@ export default function ModerationPage() {
                             font-bold text-red-600 transition-all hover:bg-red-100 disabled:opacity-40 active:scale-95">
                           {actionId === listing.id ? (
                             <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
+                              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
                             </svg>
                           ) : <XCircle className="h-3.5 w-3.5" />}
                           Reject

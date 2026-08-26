@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { BarChart2, Users, Package, CreditCard, Download, TrendingUp } from 'lucide-react';
+import { ChartBar, Users, Package, CreditCard, DownloadSimple, TrendUp } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -72,9 +72,9 @@ export default function AdminReportsPage() {
     { label: 'Registered Users',  value: ov.active_users.toLocaleString(),               sub: `+${ov.new_users_today} today`,                                icon: Users,       color: '#4F46E5' },
     { label: 'Active Listings',   value: ov.active_listings.toLocaleString(),             sub: `${ov.pending_listings} pending review`,                      icon: Package,     color: '#059669' },
     { label: 'Monthly Revenue',   value: fmt(ov.monthly_revenue),                        sub: `${fmt(ov.today_revenue)} today`,                             icon: CreditCard,  color: '#7C3AED' },
-    { label: 'Total Payments',    value: ov.total_sub_payments.toLocaleString(),          sub: `${ov.total_listings} total listings`,                        icon: TrendingUp,  color: '#D97706' },
-    { label: "Today's Sales",     value: fmt(sales.today_sales),                         sub: `${fmt(sales.week_sales)} this week`,                         icon: BarChart2,   color: '#0369A1' },
-    { label: 'Total Orders',      value: sales.total_orders.toLocaleString(),             sub: `Avg ₦${Math.round(sales.avg_order).toLocaleString()} each`,  icon: TrendingUp,  color: '#059669' },
+    { label: 'Total Payments',    value: ov.total_sub_payments.toLocaleString(),          sub: `${ov.total_listings} total listings`,                        icon: TrendUp,  color: '#D97706' },
+    { label: "Today's Sales",     value: fmt(sales.today_sales),                         sub: `${fmt(sales.week_sales)} this week`,                         icon: ChartBar,   color: '#0369A1' },
+    { label: 'Total Orders',      value: sales.total_orders.toLocaleString(),             sub: `Avg ₦${Math.round(sales.avg_order).toLocaleString()} each`,  icon: TrendUp,  color: '#059669' },
   ] : null;
 
   return (
@@ -87,11 +87,11 @@ export default function AdminReportsPage() {
         <div className="flex gap-2">
           <a href="/admin/revenue"
             className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-600 no-underline hover:bg-slate-50 transition-colors">
-            <BarChart2 className="h-4 w-4" /> Revenue Details
+            <ChartBar className="h-4 w-4" /> Revenue Details
           </a>
           <a href="/admin/sales"
             className="inline-flex h-10 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-[13px] font-bold text-white no-underline hover:bg-indigo-700 transition-colors">
-            <TrendingUp className="h-4 w-4" /> Sales Report
+            <TrendUp className="h-4 w-4" /> Sales Report
           </a>
         </div>
       </div>
@@ -123,7 +123,7 @@ export default function AdminReportsPage() {
               <p className="text-[15px] font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">{title}</p>
               <p className="text-[12px] text-slate-400 mt-0.5">{desc}</p>
             </div>
-            <Download className="h-5 w-5 text-slate-300 group-hover:text-indigo-500 flex-shrink-0 transition-colors" />
+            <DownloadSimple className="h-5 w-5 text-slate-300 group-hover:text-indigo-500 flex-shrink-0 transition-colors" />
           </a>
         ))}
       </div>

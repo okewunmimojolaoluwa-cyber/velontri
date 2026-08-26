@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight } from '@phosphor-icons/react';
 import { listingsApi, listingKeys } from '@/lib/api/endpoints/listings';
 import { ListingCard, ListingCardSkeleton } from './listing-card';
 import { Button } from '@/components/ui/button';

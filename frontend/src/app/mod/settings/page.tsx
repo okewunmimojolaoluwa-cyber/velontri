@@ -1,10 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Settings, Bell, Lock, LogOut, Eye, EyeOff,
-  CheckCircle, Smartphone, AlertCircle,
-} from 'lucide-react';
+import { Gear, Bell, Lock, SignOut, Eye, EyeSlash, CheckCircle, DeviceMobile, WarningCircle } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
@@ -177,7 +174,7 @@ export default function ModSettingsPage() {
     <div className="max-w-2xl space-y-6">
       <div>
         <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight flex items-center gap-2">
-          <Settings className="h-5 w-5 text-amber-500" /> Settings
+          <Gear className="h-5 w-5 text-amber-500" /> Gear
         </h1>
         <p className="text-[13px] text-slate-400 mt-0.5">
           Manage your moderator account preferences
@@ -231,7 +228,7 @@ export default function ModSettingsPage() {
               onClick={savePrefs}
               className="h-10 rounded-xl bg-amber-500 px-5 text-[13px] font-bold text-white hover:bg-amber-600 transition-colors"
             >
-              Save Changes
+              FloppyDisk Changes
             </button>
             {prefsSaved && (
               <span className="flex items-center gap-1.5 text-[12px] font-semibold text-emerald-600">
@@ -275,7 +272,7 @@ export default function ModSettingsPage() {
               onClick={saveNotifs}
               className="h-10 rounded-xl bg-amber-500 px-5 text-[13px] font-bold text-white hover:bg-amber-600 transition-colors"
             >
-              Save Changes
+              FloppyDisk Changes
             </button>
             {notifsSaved && (
               <span className="flex items-center gap-1.5 text-[12px] font-semibold text-emerald-600">
@@ -316,7 +313,7 @@ export default function ModSettingsPage() {
                     tabIndex={-1}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   >
-                    {showCur ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showCur ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
@@ -338,7 +335,7 @@ export default function ModSettingsPage() {
                     tabIndex={-1}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   >
-                    {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showNew ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
                 <PwStrength pw={newPw} />
@@ -358,7 +355,7 @@ export default function ModSettingsPage() {
 
               {pwErr && (
                 <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5">
-                  <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                  <WarningCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
                   <p className="text-[12px] font-medium text-red-600">{pwErr}</p>
                 </div>
               )}
@@ -383,7 +380,7 @@ export default function ModSettingsPage() {
           {/* 2FA — coming soon */}
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-100 bg-slate-50 px-5 py-3.5 flex items-center gap-2">
-              <Smartphone className="h-4 w-4 text-amber-500" />
+              <DeviceMobile className="h-4 w-4 text-amber-500" />
               <h2 className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">
                 Two-Factor Authentication
               </h2>
@@ -421,7 +418,7 @@ export default function ModSettingsPage() {
                   font-bold text-white hover:bg-red-700 transition-colors
                   disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ml-4"
               >
-                <LogOut className="h-3.5 w-3.5" />
+                <SignOut className="h-3.5 w-3.5" />
                 {signingOut ? 'Signing out…' : 'Sign Out All'}
               </button>
             </div>

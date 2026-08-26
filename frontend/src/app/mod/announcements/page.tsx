@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
-import { Megaphone, Plus, Trash2 } from 'lucide-react';
+import { Megaphone, Plus, Trash } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
@@ -180,7 +180,7 @@ export default function ModAnnouncementsPage() {
                   <button onClick={() => remove(a.id)}
                     className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200
                       text-slate-400 hover:border-red-200 hover:bg-red-50 hover:text-red-600 transition-all">
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>

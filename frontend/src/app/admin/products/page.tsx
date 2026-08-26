@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Package, Search, Eye } from 'lucide-react';
+import { Package, MagnifyingGlass, Eye } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
@@ -45,9 +45,9 @@ export function AdminListingsTable({
         </div>
         <form onSubmit={e => { e.preventDefault(); onSearch(); }} className="flex gap-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:flex-none">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
             <input
-              placeholder={`Search ${title.toLowerCase()}…`}
+              placeholder={`MagnifyingGlass ${title.toLowerCase()}…`}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="h-10 w-full sm:w-60 rounded-xl border border-slate-200 pl-9 pr-4 text-sm
@@ -56,7 +56,7 @@ export function AdminListingsTable({
           </div>
           <button type="submit"
             className="h-10 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white hover:bg-indigo-700 transition-colors">
-            Search
+            MagnifyingGlass
           </button>
         </form>
       </div>

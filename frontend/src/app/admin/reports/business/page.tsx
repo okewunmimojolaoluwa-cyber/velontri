@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, Download, BarChart2 } from 'lucide-react';
+import { TrendUp, DownloadSimple, ChartBar } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -34,12 +34,12 @@ export default function BusinessReportsPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <TrendingUp className="h-6 w-6 text-indigo-600" /> Business Reports
+            <TrendUp className="h-6 w-6 text-indigo-600" /> Business Reports
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">Comprehensive business performance reports</p>
         </div>
         <button className="flex items-center gap-2 h-10 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white hover:bg-indigo-700 transition-colors">
-          <Download className="h-4 w-4" /> Export PDF
+          <DownloadSimple className="h-4 w-4" /> Export PDF
         </button>
       </div>
 
@@ -67,7 +67,7 @@ export default function BusinessReportsPage() {
         </div>
       ) : metrics.length === 0 && !isError ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-20 text-center">
-          <BarChart2 className="h-12 w-12 text-slate-200 mb-3" />
+          <ChartBar className="h-12 w-12 text-slate-200 mb-3" />
           <p className="text-sm font-semibold text-slate-900">No business report data yet</p>
           <p className="text-xs text-slate-400 mt-1">
             Business metrics will appear here after your platform has processed activity

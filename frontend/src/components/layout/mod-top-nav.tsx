@@ -1,14 +1,14 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ListChecks, Flag, FileCheck } from 'lucide-react';
+import { SquaresFour, ListChecks, Flag, FileCheck } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 
 const TAB_ITEMS = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: ROUTES.mod.overview },
+  { icon: SquaresFour, label: 'Dashboard', href: ROUTES.mod.overview },
   { icon: ListChecks, label: 'Pending', href: ROUTES.mod.pendingListings },
   { icon: Flag, label: 'Reported', href: ROUTES.mod.reportedListings },
   { icon: FileCheck, label: 'KYC', href: ROUTES.mod.kyc },

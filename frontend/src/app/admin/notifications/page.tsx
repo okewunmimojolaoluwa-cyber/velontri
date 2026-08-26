@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bell, Trash2, Plus, CheckCircle, AlertCircle, X, Users } from 'lucide-react';
+import { Bell, Trash, Plus, CheckCircle, WarningCircle, X, Users } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -77,7 +77,7 @@ export default function AdminNotificationsPage() {
           <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight flex items-center gap-2">
             <Bell className="h-6 w-6 text-indigo-600" /> Announcements
           </h1>
-          <p className="text-[13px] text-slate-400 mt-0.5">Send platform-wide announcements to users</p>
+          <p className="text-[13px] text-slate-400 mt-0.5">PaperPlaneRight platform-wide announcements to users</p>
         </div>
         <button
           onClick={() => { setShowForm(v => !v); setFormErr(''); }}
@@ -144,7 +144,7 @@ export default function AdminNotificationsPage() {
             </div>
             {formErr && (
               <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5">
-                <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                <WarningCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
                 <p className="text-[12px] font-medium text-red-600">{formErr}</p>
               </div>
             )}
@@ -154,7 +154,7 @@ export default function AdminNotificationsPage() {
                 disabled={creating}
                 className="h-10 rounded-xl bg-indigo-600 px-5 text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors disabled:opacity-50"
               >
-                {creating ? 'Sending…' : 'Send Announcement'}
+                {creating ? 'Sending…' : 'PaperPlaneRight Announcement'}
               </button>
               <button
                 type="button"
@@ -184,7 +184,7 @@ export default function AdminNotificationsPage() {
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-16 text-center">
           <Bell className="h-12 w-12 text-slate-200 mb-3" />
           <p className="text-[15px] font-semibold text-slate-900 mb-1">No announcements yet</p>
-          <p className="text-[13px] text-slate-400">Send your first announcement to keep users informed.</p>
+          <p className="text-[13px] text-slate-400">PaperPlaneRight your first announcement to keep users informed.</p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm divide-y divide-slate-100">
@@ -211,7 +211,7 @@ export default function AdminNotificationsPage() {
                 className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:border-red-200 hover:bg-red-50 hover:text-red-600 transition-all"
                 title="Delete announcement"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash className="h-3.5 w-3.5" />
               </button>
             </div>
           ))}

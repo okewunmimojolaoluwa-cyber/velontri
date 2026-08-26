@@ -1,4 +1,4 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import { siteConfig } from '@/config/site';
 import { ROUTES } from '@/config/routes';
 
@@ -26,7 +26,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href={ROUTES.search} className="hover:text-foreground transition-colors">
-                  Search
+                  MagnifyingGlass
                 </Link>
               </li>
             </ul>

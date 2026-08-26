@@ -1,13 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard, ListChecks, FileCheck, Flag, AlertTriangle,
-  Users, Store, MessageSquare, Megaphone, LogOut, Menu, X, Zap,
-  Star, FileText, User, Settings, BadgeCheck,
-} from 'lucide-react';
+import { SquaresFour, ListChecks, FileCheck, Flag, Warning, Users, Storefront, ChatSquare, Megaphone, SignOut, List, X, Lightning, Star, FileText, User, Gear, SealCheck } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 import { useAuth } from '@/features/auth/auth-provider';
@@ -18,20 +14,20 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { VelontriLogo } from '@/components/ui/velontri-logo';
 
 const MOD_NAV = [
-  { icon: LayoutDashboard, label: 'Dashboard',           href: ROUTES.mod.overview },
+  { icon: SquaresFour, label: 'Dashboard',           href: ROUTES.mod.overview },
   { icon: ListChecks,      label: 'Pending Listings',   href: ROUTES.mod.pendingListings },
   { icon: Flag,            label: 'Reported Listings',  href: ROUTES.mod.reportedListings },
   { icon: FileCheck,       label: 'Pending KYC',         href: ROUTES.mod.kyc },
-  { icon: BadgeCheck,      label: 'Seller Verification', href: '/mod/verification' },
+  { icon: SealCheck,      label: 'Seller Verification', href: '/mod/verification' },
   { icon: Users,           label: 'Users',              href: ROUTES.mod.users },
-  { icon: Store,           label: 'Stores',             href: ROUTES.mod.stores },
+  { icon: Storefront,           label: 'Stores',             href: ROUTES.mod.stores },
   { icon: Star,            label: 'Reported Reviews',   href: ROUTES.mod.reviews },
-  { icon: AlertTriangle,   label: 'Disputes',           href: ROUTES.mod.disputes },
-  { icon: MessageSquare,   label: 'Support Tickets',    href: ROUTES.mod.tickets },
+  { icon: Warning,   label: 'Disputes',           href: ROUTES.mod.disputes },
+  { icon: ChatSquare,   label: 'Support Tickets',    href: ROUTES.mod.tickets },
   { icon: Megaphone,       label: 'Announcements',      href: ROUTES.mod.announcements },
   { icon: FileText,        label: 'Moderation Logs',    href: ROUTES.mod.logs },
   { icon: User,            label: 'Profile',             href: ROUTES.mod.profile },
-  { icon: Settings,        label: 'Settings',           href: ROUTES.mod.settings },
+  { icon: Gear,        label: 'Gear',           href: ROUTES.mod.settings },
 ];
 
 export function ModShell({ children }: { children: ReactNode }) {
@@ -79,7 +75,7 @@ export function ModShell({ children }: { children: ReactNode }) {
           </div>
           <button onClick={logout}
             className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all">
-            <LogOut className="h-3.5 w-3.5" />
+            <SignOut className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
@@ -98,7 +94,7 @@ export function ModShell({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <header className="flex h-14 items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[hsl(222_40%_8%)] px-4 sm:px-6">
           <button onClick={() => setOpen(v => !v)} className="md:hidden p-2 text-slate-500">
-            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {open ? <X className="h-5 w-5" /> : <List className="h-5 w-5" />}
           </button>
           <div className="flex items-center gap-2 ml-auto">
             <ThemeToggle variant="icon" />

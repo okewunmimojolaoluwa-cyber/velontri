@@ -1,18 +1,18 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Heart, Zap, MessageCircle, LayoutDashboard } from 'lucide-react';
+import { House, Heart, Lightning, ChatCircle, SquaresFour } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 
 const NAV_ITEMS = [
-  { icon: Home, label: 'Home', href: ROUTES.home },
+  { icon: House, label: 'House', href: ROUTES.home },
   { icon: Heart, label: 'Saved', href: ROUTES.user.saved },
-  { icon: Zap, label: 'SELL', href: ROUTES.user.create, isCTA: true },
-  { icon: MessageCircle, label: 'Messages', href: ROUTES.user.messages },
-  { icon: LayoutDashboard, label: 'Dashboard', href: ROUTES.user.overview },
+  { icon: Lightning, label: 'SELL', href: ROUTES.user.create, isCTA: true },
+  { icon: ChatCircle, label: 'Messages', href: ROUTES.user.messages },
+  { icon: SquaresFour, label: 'Dashboard', href: ROUTES.user.overview },
 ];
 
 export function UserBottomNav() {

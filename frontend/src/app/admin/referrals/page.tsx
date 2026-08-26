@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Users, DollarSign, TrendingUp } from 'lucide-react';
+import { Users, CurrencyDollar, TrendUp } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -49,8 +49,8 @@ export default function ReferralsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: 'Total Referrals', value: stats ? stats.total_referrals.toLocaleString() : '—', icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-          { label: 'Total Rewards', value: stats ? `₦${totalEarnings.toLocaleString()}` : '—', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Conversion Rate', value: stats ? `${(stats.conversion_rate ?? 0).toFixed(1)}%` : '—', icon: TrendingUp, color: 'text-violet-600', bg: 'bg-violet-50' },
+          { label: 'Total Rewards', value: stats ? `₦${totalEarnings.toLocaleString()}` : '—', icon: CurrencyDollar, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Conversion Rate', value: stats ? `${(stats.conversion_rate ?? 0).toFixed(1)}%` : '—', icon: TrendUp, color: 'text-violet-600', bg: 'bg-violet-50' },
         ].map(({ label, value, icon: Icon, color, bg }) => (
           <div key={label} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
             <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${bg} mb-3`}>

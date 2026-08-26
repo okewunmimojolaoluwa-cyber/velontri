@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { BadgeCheck, FileText, ShieldOff } from 'lucide-react';
+import { SealCheck, FileText, ShieldOff } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -34,7 +34,7 @@ export default function AdminKycPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <BadgeCheck className="h-6 w-6 text-emerald-600" /> KYC Verification
+            <SealCheck className="h-6 w-6 text-emerald-600" /> KYC Verification
           </h1>
           {pendingCount > 0 && (
             <p className="text-sm font-medium text-amber-600 mt-0.5">{pendingCount} document{pendingCount !== 1 ? 's' : ''} pending review</p>
@@ -56,7 +56,7 @@ export default function AdminKycPage() {
           <div className="space-y-3">{[...Array(5)].map((_, i) => <div key={i} className="h-24 rounded-2xl bg-slate-100 animate-pulse" />)}</div>
         ) : docs.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/30 py-20 text-center">
-            <BadgeCheck className="h-12 w-12 text-emerald-300 mb-3" />
+            <SealCheck className="h-12 w-12 text-emerald-300 mb-3" />
             <p className="text-sm font-semibold text-slate-900">No {filter !== 'all' ? filter : ''} KYC documents</p>
           </div>
         ) : (

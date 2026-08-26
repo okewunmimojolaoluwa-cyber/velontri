@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -63,7 +63,7 @@ export default function ModListingsPage() {
 
         <div className="flex gap-4">
           <Input
-            placeholder="Search listings..."
+            placeholder="MagnifyingGlass listings..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="max-w-xs"

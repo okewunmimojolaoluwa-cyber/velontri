@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MessageSquare, CheckCircle } from 'lucide-react';
+import { ChatSquare, CheckCircle } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -38,7 +38,7 @@ export default function AdminTicketsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-          <MessageSquare className="h-6 w-6 text-indigo-600" /> Support Tickets
+          <ChatSquare className="h-6 w-6 text-indigo-600" /> Support Tickets
         </h1>
         <p className="text-sm text-slate-500 mt-0.5">
           {meta?.total != null ? `${meta.total} ticket(s)` : 'Manage user support requests'}

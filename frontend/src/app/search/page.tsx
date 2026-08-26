@@ -1,12 +1,9 @@
-'use client';
+﻿'use client';
 
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Search, X, ChevronLeft, ChevronRight, SlidersHorizontal,
-  Clock, TrendingUp, MapPin, Tag, Zap,
-} from 'lucide-react';
+import { MagnifyingGlass, X, CaretLeft, CaretRight, SlidersHorizontal, Clock, TrendUp, MapPin, Tag, Lightning } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import { listingKeys } from '@/lib/api/endpoints/listings';
 import { ListingCard, ListingCardSkeleton } from '@/components/marketplace/listing-card';
@@ -144,14 +141,14 @@ function AutocompleteDropdown({
       {showSuggest && (
         <div className="p-2">
           <p className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
-            <Zap className="h-3 w-3" /> Suggestions
+            <Lightning className="h-3 w-3" /> Suggestions
           </p>
           {suggestions.slice(0, 8).map(s => (
             <button key={s} onClick={() => onSelect(s)}
               className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left
                 text-[13px] text-slate-700 hover:bg-slate-50 transition-colors
                 dark:text-slate-300 dark:hover:bg-[#242424]">
-              <Search className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+              <MagnifyingGlass className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
               <span dangerouslySetInnerHTML={{
                 __html: s.replace(
                   new RegExp(`(${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
@@ -166,7 +163,7 @@ function AutocompleteDropdown({
   );
 }
 
-/* ─── Filter bar ─────────────────────────────────────────── */
+/* ─── Funnel bar ─────────────────────────────────────────── */
 function FilterBar({
   category, condition, minPrice, maxPrice,
   onChange, open, onToggle,
@@ -320,7 +317,7 @@ function SearchInner() {
     return () => document.removeEventListener('mousedown', handle);
   }, []);
 
-  // Filter change handler
+  // Funnel change handler
   function handleFilterChange(k: string, v: string) {
     if (k === 'category') setCategory(v);
     else if (k === 'condition') setCondition(v);
@@ -399,7 +396,7 @@ function SearchInner() {
     <div className="min-h-screen bg-[#F8F9FA]">
       <Navbar />
 
-      {/* ── Search header ──────────────────────────────────── */}
+      {/* ── MagnifyingGlass header ──────────────────────────────────── */}
       <div className="border-b border-slate-200 bg-white dark:bg-[#1c1c1c] dark:border-[#2a2a2a]">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 py-6">
 
@@ -415,10 +412,10 @@ function SearchInner() {
             )}>
               {isLoading || isFetching
                 ? <svg className="h-5 w-5 text-indigo-500 flex-shrink-0 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+                    <circle cx="12" cy="12" r="10" stroke="currentColor"
                       strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
                   </svg>
-                : <Search className="h-5 w-5 text-slate-400 flex-shrink-0" />
+                : <MagnifyingGlass className="h-5 w-5 text-slate-400 flex-shrink-0" />
               }
               <input
                 ref={inputRef}
@@ -430,7 +427,7 @@ function SearchInner() {
                 onChange={e => { setQuery(e.target.value); setDropOpen(true); }}
                 onFocus={() => setDropOpen(true)}
                 onKeyDown={handleKey}
-                placeholder="Search for anything — phones, cars, property, fashion…"
+                placeholder="MagnifyingGlass for anything — phones, cars, property, fashion…"
                 className="flex-1 bg-transparent text-[15px] text-slate-800 placeholder-slate-400
                   focus:outline-none dark:text-slate-100 dark:placeholder-slate-500"
               />
@@ -445,7 +442,7 @@ function SearchInner() {
                 className="flex-shrink-0 rounded-xl bg-indigo-600 px-5 py-2.5
                   text-[13px] font-bold text-white hover:bg-indigo-700 active:scale-[0.98]
                   transition-all">
-                Search
+                MagnifyingGlass
               </button>
             </div>
 
@@ -463,7 +460,7 @@ function SearchInner() {
           {!committed && (
             <div className="mt-4">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2.5 flex items-center gap-1.5">
-                <TrendingUp className="h-3 w-3" /> Trending
+                <TrendUp className="h-3 w-3" /> Trending
               </p>
               <div className="flex flex-wrap gap-2">
                 {TRENDING.map(t => (
@@ -482,7 +479,7 @@ function SearchInner() {
         </div>
       </div>
 
-      {/* ── Filter bar ─────────────────────────────────────── */}
+      {/* ── Funnel bar ─────────────────────────────────────── */}
       {committed && (
         <FilterBar
           category={category} condition={condition}
@@ -534,9 +531,9 @@ function SearchInner() {
         {!committed && (
           <div className="py-20 text-center space-y-3">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 mx-auto dark:bg-indigo-950/40">
-              <Search className="h-8 w-8 text-indigo-400" />
+              <MagnifyingGlass className="h-8 w-8 text-indigo-400" />
             </div>
-            <p className="text-[16px] font-bold text-slate-800 dark:text-slate-200">Search Velontri</p>
+            <p className="text-[16px] font-bold text-slate-800 dark:text-slate-200">MagnifyingGlass Velontri</p>
             <p className="text-[13px] text-slate-400 max-w-xs mx-auto">
               Find listings across Africa — type anything and results appear instantly.
             </p>
@@ -546,7 +543,7 @@ function SearchInner() {
         {/* Error */}
         {committed && isError && (
           <div className="py-16 text-center space-y-2">
-            <p className="text-[15px] font-semibold text-slate-700 dark:text-slate-300">Search failed</p>
+            <p className="text-[15px] font-semibold text-slate-700 dark:text-slate-300">MagnifyingGlass failed</p>
             <p className="text-[13px] text-slate-400">Please check your connection and try again.</p>
           </div>
         )}
@@ -563,7 +560,7 @@ function SearchInner() {
           <div className="py-16 text-center space-y-5">
             {/* Icon */}
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 mx-auto dark:bg-[#242424]">
-              <Search className="h-8 w-8 text-slate-300" />
+              <MagnifyingGlass className="h-8 w-8 text-slate-300" />
             </div>
 
             <div>
@@ -579,7 +576,7 @@ function SearchInner() {
             {(meta?.suggestions ?? []).length > 0 && (
               <div className="max-w-lg mx-auto">
                 <p className="text-[12px] font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-center gap-1.5">
-                  <Zap className="h-3 w-3 text-indigo-500" />
+                  <Lightning className="h-3 w-3 text-indigo-500" />
                   Did you mean one of these?
                 </p>
                 <div className="flex flex-wrap gap-2 justify-center">
@@ -624,7 +621,7 @@ function SearchInner() {
             {/* Trending fallback */}
             <div className="max-w-lg mx-auto pt-2 border-t border-slate-100 dark:border-[#2a2a2a]">
               <p className="text-[12px] font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-center gap-1.5">
-                <TrendingUp className="h-3 w-3" /> Trending right now
+                <TrendUp className="h-3 w-3" /> Trending right now
               </p>
               <div className="flex flex-wrap gap-2 justify-center">
                 {TRENDING.map(t => (
@@ -655,7 +652,7 @@ function SearchInner() {
                     px-4 py-2.5 text-[13px] font-medium text-slate-500 hover:text-slate-800
                     disabled:opacity-35 disabled:cursor-not-allowed transition-all
                     dark:border-[#2a2a2a] dark:text-slate-400">
-                  <ChevronLeft className="h-4 w-4" /> Previous
+                  <CaretLeft className="h-4 w-4" /> Previous
                 </button>
                 <span className="px-4 text-[13px] text-slate-400">
                   {meta.page} / {meta.total_pages}
@@ -665,7 +662,7 @@ function SearchInner() {
                     px-4 py-2.5 text-[13px] font-medium text-slate-500 hover:text-slate-800
                     disabled:opacity-35 disabled:cursor-not-allowed transition-all
                     dark:border-[#2a2a2a] dark:text-slate-400">
-                  Next <ChevronRight className="h-4 w-4" />
+                  Next <CaretRight className="h-4 w-4" />
                 </button>
               </div>
             )}
@@ -681,7 +678,7 @@ export default function SearchPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
         <svg className="h-8 w-8 text-indigo-600 animate-spin" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+          <circle cx="12" cy="12" r="10" stroke="currentColor"
             strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
         </svg>
       </div>

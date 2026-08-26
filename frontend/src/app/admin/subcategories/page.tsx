@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Tag, Plus, Trash2, Search } from 'lucide-react';
+import { Tag, Plus, Trash, MagnifyingGlass } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -68,9 +68,9 @@ export default function AdminSubcategoriesPage() {
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <MagnifyingGlass className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input value={search} onChange={e => setSearch(e.target.value)}
-                placeholder={`Search ${selectedCat} subcategories…`}
+                placeholder={`MagnifyingGlass ${selectedCat} subcategories…`}
                 className="w-full h-10 rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-[14px]
                   text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-400 transition-all" />
             </div>
@@ -136,7 +136,7 @@ export default function AdminSubcategoriesPage() {
                       }}
                       className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400
                         hover:bg-red-50 hover:text-red-500 transition-colors">
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash className="h-3.5 w-3.5" />
                     </button>
                   </li>
                 ))}

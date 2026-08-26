@@ -1,11 +1,8 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import {
-  MessageCircle, Heart, ShoppingBag, Package,
-  MapPin, ExternalLink, Clock,
-} from 'lucide-react';
+import { ChatCircle, Heart, ShoppingBag, Package, MapPin, ArrowSquareOut, Clock } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/features/auth/auth-provider';
 import type { ApiResponse } from '@/types/api';
@@ -88,7 +85,7 @@ export default function UserOrdersPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
             { n: '1', t: 'Find what you want', d: 'Browse or search listings' },
-            { n: '2', t: 'Save or contact', d: 'Save listings or tap WhatsApp to chat' },
+            { n: '2', t: 'FloppyDisk or contact', d: 'FloppyDisk listings or tap WhatsApp to chat' },
             { n: '3', t: 'Meet & buy', d: 'Meet the seller in a public place, inspect, then pay' },
           ].map(s => (
             <div key={s.n} className="flex items-start gap-3">
@@ -130,7 +127,7 @@ export default function UserOrdersPage() {
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <h2 className="text-[14px] font-bold text-slate-900 flex items-center gap-2">
-              <MessageCircle className="h-4 w-4 text-indigo-600" />
+              <ChatCircle className="h-4 w-4 text-indigo-600" />
               Messages
             </h2>
             <Link href={ROUTES.user.messages}
@@ -259,7 +256,7 @@ export default function UserOrdersPage() {
                         bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors no-underline"
                       title="View listing"
                     >
-                      <ExternalLink className="h-4 w-4" />
+                      <ArrowSquareOut className="h-4 w-4" />
                     </Link>
                   </li>
                 );

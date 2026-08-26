@@ -1,11 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import {
-  Search, ChevronDown, ChevronRight, MapPin,
-  Shield, BadgeCheck, Zap, TrendingUp, Sparkles, Star, Quote, Menu, X,
-} from 'lucide-react';
+import { MagnifyingGlass, CaretDown, CaretRight, MapPin, Shield, SealCheck, Lightning, TrendUp, Sparkle, Star, Quotes, List, X } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { listingsApi, listingKeys } from '@/lib/api/endpoints/listings';
 import { ROUTES } from '@/config/routes';
@@ -296,7 +293,7 @@ export default function HomePage() {
               text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800
               transition-all duration-200 active:scale-95"
           >
-            {open ? <X size={20} /> : <Menu size={20} />}
+            {open ? <X size={20} /> : <List size={20} />}
           </button>
         </div>
 
@@ -314,7 +311,7 @@ export default function HomePage() {
                 className="flex items-center gap-3 rounded-xl px-4 py-3 text-[14px] font-medium
                   text-slate-600 dark:text-slate-300 no-underline transition-colors
                   hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white">
-                <ChevronRight size={14} className="text-slate-300 dark:text-slate-600" />
+                <CaretRight size={14} className="text-slate-300 dark:text-slate-600" />
                 {l}
               </Link>
             ))}
@@ -351,7 +348,7 @@ export default function HomePage() {
             {/* LEFT */}
             <div className="lg:py-16">
               <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5">
-                <TrendingUp size={11} className="text-indigo-600" strokeWidth={2.5} />
+                <TrendUp size={11} className="text-indigo-600" />
                 <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-indigo-600">
                   Africa&apos;s #1 Marketplace
                 </span>
@@ -369,7 +366,7 @@ export default function HomePage() {
                 Millions of premium listings. 12 African countries.
               </p>
 
-              {/* Search bar */}
+              {/* MagnifyingGlass bar */}
               <div className="mb-4 flex items-stretch overflow-hidden rounded-xl border-2 border-slate-200
                 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.07)] transition-colors focus-within:border-indigo-400">
 
@@ -386,7 +383,7 @@ export default function HomePage() {
                     <span className="truncate">
                       {location || 'All Africa'}
                     </span>
-                    <ChevronDown size={12} className="flex-shrink-0 text-slate-300 ml-auto" />
+                    <CaretDown size={12} className="flex-shrink-0 text-slate-300 ml-auto" />
                   </button>
                   {locOpen && (
                     <div
@@ -420,7 +417,7 @@ export default function HomePage() {
                       window.location.href = `/search?q=${encodeURIComponent(query.trim())}${loc}`;
                     }
                   }}
-                  placeholder="Search cars, phones, properties, jobs…"
+                  placeholder="MagnifyingGlass cars, phones, properties, jobs…"
                   className="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-[14px] text-slate-800
                     placeholder-slate-400 outline-none"
                 />
@@ -432,8 +429,8 @@ export default function HomePage() {
                   }
                   className="m-1.5 flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600
                     px-4 text-[13px] font-bold text-white no-underline transition-colors hover:bg-indigo-700">
-                  <Search size={13} />
-                  <span className="hidden sm:inline">Search</span>
+                  <MagnifyingGlass size={13} />
+                  <span className="hidden sm:inline">MagnifyingGlass</span>
                 </Link>
               </div>
 
@@ -556,7 +553,7 @@ export default function HomePage() {
           <div className="mb-7 flex items-end justify-between">
             <div>
               <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                <TrendingUp size={11} className="text-indigo-600" />
+                <TrendUp size={11} className="text-indigo-600" />
                 {allLoading ? 'Loading…' : `${allData?.meta?.total ?? allListings.length} Active Listings`}
               </div>
               <h2 className="font-black leading-tight text-slate-900"
@@ -567,7 +564,7 @@ export default function HomePage() {
             <Link href={ROUTES.listings}
               className="flex items-center gap-1 text-[13px] font-semibold text-indigo-600
                 no-underline transition-all hover:gap-2">
-              Browse all <ChevronRight size={14} />
+              Browse all <CaretRight size={14} />
             </Link>
           </div>
 
@@ -656,7 +653,7 @@ export default function HomePage() {
                 className="inline-flex items-center gap-2 h-11 rounded-xl border-2 border-indigo-200
                   bg-indigo-50 px-8 text-[14px] font-bold text-indigo-600 no-underline
                   hover:bg-indigo-100 hover:border-indigo-300 transition-all">
-                View all {allData?.meta?.total?.toLocaleString()} listings <ChevronRight size={16} />
+                View all {allData?.meta?.total?.toLocaleString()} listings <CaretRight size={16} />
               </Link>
             </div>
           )}
@@ -674,7 +671,7 @@ export default function HomePage() {
             className="vr-out mb-7 flex items-end justify-between">
             <div>
               <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                <Zap size={11} className="text-indigo-600" />
+                <Lightning size={11} className="text-indigo-600" />
                 {vehiclesLoading ? 'Loading…' : `${vehiclesData?.meta?.total ?? vehicles.length} Listings`}
               </div>
               <h2 className="font-black leading-tight text-slate-900"
@@ -685,7 +682,7 @@ export default function HomePage() {
             <Link href="/listings?listing_type=vehicle"
               className="flex items-center gap-1 text-[13px] font-semibold text-indigo-600
                 no-underline transition-all hover:gap-2">
-              Browse all <ChevronRight size={14} />
+              Browse all <CaretRight size={14} />
             </Link>
           </div>
 
@@ -756,7 +753,7 @@ export default function HomePage() {
             className="vr-out mb-7 flex items-end justify-between">
             <div>
               <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                <Sparkles size={11} className="text-violet-600" />
+                <Sparkle size={11} className="text-violet-600" />
                 {electronicsLoading ? 'Loading…' : `${electronicsData?.meta?.total ?? electronics.length} Listings`}
               </div>
               <h2 className="font-black leading-tight text-slate-900"
@@ -767,7 +764,7 @@ export default function HomePage() {
             <Link href="/listings?category=Electronics"
               className="flex items-center gap-1 text-[13px] font-semibold text-violet-600
                 no-underline transition-all hover:gap-2">
-              Browse all <ChevronRight size={14} />
+              Browse all <CaretRight size={14} />
             </Link>
           </div>
 
@@ -838,7 +835,7 @@ export default function HomePage() {
             <Link href="/listings?listing_type=property"
               className="flex items-center gap-1 text-[13px] font-semibold text-sky-600
                 no-underline transition-all hover:gap-2">
-              Browse all <ChevronRight size={14} />
+              Browse all <CaretRight size={14} />
             </Link>
           </div>
 
@@ -908,7 +905,7 @@ export default function HomePage() {
                 style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl"
                   style={{ background: 'rgba(99,102,241,0.15)' }}>
-                  <Quote size={16} color="#6366f1" />
+                  <Quotes size={16} color="#6366f1" />
                 </div>
                 <div className="flex gap-0.5">
                   {[1,2,3,4,5].map(s => (
@@ -971,7 +968,7 @@ export default function HomePage() {
               },
               {
                 icon: () => (
-                  <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <circle cx="12" cy="12" r="10"/>
                     <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
                   </svg>
@@ -983,14 +980,14 @@ export default function HomePage() {
                 tag: 'Reach',
               },
               {
-                icon: Zap, n: 'Free', label: 'To start',
+                icon: Lightning, n: 'Free', label: 'To start',
                 t: 'Free plan, no commissions',
                 d: 'Post up to 3 listings free. Upgrade for more. Velontri earns through subscriptions — never from your sales.',
                 c: '#FBBF24', bg: 'linear-gradient(135deg,#0a0f1e 0%,#1a1200 100%)',
                 tag: 'Pricing',
               },
               {
-                icon: BadgeCheck, n: 'Verified', label: 'Sellers only',
+                icon: SealCheck, n: 'Verified', label: 'Sellers only',
                 t: 'Verified sellers only',
                 d: 'Every seller is ID-verified. Every listing reviewed. You only see quality, trusted stores.',
                 c: '#A78BFA', bg: 'linear-gradient(135deg,#0a0f1e 0%,#130a1a 100%)',
@@ -1007,7 +1004,7 @@ export default function HomePage() {
                 <div className="flex items-end gap-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl flex-shrink-0"
                     style={{ background: `${c}20`, color: c }}>
-                    <Icon size={22} strokeWidth={1.75} />
+                    <Icon size={22} />
                   </div>
                   <div>
                     <p className="font-black leading-none" style={{ fontSize: '2rem', color: c, letterSpacing: '-0.04em' }}>{n}</p>
@@ -1209,7 +1206,7 @@ export default function HomePage() {
                 </div>
               </button>
 
-              {/* App Store */}
+              {/* App Storefront */}
               <button
                 onClick={() => setAppStore('apple')}
                 className="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-800/50
@@ -1220,8 +1217,8 @@ export default function HomePage() {
                   <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
                 </svg>
                 <div className="text-left">
-                  <p className="text-[9px] text-slate-500 leading-none uppercase tracking-wide">Download on the</p>
-                  <p className="text-[13px] font-bold text-white leading-tight">App Store</p>
+                  <p className="text-[9px] text-slate-500 leading-none uppercase tracking-wide">DownloadSimple on the</p>
+                  <p className="text-[13px] font-bold text-white leading-tight">App Storefront</p>
                 </div>
               </button>
             </div>

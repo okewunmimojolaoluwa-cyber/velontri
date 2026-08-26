@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { ShoppingBag, MapPin, ExternalLink, Heart, AlertTriangle } from 'lucide-react';
+import { ShoppingBag, MapPin, ArrowSquareOut, Heart, Warning } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/features/auth/auth-provider';
 import type { ApiResponse } from '@/types/api';
@@ -52,7 +52,7 @@ export default function UserPurchasesPage() {
 
       {/* How to buy banner */}
       <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-        <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+        <Warning className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
         <div>
           <p className="text-[13px] font-bold text-amber-800 mb-0.5">How to purchase on Velontri</p>
           <p className="text-[12px] text-amber-700 leading-relaxed">
@@ -119,7 +119,7 @@ export default function UserPurchasesPage() {
                     className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl
                       bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors no-underline"
                     title="View listing">
-                    <ExternalLink className="h-4 w-4" />
+                    <ArrowSquareOut className="h-4 w-4" />
                   </Link>
                 </li>
               );

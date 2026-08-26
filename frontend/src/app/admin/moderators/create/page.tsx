@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
-import { UserCog } from 'lucide-react';
+import { UserCog } from '@phosphor-icons/react';
 import { ROUTES } from '@/config/routes';
 
 export default function CreateModeratorPage() {

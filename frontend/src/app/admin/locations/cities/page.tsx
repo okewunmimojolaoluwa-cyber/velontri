@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { MapPin, Search } from 'lucide-react';
+import { MapPin, MagnifyingGlass } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -41,8 +41,8 @@ export default function CitiesPage() {
             <p className="text-sm text-slate-500 mt-0.5">Top cities by listing count</p>
           </div>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-            <input placeholder="Search cities…" value={search} onChange={e => setSearch(e.target.value)}
+            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <input placeholder="MagnifyingGlass cities…" value={search} onChange={e => setSearch(e.target.value)}
               className="h-10 w-56 rounded-xl border border-slate-200 pl-9 pr-4 text-sm text-slate-800
                 placeholder-slate-400 focus:border-indigo-400 focus:outline-none" />
           </div>

@@ -1,11 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  BadgeCheck, Search, ChevronDown, ChevronUp,
-  CheckCircle, XCircle, AlertCircle, Clock, X,
-} from 'lucide-react';
+import { SealCheck, MagnifyingGlass, CaretDown, CaretUp, CheckCircle, XCircle, WarningCircle, Clock, X } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { apiClient } from '@/lib/api/client';
 
@@ -129,7 +126,7 @@ function MoreInfoModal({
             <button onClick={() => { if (!notes.trim()) { setErr('Please provide instructions.'); return; } mutate(); }}
               disabled={isPending}
               className="flex-1 h-10 rounded-xl bg-amber-500 text-[13px] font-bold text-white hover:bg-amber-600 disabled:opacity-50 transition-colors">
-              {isPending ? 'Sending…' : 'Send Request'}
+              {isPending ? 'Sending…' : 'PaperPlaneRight Request'}
             </button>
           </div>
         </div>
@@ -191,14 +188,14 @@ export default function ModVerificationPage() {
 
       <div>
         <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight flex items-center gap-2">
-          <BadgeCheck className="h-6 w-6 text-amber-500" /> Seller Verification
+          <SealCheck className="h-6 w-6 text-amber-500" /> Seller Verification
         </h1>
         <p className="text-[13px] text-slate-400 mt-0.5">
           {meta?.total != null ? `${meta.total} application(s)` : 'Review seller verification applications'}
         </p>
       </div>
 
-      {/* Tabs + Search */}
+      {/* Tabs + MagnifyingGlass */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
         <div className="flex gap-1.5 flex-wrap">
           {[
@@ -219,9 +216,9 @@ export default function ModVerificationPage() {
           ))}
         </div>
         <div className="relative sm:ml-auto">
-          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search applications…"
+            placeholder="MagnifyingGlass applications…"
             className="h-9 w-full sm:w-52 rounded-xl border border-slate-200 bg-white pl-9 pr-4 text-[13px] text-slate-800 placeholder-slate-400 outline-none focus:border-amber-400 transition-all" />
         </div>
       </div>
@@ -240,7 +237,7 @@ export default function ModVerificationPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-20 text-center">
-          <BadgeCheck className="h-12 w-12 text-slate-200 mb-3" />
+          <SealCheck className="h-12 w-12 text-slate-200 mb-3" />
           <p className="text-[14px] font-semibold text-slate-900 mb-1">No applications found</p>
           <p className="text-[12px] text-slate-400">Verification applications will appear here when submitted.</p>
         </div>
@@ -270,7 +267,7 @@ export default function ModVerificationPage() {
                         : app.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
                         : 'bg-slate-100 text-slate-500 border-slate-200'
                     }`}>{app.status?.replace(/_/g, ' ')}</span>
-                    {isOpen ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
+                    {isOpen ? <CaretUp className="h-4 w-4 text-slate-400" /> : <CaretDown className="h-4 w-4 text-slate-400" />}
                   </div>
                 </button>
 
@@ -306,7 +303,7 @@ export default function ModVerificationPage() {
                         </button>
                         <button onClick={() => setInfoModal({ id: app.id, name })}
                           className="flex items-center gap-1.5 h-9 rounded-xl border border-amber-200 bg-amber-50 px-4 text-[12px] font-semibold text-amber-700 hover:bg-amber-100 transition-colors">
-                          <AlertCircle className="h-3.5 w-3.5" /> Request Info
+                          <WarningCircle className="h-3.5 w-3.5" /> Request Info
                         </button>
                       </div>
                     )}

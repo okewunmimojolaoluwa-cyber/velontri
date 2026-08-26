@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Star, Package } from 'lucide-react';
+import { Star, Package } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';

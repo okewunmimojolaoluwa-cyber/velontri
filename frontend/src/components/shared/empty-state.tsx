@@ -1,4 +1,4 @@
-import { PackageOpen } from 'lucide-react';
+﻿import { PackageOpen } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
 
 interface EmptyStateProps {

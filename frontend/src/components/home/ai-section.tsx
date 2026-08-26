@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, SendHorizontal, BadgeCheck, MapPin, TrendingUp, Zap } from 'lucide-react';
+import { Sparkle, SendHorizontal, SealCheck, MapPin, TrendUp, Lightning } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 
 const EXAMPLE_QUERIES = [
@@ -41,12 +41,12 @@ export function AISection() {
           {/* Left — copy */}
           <div className="space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-2 text-sm text-primary font-semibold">
-              <Sparkles className="h-4 w-4 text-amber-500" />
-              AI-Powered Search
+              <Sparkle className="h-4 w-4 text-amber-500" />
+              AI-Powered MagnifyingGlass
             </div>
 
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight leading-tight">
-              Search like you're
+              MagnifyingGlass like you're
               <br />
               <span className="text-gradient-primary">talking to a friend</span>
             </h2>
@@ -58,9 +58,9 @@ export function AISection() {
 
             <div className="space-y-3">
               {[
-                { icon: Zap, text: 'Natural language understanding' },
+                { icon: Lightning, text: 'Natural language understanding' },
                 { icon: MapPin, text: 'Location-aware results' },
-                { icon: TrendingUp, text: 'Price & trend analysis' },
+                { icon: TrendUp, text: 'Price & trend analysis' },
               ].map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-center gap-3 text-sm">
                   <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -76,8 +76,8 @@ export function AISection() {
               onClick={() => router.push('/search')}
               className="gap-2"
             >
-              <Sparkles className="h-4 w-4" />
-              Try AI Search
+              <Sparkle className="h-4 w-4" />
+              Try AI MagnifyingGlass
             </Button>
           </div>
 
@@ -90,7 +90,7 @@ export function AISection() {
               {/* Header */}
               <div className="flex items-center gap-3 border-b border-border/60 px-5 py-4 bg-gradient-to-r from-primary/5 to-violet-500/5">
                 <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Sparkles className="h-4.5 w-4.5 text-primary" />
+                  <Sparkle className="h-4.5 w-4.5 text-primary" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold">Velontri AI Assistant</p>
@@ -140,7 +140,7 @@ export function AISection() {
               {showResult && (
                 <div className="border-t border-border/60 px-5 py-4 bg-emerald-50/50 dark:bg-emerald-900/10">
                   <div className="flex items-center gap-2 mb-3">
-                    <BadgeCheck className="h-4 w-4 text-emerald-600" />
+                    <SealCheck className="h-4 w-4 text-emerald-600" />
                     <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                       {AI_RESULT.count} matches found
                     </span>
@@ -155,7 +155,7 @@ export function AISection() {
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <MapPin className="h-3 w-3" />
                               {item.location}
-                              {item.verified && <BadgeCheck className="h-3 w-3 text-emerald-500 ml-1" />}
+                              {item.verified && <SealCheck className="h-3 w-3 text-emerald-500 ml-1" />}
                             </div>
                           </div>
                         </div>

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Category landing page — server-rendered, fully indexable.
  * /categories/vehicles, /categories/electronics, etc.
  */
@@ -162,7 +162,7 @@ export default async function CategoryPage(
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home',       item: BASE },
+      { '@type': 'ListItem', position: 1, name: 'House',       item: BASE },
       { '@type': 'ListItem', position: 2, name: 'Categories', item: `${BASE}/categories` },
       { '@type': 'ListItem', position: 3, name: config.title, item: canonicalUrl },
     ],
@@ -189,7 +189,7 @@ export default async function CategoryPage(
           <div className="mx-auto max-w-4xl px-4 sm:px-6">
             {/* Breadcrumb */}
             <nav className="flex items-center gap-1.5 text-[12px] text-indigo-300 mb-4" aria-label="Breadcrumb">
-              <Link href="/" className="hover:text-white transition-colors">Home</Link>
+              <Link href="/" className="hover:text-white transition-colors">House</Link>
               <span aria-hidden="true">›</span>
               <Link href="/listings" className="hover:text-white transition-colors">Listings</Link>
               <span aria-hidden="true">›</span>

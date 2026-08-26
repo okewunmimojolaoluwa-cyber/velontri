@@ -1,9 +1,9 @@
-/**
+﻿/**
  * GET /sitemap.xml — Next.js App Router Route Handler
  *
  * Why a Route Handler instead of sitemap.ts?
  *   Next.js sitemap.ts hardcodes Content-Type: application/xml
- *   Google Search Console rejects application/xml with (400) Unsupported
+ *   Google MagnifyingGlass Console rejects application/xml with (400) Unsupported
  *   content-type. This handler explicitly sends text/xml; charset=utf-8.
  *
  * Listing data source:
@@ -179,7 +179,7 @@ export async function GET(): Promise<NextResponse> {
   return new NextResponse(xml, {
     status: 200,
     headers: {
-      // text/xml — required by Google Search Console (application/xml is rejected)
+      // text/xml — required by Google MagnifyingGlass Console (application/xml is rejected)
       'Content-Type':  'text/xml; charset=utf-8',
       // Cache for 1 hour on CDN; stale-while-revalidate for 24 hours
       // No X-Robots-Tag — sitemaps must NEVER be marked noindex

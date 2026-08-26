@@ -1,17 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard, DollarSign, Users, Store, Package,
-  ListChecks, AlertTriangle,
-  CreditCard, Crown, Megaphone, Image, FileText, Bell,
-  Mail, MessageSquare, MessageCircle, MapPin, Settings, BarChart3,
-  ClipboardList, LogOut, Menu, X, ChevronRight,
-  TrendingUp, UserCog, Home, Car, Briefcase,
-  Tag, Globe, Download, User, Star, Smartphone, Shield, BadgeCheck,
-} from 'lucide-react';
+import { SquaresFour, CurrencyDollar, Users, Storefront, Package, ListChecks, Warning, CreditCard, Crown, Megaphone, Image, FileText, Bell, EnvelopeSimple, ChatSquare, ChatCircle, MapPin, Gear, BarChart3, ClipboardList, SignOut, List, X, CaretRight, TrendUp, UserCog, House, Car, Briefcase, Tag, Globe, DownloadSimple, User, Star, DeviceMobile, Shield, SealCheck } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 import { useAuth } from '@/features/auth/auth-provider';
@@ -22,22 +14,22 @@ import { VelontriLogo } from '@/components/ui/velontri-logo';
 
 interface NavGroup {
   label: string;
-  items: { icon: typeof LayoutDashboard; label: string; href: string }[];
+  items: { icon: typeof SquaresFour; label: string; href: string }[];
 }
 
 const ADMIN_NAV: NavGroup[] = [
   {
     label: 'DASHBOARD',
     items: [
-      { icon: LayoutDashboard, label: 'Dashboard',           href: ROUTES.admin.overview },
-      { icon: TrendingUp,      label: 'Business Overview',   href: ROUTES.admin.businessOverview },
+      { icon: SquaresFour, label: 'Dashboard',           href: ROUTES.admin.overview },
+      { icon: TrendUp,      label: 'Business Overview',   href: ROUTES.admin.businessOverview },
     ],
   },
   {
     label: 'REVENUE',
     items: [
       { icon: CreditCard,      label: 'Payments',            href: ROUTES.admin.payments },
-      { icon: DollarSign,      label: 'Revenue Analytics',   href: ROUTES.admin.revenue },
+      { icon: CurrencyDollar,      label: 'Revenue Analytics',   href: ROUTES.admin.revenue },
     ],
   },
   {
@@ -53,13 +45,13 @@ const ADMIN_NAV: NavGroup[] = [
       { icon: Users,           label: 'Total Users',          href: ROUTES.admin.users },
       { icon: Users,           label: 'Verified Users',       href: ROUTES.admin.verifiedUsers },
       { icon: Users,           label: 'Sellers',             href: ROUTES.admin.sellers },
-      { icon: BadgeCheck,      label: 'Seller Verification', href: '/admin/verification' },
+      { icon: SealCheck,      label: 'Seller Verification', href: '/admin/verification' },
     ],
   },
   {
     label: 'STORES & LISTINGS',
     items: [
-      { icon: Store,           label: 'Stores',               href: ROUTES.admin.stores },
+      { icon: Storefront,           label: 'Stores',               href: ROUTES.admin.stores },
       { icon: Package,         label: 'Listings',             href: ROUTES.admin.listings },
       { icon: Star,            label: 'Featured Listings',   href: ROUTES.admin.featuredListings },
     ],
@@ -76,7 +68,7 @@ const ADMIN_NAV: NavGroup[] = [
     items: [
       { icon: Package,         label: 'Products',            href: ROUTES.admin.products },
       { icon: Car,             label: 'Vehicles',             href: ROUTES.admin.vehicles },
-      { icon: Home,            label: 'Properties',          href: ROUTES.admin.properties },
+      { icon: House,            label: 'Properties',          href: ROUTES.admin.properties },
       { icon: Briefcase,       label: 'Services',            href: ROUTES.admin.services },
       { icon: Briefcase,       label: 'Jobs',                href: ROUTES.admin.jobs },
     ],
@@ -124,18 +116,18 @@ const ADMIN_NAV: NavGroup[] = [
     items: [
       { icon: Shield,          label: 'Moderation Activity', href: '/admin/moderation' },
       { icon: Star,            label: 'Reviews',             href: ROUTES.admin.reviews },
-      { icon: TrendingUp,      label: 'Reports',             href: ROUTES.admin.businessReports },
-      { icon: AlertTriangle,   label: 'Disputes',            href: ROUTES.admin.disputes },
-      { icon: MessageSquare,   label: 'Support Tickets',     href: ROUTES.admin.tickets },
+      { icon: TrendUp,      label: 'Reports',             href: ROUTES.admin.businessReports },
+      { icon: Warning,   label: 'Disputes',            href: ROUTES.admin.disputes },
+      { icon: ChatSquare,   label: 'Support Tickets',     href: ROUTES.admin.tickets },
     ],
   },
   {
     label: 'NOTIFICATIONS',
     items: [
-      { icon: MessageCircle,   label: 'Messages',        href: '/admin/messages' },
-      { icon: Mail,            label: 'Email Campaigns',     href: ROUTES.admin.emailCampaigns },
-      { icon: MessageSquare,   label: 'SMS Campaigns',       href: ROUTES.admin.smsCampaigns },
-      { icon: Smartphone,      label: 'Push Notifications',  href: ROUTES.admin.pushNotifications },
+      { icon: ChatCircle,   label: 'Messages',        href: '/admin/messages' },
+      { icon: EnvelopeSimple,            label: 'Email Campaigns',     href: ROUTES.admin.emailCampaigns },
+      { icon: ChatSquare,   label: 'SMS Campaigns',       href: ROUTES.admin.smsCampaigns },
+      { icon: DeviceMobile,      label: 'Push Notifications',  href: ROUTES.admin.pushNotifications },
     ],
   },
   {
@@ -149,17 +141,17 @@ const ADMIN_NAV: NavGroup[] = [
   {
     label: 'CONFIGURATION',
     items: [
-      { icon: DollarSign,      label: 'Currencies',          href: ROUTES.admin.currencies },
+      { icon: CurrencyDollar,      label: 'Currencies',          href: ROUTES.admin.currencies },
       { icon: Globe,           label: 'Languages',           href: ROUTES.admin.languages },
     ],
   },
   {
     label: 'REPORTS',
     items: [
-      { icon: TrendingUp,      label: 'Business Reports',    href: ROUTES.admin.businessReports },
+      { icon: TrendUp,      label: 'Business Reports',    href: ROUTES.admin.businessReports },
       { icon: BarChart3,       label: 'Sales Reports',       href: ROUTES.admin.salesReports },
-      { icon: DollarSign,      label: 'Revenue Reports',     href: ROUTES.admin.revenueReports },
-      { icon: Download,        label: 'Export Reports',      href: ROUTES.admin.exportReports },
+      { icon: CurrencyDollar,      label: 'Revenue Reports',     href: ROUTES.admin.revenueReports },
+      { icon: DownloadSimple,        label: 'Export Reports',      href: ROUTES.admin.exportReports },
     ],
   },
   {
@@ -172,8 +164,8 @@ const ADMIN_NAV: NavGroup[] = [
   {
     label: 'SETTINGS',
     items: [
-      { icon: Settings,        label: 'Business Settings',    href: ROUTES.admin.platformSettings },
-      { icon: Settings,        label: 'Platform Settings',    href: ROUTES.admin.settings },
+      { icon: Gear,        label: 'Business Gear',    href: ROUTES.admin.platformSettings },
+      { icon: Gear,        label: 'Platform Gear',    href: ROUTES.admin.settings },
     ],
   },
   {
@@ -209,7 +201,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
         )}
         <button onClick={() => setCollapsed(v => !v)}
           className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 hover:bg-white/8 hover:text-white/80 transition-colors ml-auto">
-          <ChevronRight className={cn('h-3.5 w-3.5 transition-transform', !collapsed && 'rotate-180')} />
+          <CaretRight className={cn('h-3.5 w-3.5 transition-transform', !collapsed && 'rotate-180')} />
         </button>
       </div>
 
@@ -234,7 +226,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                         : 'text-white/50 hover:bg-white/6 hover:text-white/90',
                       collapsed && 'justify-center',
                     )}>
-                    <Icon className={cn('h-4 w-4 flex-shrink-0', active ? 'text-indigo-400' : '')} strokeWidth={active ? 2 : 1.75} />
+                    <Icon className={cn('h-4 w-4 flex-shrink-0', active ? 'text-indigo-400' : '')} />
                     {!collapsed && <span className="truncate">{itemLabel}</span>}
                     {active && !collapsed && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-indigo-400 flex-shrink-0" />}
                   </Link>
@@ -259,7 +251,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               </div>
               <button onClick={logout}
                 className="flex h-7 w-7 items-center justify-center rounded-lg text-white/30 hover:bg-red-500/20 hover:text-red-400 transition-all">
-                <LogOut className="h-3.5 w-3.5" />
+                <SignOut className="h-3.5 w-3.5" />
               </button>
             </>
           )}
@@ -284,7 +276,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           border-b border-slate-200 bg-white px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <button onClick={() => setOpen(v => !v)} className="md:hidden p-2 text-slate-500">
-              {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {open ? <X className="h-5 w-5" /> : <List className="h-5 w-5" />}
             </button>
             <div className="hidden sm:flex items-center gap-2 rounded-full bg-indigo-50 border border-indigo-100 px-3 py-1.5">
               <Crown className="h-3.5 w-3.5 text-indigo-600" />

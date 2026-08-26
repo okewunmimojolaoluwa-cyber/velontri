@@ -1,12 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Settings, Shield, CreditCard, Bell, Server,
-  Globe, Save, Loader2, CheckCircle, AlertTriangle,
-  ToggleLeft, ToggleRight,
-} from 'lucide-react';
+import { Gear, Shield, CreditCard, Bell, HardDrive, Globe, FloppyDisk, CircleNotch, CheckCircle, Warning, ToggleLeft, ToggleRight } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -19,11 +15,11 @@ interface MaintenanceStatus {
 /* ── Tab type ───────────────────────────────────────────── */
 type Tab = 'general' | 'security' | 'integrations' | 'maintenance';
 
-const TABS: { id: Tab; label: string; icon: typeof Settings }[] = [
+const TABS: { id: Tab; label: string; icon: typeof Gear }[] = [
   { id: 'general',      label: 'General',      icon: Globe    },
   { id: 'security',     label: 'Security',     icon: Shield   },
   { id: 'integrations', label: 'Integrations', icon: CreditCard },
-  { id: 'maintenance',  label: 'Maintenance',  icon: Server   },
+  { id: 'maintenance',  label: 'Maintenance',  icon: HardDrive   },
 ];
 
 /* ── General settings tab (static for now) ─────────────── */
@@ -49,7 +45,7 @@ function GeneralTab() {
       <div className="pt-2">
         <button className="inline-flex items-center gap-2 h-9 rounded-xl bg-indigo-600 px-5
           text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors">
-          <Save className="h-3.5 w-3.5" /> Save changes
+          <FloppyDisk className="h-3.5 w-3.5" /> FloppyDisk changes
         </button>
       </div>
     </div>
@@ -76,7 +72,7 @@ function SecurityTab() {
       <div className="pt-2">
         <button className="inline-flex items-center gap-2 h-9 rounded-xl bg-indigo-600 px-5
           text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors">
-          <Save className="h-3.5 w-3.5" /> Save changes
+          <FloppyDisk className="h-3.5 w-3.5" /> FloppyDisk changes
         </button>
       </div>
     </div>
@@ -114,7 +110,7 @@ function IntegrationsTab() {
               className="w-full h-9 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px]
                 text-slate-500 focus:outline-none focus:border-indigo-400" />
             <p className="text-[10px] text-slate-400 mt-1">
-              Edit these keys in <code className="bg-slate-100 px-1 rounded">backend/.env</code>
+              PencilSimple these keys in <code className="bg-slate-100 px-1 rounded">backend/.env</code>
             </p>
           </div>
         </div>
@@ -147,7 +143,7 @@ function IntegrationsTab() {
               className="w-full h-9 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px]
                 text-slate-500 focus:outline-none focus:border-indigo-400" />
             <p className="text-[10px] text-slate-400 mt-1">
-              Edit in <code className="bg-slate-100 px-1 rounded">backend/.env</code> →
+              PencilSimple in <code className="bg-slate-100 px-1 rounded">backend/.env</code> →
               GMAIL_USER / GMAIL_APP_PASSWORD
             </p>
           </div>
@@ -202,7 +198,7 @@ function MaintenanceTab() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
+        <CircleNotch className="h-8 w-8 animate-spin text-indigo-400" />
       </div>
     );
   }
@@ -222,7 +218,7 @@ function MaintenanceTab() {
           <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl ${
             enabled ? 'bg-amber-100' : 'bg-slate-100'
           }`}>
-            <Server className={`h-6 w-6 ${enabled ? 'text-amber-600' : 'text-slate-400'}`} />
+            <HardDrive className={`h-6 w-6 ${enabled ? 'text-amber-600' : 'text-slate-400'}`} />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[15px] font-black text-slate-900 mb-0.5">Maintenance Mode</p>
@@ -243,7 +239,7 @@ function MaintenanceTab() {
                   }`}
               >
                 {isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <CircleNotch className="h-4 w-4 animate-spin" />
                 ) : enabled ? (
                   <ToggleRight className="h-4 w-4" />
                 ) : (
@@ -269,7 +265,7 @@ function MaintenanceTab() {
       {saved && (
         <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
           <CheckCircle className="h-4 w-4 text-emerald-600 flex-shrink-0" />
-          <p className="text-[13px] font-semibold text-emerald-700">Settings saved successfully.</p>
+          <p className="text-[13px] font-semibold text-emerald-700">Gear saved successfully.</p>
         </div>
       )}
 
@@ -298,15 +294,15 @@ function MaintenanceTab() {
               text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors
               disabled:opacity-50"
           >
-            {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-            Save message
+            {isPending ? <CircleNotch className="h-3.5 w-3.5 animate-spin" /> : <FloppyDisk className="h-3.5 w-3.5" />}
+            FloppyDisk message
           </button>
         </div>
       </div>
 
       {/* Warning */}
       <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-        <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+        <Warning className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
         <div>
           <p className="text-[12px] font-bold text-amber-800 mb-0.5">Before enabling maintenance mode</p>
           <p className="text-[12px] text-amber-700 leading-relaxed">
@@ -327,7 +323,7 @@ export default function PlatformSettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-          <Settings className="h-6 w-6 text-indigo-600" /> Platform Settings
+          <Gear className="h-6 w-6 text-indigo-600" /> Platform Gear
         </h1>
         <p className="text-sm text-slate-500 mt-0.5">Configure platform-wide settings</p>
       </div>

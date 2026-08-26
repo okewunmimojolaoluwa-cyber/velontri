@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/api/client';
+﻿import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 import type { ListingSummary } from './listings';
 
@@ -62,7 +62,7 @@ export const sellerApi = {
       .then((r) => r.data);
   },
 
-  /** Upload a listing image as multipart (avoids sending huge base64 in JSON). */
+  /** UploadSimple a listing image as multipart (avoids sending huge base64 in JSON). */
   uploadImage(listingId: string, dataUrl: string): Promise<ApiResponse<{ s3_key: string }>> {
     // Convert data URL → Blob → File
     const arr = dataUrl.split(',');

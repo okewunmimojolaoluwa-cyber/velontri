@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useState } from 'react';
-import { Search, Users, ShieldOff, ShieldCheck, MessageCircle, CheckCircle, AlertCircle, X, Calendar, Phone, Mail, Globe } from 'lucide-react';
+import { MagnifyingGlass, Users, ShieldOff, ShieldCheck, ChatCircle, CheckCircle, WarningCircle, X, CalendarBlank, Phone, EnvelopeSimple, Globe } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
@@ -70,14 +70,14 @@ function MessageModal({ user, onClose }: { user: AdminUser; onClose: () => void 
             />
             {err && (
               <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2">
-                <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                <WarningCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
                 <p className="text-[12px] font-medium text-red-600">{err}</p>
               </div>
             )}
             <div className="flex gap-2">
               <button onClick={() => content.trim() && send()} disabled={isPending || !content.trim()}
                 className="flex-1 h-10 rounded-xl bg-amber-500 text-[13px] font-bold text-white hover:bg-amber-600 transition-colors disabled:opacity-50">
-                {isPending ? 'Sending…' : 'Send'}
+                {isPending ? 'Sending…' : 'PaperPlaneRight'}
               </button>
               <button onClick={onClose}
                 className="h-10 rounded-xl border border-slate-200 px-4 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
@@ -155,7 +155,7 @@ export default function ModUsersPage() {
 
       {/* Controls */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
-        {/* Filter pills */}
+        {/* Funnel pills */}
         <div className="flex gap-1.5">
           {(['all', 'active', 'suspended'] as const).map(s => (
             <button key={s} onClick={() => setFilter(s)}
@@ -173,12 +173,12 @@ export default function ModUsersPage() {
             </button>
           ))}
         </div>
-        {/* Search */}
+        {/* MagnifyingGlass */}
         <form onSubmit={e => { e.preventDefault(); setCommitted(search); }} className="flex gap-2 sm:ml-auto">
           <div className="relative flex-1 sm:flex-none">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <MagnifyingGlass className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
-              placeholder="Search name, email…"
+              placeholder="MagnifyingGlass name, email…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="h-9 w-full sm:w-52 rounded-xl border border-slate-200 bg-white pl-10 pr-4
@@ -187,7 +187,7 @@ export default function ModUsersPage() {
           </div>
           <button type="submit"
             className="h-9 rounded-xl bg-amber-500 px-4 text-[12px] font-bold text-white hover:bg-amber-600 transition-colors">
-            Search
+            MagnifyingGlass
           </button>
         </form>
       </div>
@@ -262,7 +262,7 @@ export default function ModUsersPage() {
                 {/* Contact info */}
                 <div className="px-4 pb-3 space-y-1.5">
                   <div className="flex items-center gap-2 text-[12px] text-slate-500">
-                    <Mail className="h-3.5 w-3.5 flex-shrink-0 text-slate-400" />
+                    <EnvelopeSimple className="h-3.5 w-3.5 flex-shrink-0 text-slate-400" />
                     <span className="truncate">{user.email}</span>
                   </div>
                   <div className="flex items-center gap-2 text-[12px] text-slate-500">
@@ -273,7 +273,7 @@ export default function ModUsersPage() {
                     <Globe className="h-3.5 w-3.5 flex-shrink-0 text-slate-400" />
                     <span>{user.country_code}</span>
                     <span className="text-slate-300">·</span>
-                    <Calendar className="h-3.5 w-3.5 flex-shrink-0 text-slate-400" />
+                    <CalendarBlank className="h-3.5 w-3.5 flex-shrink-0 text-slate-400" />
                     <span>{new Date(user.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                   </div>
                 </div>
@@ -286,7 +286,7 @@ export default function ModUsersPage() {
                       className="flex flex-1 items-center justify-center gap-1.5 h-9 rounded-xl border border-amber-200 bg-amber-50
                         text-[12px] font-semibold text-amber-700 hover:bg-amber-100 transition-colors"
                     >
-                      <MessageCircle className="h-3.5 w-3.5" /> Message
+                      <ChatCircle className="h-3.5 w-3.5" /> Message
                     </button>
                   ) : <div className="flex-1" />}
                   <button
@@ -354,7 +354,7 @@ export default function ModUsersPage() {
                   {user.id !== session.userId && !user.roles.includes('enterprise_admin') ? (
                     <button onClick={() => setMsgUser(user)}
                       className="flex items-center gap-1.5 h-8 rounded-lg border border-amber-200 bg-amber-50 px-2.5 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 transition-colors">
-                      <MessageCircle className="h-3.5 w-3.5" /> Message
+                      <ChatCircle className="h-3.5 w-3.5" /> Message
                     </button>
                   ) : <span />}
                   <button

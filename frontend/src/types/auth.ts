@@ -1,4 +1,4 @@
-/** ──────────────────────────────────────────────
+﻿/** ──────────────────────────────────────────────
  *  Velontri Role System (4 roles only)
  *  ─────────────────────────────────────────────
  *  guest       → unauthenticated / public browsing
@@ -14,7 +14,7 @@ export type LegacyRole =
   | 'branch_manager' | 'business_owner'
   | 'enterprise_admin' | 'ops' | 'moderator';
 
-/** Map legacy DB roles → new 4-role system */
+/** MapTrifold legacy DB roles → new 4-role system */
 export function normaliseRole(legacy: LegacyRole | string): VelontriRole {
   switch (legacy) {
     case 'enterprise_admin':

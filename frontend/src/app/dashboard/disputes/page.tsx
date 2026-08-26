@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Plus, CheckCircle, Clock, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Warning, Plus, CheckCircle, Clock, X, CaretDown, CaretUp } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
@@ -214,7 +214,7 @@ export default function UserDisputesPage() {
         </div>
       ) : disputes.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-16 text-center">
-          <AlertTriangle className="h-12 w-12 text-slate-200 mb-3" />
+          <Warning className="h-12 w-12 text-slate-200 mb-3" />
           <p className="text-[15px] font-semibold text-slate-900 mb-1">No disputes yet</p>
           <p className="text-[13px] text-slate-400">
             If you have an issue with a listing or seller, use the button above to raise a dispute.
@@ -245,7 +245,7 @@ export default function UserDisputesPage() {
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {d.status === 'open' && <Clock className="h-4 w-4 text-amber-500" />}
                   {d.status === 'resolved' && <CheckCircle className="h-4 w-4 text-emerald-500" />}
-                  {expanded === d.id ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
+                  {expanded === d.id ? <CaretUp className="h-4 w-4 text-slate-400" /> : <CaretDown className="h-4 w-4 text-slate-400" />}
                 </div>
               </button>
 

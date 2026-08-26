@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Lock, Eye, EyeOff, Shield, CheckCircle, RefreshCw } from 'lucide-react';
+import { Lock, Eye, EyeSlash, Shield, CheckCircle, ArrowClockwise } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { OTPInput } from '@/components/auth/otp-input';
 import { authApi } from '@/lib/api/endpoints';
@@ -199,7 +199,7 @@ export default function UserSecurityPage() {
                   />
                   <button type="button" onClick={() => setShowCur(p => !p)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
-                    {showCur ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showCur ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
@@ -222,7 +222,7 @@ export default function UserSecurityPage() {
                   />
                   <button type="button" onClick={() => setShowNew(p => !p)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
-                    {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showNew ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
                 <PwStrength pw={newPw} />
@@ -245,7 +245,7 @@ export default function UserSecurityPage() {
                   />
                   <button type="button" onClick={() => setShowConf(p => !p)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
-                    {showConf ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showConf ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
@@ -264,7 +264,7 @@ export default function UserSecurityPage() {
                   text-white font-semibold text-[13px] disabled:opacity-50 disabled:cursor-not-allowed
                   hover:from-violet-500 hover:to-indigo-500 transition-all active:scale-[0.98]"
               >
-                {isLoadingStep1 ? 'Sending code…' : 'Send Verification Code'}
+                {isLoadingStep1 ? 'Sending code…' : 'PaperPlaneRight Verification Code'}
               </button>
             </form>
           )}
@@ -298,7 +298,7 @@ export default function UserSecurityPage() {
                 {isLoadingStep2 ? (
                   <span className="flex items-center justify-center gap-2">
                     <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+                      <circle cx="12" cy="12" r="10" stroke="currentColor"
                         strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
                     </svg>
                     Verifying…
@@ -312,7 +312,7 @@ export default function UserSecurityPage() {
                   <button onClick={handleResend}
                     className="flex items-center justify-center gap-1.5 mx-auto text-[12px]
                       font-semibold text-violet-400 hover:text-violet-300 transition-colors">
-                    <RefreshCw className="h-3 w-3" />
+                    <ArrowClockwise className="h-3 w-3" />
                     Resend code
                   </button>
                 ) : (

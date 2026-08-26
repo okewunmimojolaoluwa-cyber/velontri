@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { Warning } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
@@ -52,7 +52,7 @@ export default function ModReportsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-amber-500" /> Reports
+          <Warning className="h-5 w-5 text-amber-500" /> Reports
         </h1>
         <p className="text-[13px] text-slate-400 mt-0.5">Review user reports and violations</p>
       </div>
@@ -83,7 +83,7 @@ export default function ModReportsPage() {
         </div>
       ) : reports.length === 0 && !isError ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-16 text-center">
-          <AlertTriangle className="h-10 w-10 text-slate-200 mb-3" />
+          <Warning className="h-10 w-10 text-slate-200 mb-3" />
           <p className="text-[14px] font-semibold text-slate-900 mb-1">No reports</p>
           <p className="text-[12px] text-slate-400">
             {filter !== 'all' ? `No ${filter} reports.` : 'No reports have been filed.'}

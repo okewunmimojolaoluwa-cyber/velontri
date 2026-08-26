@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { Wallet, ShieldCheck, Package, Star, MessageCircle, Heart, Store, ShoppingBag } from 'lucide-react';
+import { Wallet, ShieldCheck, Package, Star, ChatCircle, Heart, Storefront, ShoppingBag } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 
@@ -70,7 +70,7 @@ export function KPICards({
       bg: '#f5f3ff',
     },
     {
-      icon: MessageCircle,
+      icon: ChatCircle,
       label: 'Messages',
       value: messages.toString(),
       href: ROUTES.user.messages,
@@ -86,7 +86,7 @@ export function KPICards({
       bg: '#fce7f3',
     },
     {
-      icon: Store,
+      icon: Storefront,
       label: 'Followers',
       value: followers.toString(),
       href: ROUTES.user.store,
@@ -130,7 +130,7 @@ export function KPICards({
                   className="flex h-6 w-6 items-center justify-center rounded-lg flex-shrink-0"
                   style={{ background: bg }}
                 >
-                  <Icon className="h-3 w-3" style={{ color }} strokeWidth={2} />
+                  <Icon className="h-3 w-3" style={{ color }} />
                 </div>
               </div>
               <p className="text-lg font-black text-slate-900 tracking-tight leading-none">

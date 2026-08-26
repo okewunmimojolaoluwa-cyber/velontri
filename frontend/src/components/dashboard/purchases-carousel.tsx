@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { MapPin, Truck, Package } from 'lucide-react';
+import { MapPin, Truck, Package } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 

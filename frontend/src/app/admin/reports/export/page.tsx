@@ -1,12 +1,12 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
-import { Download, FileText, BarChart3, DollarSign, Users, Package } from 'lucide-react';
+import { DownloadSimple, FileText, BarChart3, CurrencyDollar, Users, Package } from '@phosphor-icons/react';
 
 const REPORTS = [
   { id: 'users',        label: 'Users Report',         desc: 'All registered users with roles and activity', icon: Users,     format: ['CSV', 'Excel'] },
   { id: 'listings',     label: 'Listings Report',       desc: 'All listings with status, price and category', icon: Package,   format: ['CSV', 'Excel'] },
-  { id: 'revenue',      label: 'Revenue Report',        desc: 'Revenue by stream, date and category',         icon: DollarSign,format: ['CSV', 'Excel', 'PDF'] },
+  { id: 'revenue',      label: 'Revenue Report',        desc: 'Revenue by stream, date and category',         icon: CurrencyDollar,format: ['CSV', 'Excel', 'PDF'] },
   { id: 'orders',       label: 'Orders Report',         desc: 'Transaction history with amounts and status',  icon: BarChart3, format: ['CSV', 'Excel'] },
   { id: 'kyc',          label: 'KYC Report',            desc: 'Verification status for all users',            icon: FileText,  format: ['CSV', 'Excel'] },
   { id: 'audit',        label: 'Audit Log Export',      desc: 'Complete platform activity audit trail',       icon: FileText,  format: ['CSV', 'Excel'] },
@@ -25,9 +25,9 @@ export default function ExportReportsPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <Download className="h-6 w-6 text-indigo-600" /> Export Reports
+            <DownloadSimple className="h-6 w-6 text-indigo-600" /> Export Reports
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">Download platform data in CSV, Excel or PDF format</p>
+          <p className="text-sm text-slate-500 mt-0.5">DownloadSimple platform data in CSV, Excel or PDF format</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -49,9 +49,9 @@ export default function ExportReportsPage() {
                     className="flex items-center gap-1.5 h-8 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-600 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600 transition-colors disabled:opacity-50">
                     {downloading === `${id}-${f}` ? (
                       <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
                       </svg>
-                    ) : <Download className="h-3 w-3" />}
+                    ) : <DownloadSimple className="h-3 w-3" />}
                     {f}
                   </button>
                 ))}

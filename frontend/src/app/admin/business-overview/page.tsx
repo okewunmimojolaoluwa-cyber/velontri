@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, Users, Package, DollarSign, ShoppingCart, Star, Store, MapPin, BarChart2 } from 'lucide-react';
+import { TrendUp, Users, Package, CurrencyDollar, ShoppingCart, Star, Storefront, MapPin, ChartBar } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -87,14 +87,14 @@ export default function BusinessOverviewPage() {
 
   const KPI_CARDS = stats
     ? [
-        { label: 'Total Revenue',   value: fmt(stats.total_revenue),                  icon: DollarSign,   color: 'text-emerald-600', bg: 'bg-emerald-50' },
+        { label: 'Total Revenue',   value: fmt(stats.total_revenue),                  icon: CurrencyDollar,   color: 'text-emerald-600', bg: 'bg-emerald-50' },
         { label: 'Active Users',    value: stats.active_users.toLocaleString(),         icon: Users,        color: 'text-indigo-600',  bg: 'bg-indigo-50'  },
         { label: 'Total Orders',    value: stats.total_orders.toLocaleString(),         icon: ShoppingCart, color: 'text-violet-600',  bg: 'bg-violet-50'  },
         { label: 'Active Listings', value: stats.active_listings.toLocaleString(),      icon: Package,      color: 'text-sky-600',     bg: 'bg-sky-50'     },
         { label: 'Avg. Rating',     value: `${stats.avg_rating.toFixed(1)} ★`,          icon: Star,         color: 'text-amber-600',   bg: 'bg-amber-50'   },
-        { label: 'Active Stores',   value: stats.active_stores.toLocaleString(),        icon: Store,        color: 'text-pink-600',    bg: 'bg-pink-50'    },
+        { label: 'Active Stores',   value: stats.active_stores.toLocaleString(),        icon: Storefront,        color: 'text-pink-600',    bg: 'bg-pink-50'    },
         { label: 'Countries',       value: stats.countries.toLocaleString(),            icon: MapPin,       color: 'text-teal-600',    bg: 'bg-teal-50'    },
-        { label: 'MoM Growth',      value: `+${stats.mom_growth.toFixed(1)}%`,          icon: TrendingUp,   color: 'text-green-600',   bg: 'bg-green-50'   },
+        { label: 'MoM Growth',      value: `+${stats.mom_growth.toFixed(1)}%`,          icon: TrendUp,   color: 'text-green-600',   bg: 'bg-green-50'   },
       ]
     : null;
 
@@ -135,7 +135,7 @@ export default function BusinessOverviewPage() {
             <SkeletonRows count={5} />
           ) : categories.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <BarChart2 className="h-10 w-10 text-slate-200 mb-2" />
+              <ChartBar className="h-10 w-10 text-slate-200 mb-2" />
               <p className="text-sm font-semibold text-slate-900">No category data yet</p>
               <p className="text-xs text-slate-400 mt-1">Revenue will appear here after your first successful sales</p>
             </div>

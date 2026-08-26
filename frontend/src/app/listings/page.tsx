@@ -1,13 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import {
-  SlidersHorizontal, X, Search, MapPin, Car, Home,
-  Smartphone, Shirt, Briefcase, ShoppingBag, Zap,
-  ChevronRight, Package, ArrowLeft, Store,
-} from 'lucide-react';
+import { SlidersHorizontal, X, MagnifyingGlass, MapPin, Car, House, DeviceMobile, TShirt, Briefcase, ShoppingBag, Lightning, CaretRight, Package, ArrowLeft, Storefront } from '@phosphor-icons/react';
 import { useListings } from '@/features/listings/hooks/use-listings';
 import { Navbar } from '@/components/layout/navbar';
 import { cn } from '@/lib/utils/cn';
@@ -19,11 +15,11 @@ import type { ListingFilters } from '@/lib/api/endpoints/listings';
 const CATEGORIES = [
   { label: 'All',         value: '',             icon: ShoppingBag,  color: '#4F46E5', bg: '#eef2ff' },
   { label: 'Vehicles',    value: 'vehicle',      icon: Car,          color: '#0369A1', bg: '#e0f2fe' },
-  { label: 'Property',    value: 'property',     icon: Home,         color: '#059669', bg: '#ecfdf5' },
-  { label: 'Electronics', value: 'Electronics',  icon: Smartphone,   color: '#7C3AED', bg: '#f5f3ff' },
-  { label: 'Fashion',     value: 'Fashion',      icon: Shirt,        color: '#DB2777', bg: '#fce7f3' },
+  { label: 'Property',    value: 'property',     icon: House,        color: '#059669', bg: '#ecfdf5' },
+  { label: 'Electronics', value: 'Electronics',  icon: DeviceMobile, color: '#7C3AED', bg: '#f5f3ff' },
+  { label: 'Fashion',     value: 'Fashion',      icon: TShirt,       color: '#DB2777', bg: '#fce7f3' },
   { label: 'Jobs',        value: 'job',          icon: Briefcase,    color: '#D97706', bg: '#fffbeb' },
-  { label: 'Services',    value: 'service',      icon: Zap,          color: '#DC2626', bg: '#fef2f2' },
+  { label: 'Services',    value: 'service',      icon: Lightning,    color: '#DC2626', bg: '#fef2f2' },
 ] as const;
 
 const COUNTRIES = [
@@ -83,7 +79,7 @@ function BrowseCard({ listing }: { listing: any }) {
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2"
             style={{ background: bgLight }}>
-            <Icon className="h-10 w-10" style={{ color: accent }} strokeWidth={1.5} />
+            <Icon className="h-10 w-10" style={{ color: accent }} />
           </div>
         )}
         {/* Category badge */}
@@ -257,7 +253,7 @@ export default function ListingsPage() {
               </div>
               <div>
                 <p className="text-indigo-300 text-[11px] font-bold uppercase tracking-widest mb-0.5 flex items-center gap-1">
-                  <Store className="h-3 w-3" /> Seller Store
+                  <Storefront className="h-3 w-3" /> Seller Storefront
                 </p>
                 <h1 className="text-white font-black text-[1.6rem] leading-tight tracking-tight">
                   {storeName || sellerNameParam || 'Seller'}
@@ -280,21 +276,21 @@ export default function ListingsPage() {
             <p className="mb-8 text-[15px] text-white/60 max-w-md mx-auto">
               Vehicles, property, electronics, fashion and more — direct from sellers via WhatsApp.
             </p>
-            {/* Search bar */}
+            {/* MagnifyingGlass bar */}
             <form onSubmit={handleSearch}
               className="mx-auto flex max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl shadow-black/30">
               <div className="relative flex-1">
-                <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <MagnifyingGlass className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="Search listings…"
+                  placeholder="MagnifyingGlass listings…"
                   className="h-14 w-full bg-transparent pl-11 pr-4 text-[15px] text-slate-800 placeholder-slate-400 outline-none"
                 />
               </div>
               <button type="submit"
                 className="flex items-center gap-2 bg-indigo-600 px-6 text-[14px] font-bold text-white transition-colors hover:bg-indigo-700 flex-shrink-0">
-                <Search className="h-4 w-4" /> Search
+                <MagnifyingGlass className="h-4 w-4" /> MagnifyingGlass
               </button>
             </form>
           </div>
@@ -457,7 +453,7 @@ export default function ListingsPage() {
         {!isLoading && !isError && listings.length === 0 && (
           <div className="py-24 text-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-slate-100 mx-auto mb-5">
-              <Search className="h-10 w-10 text-slate-300" />
+              <MagnifyingGlass className="h-10 w-10 text-slate-300" />
             </div>
             <p className="text-[18px] font-black text-slate-900 mb-2">No listings found</p>
             <p className="text-[14px] text-slate-400 mb-5">Try adjusting your filters or search.</p>
@@ -480,7 +476,7 @@ export default function ListingsPage() {
               </p>
               <Link href="/listings"
                 className="flex items-center gap-1 text-[12px] font-semibold text-indigo-600 no-underline hover:underline">
-                See all <ChevronRight className="h-3.5 w-3.5" />
+                See all <CaretRight className="h-3.5 w-3.5" />
               </Link>
             </div>
 

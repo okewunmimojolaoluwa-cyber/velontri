@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Listing detail — SERVER COMPONENT wrapper.
  *
  * Responsibilities:
@@ -174,7 +174,7 @@ function ListingStructuredData({ listing }: { listing: ListingData }) {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home',     item: BASE },
+      { '@type': 'ListItem', position: 1, name: 'House',     item: BASE },
       { '@type': 'ListItem', position: 2, name: 'Listings', item: `${BASE}/listings` },
       { '@type': 'ListItem', position: 3, name: category,   item: `${BASE}/categories/${category.toLowerCase().replace(/\s+/g, '-')}` },
       { '@type': 'ListItem', position: 4, name: listing.title, item: canonicalUrl },

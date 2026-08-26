@@ -1,12 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-  ClipboardList, Search, User, Shield, Settings, Cpu,
-  CheckCircle, XCircle, Calendar, ChevronLeft, ChevronRight,
-  RefreshCw,
-} from 'lucide-react';
+import { ClipboardList, MagnifyingGlass, User, Shield, Gear, Cpu, CheckCircle, XCircle, CalendarBlank, CaretLeft, CaretRight, ArrowClockwise } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -45,7 +41,7 @@ const CATEGORY_COLOR: Record<string, string> = {
 const CATEGORY_ICON: Record<string, typeof User> = {
   user:   User,
   admin:  Shield,
-  system: Settings,
+  system: Gear,
 };
 
 const ACTION_COLOR: Record<string, string> = {
@@ -69,7 +65,7 @@ function fmt(ts: string) {
 
 /* ── Audit entry card (mobile) ───────────────────────────── */
 function AuditCard({ log }: { log: AuditEntry }) {
-  const CatIcon = CATEGORY_ICON[log.category] ?? Settings;
+  const CatIcon = CATEGORY_ICON[log.category] ?? Gear;
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 shadow-sm">
       {/* Top row */}
@@ -101,7 +97,7 @@ function AuditCard({ log }: { log: AuditEntry }) {
       <div className="flex items-center justify-between text-[11px] text-slate-500">
         <span className="truncate max-w-[55%]">{log.user_name} {log.user_email && `· ${log.user_email}`}</span>
         <span className="flex items-center gap-1 flex-shrink-0">
-          <Calendar className="h-3 w-3" />
+          <CalendarBlank className="h-3 w-3" />
           {fmt(log.timestamp)}
         </span>
       </div>
@@ -155,7 +151,7 @@ export default function AdminAuditPage() {
             px-4 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors
             disabled:opacity-50 self-start"
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${isRefetching ? 'animate-spin' : ''}`} />
+          <ArrowClockwise className={`h-3.5 w-3.5 ${isRefetching ? 'animate-spin' : ''}`} />
           Refresh
         </button>
       </div>
@@ -181,12 +177,12 @@ export default function AdminAuditPage() {
           ))}
         </div>
 
-        {/* Search */}
+        {/* MagnifyingGlass */}
         <form onSubmit={handleSearch} className="flex gap-2 sm:ml-auto w-full sm:w-auto">
           <div className="relative flex-1 sm:flex-none">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
             <input
-              placeholder="Search action, user, resource…"
+              placeholder="MagnifyingGlass action, user, resource…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="h-9 w-full sm:w-60 rounded-xl border border-slate-200 pl-9 pr-4
@@ -197,7 +193,7 @@ export default function AdminAuditPage() {
           <button type="submit"
             className="h-9 rounded-xl bg-indigo-600 px-4 text-[12px] font-bold text-white
               hover:bg-indigo-700 transition-colors flex-shrink-0">
-            Search
+            MagnifyingGlass
           </button>
         </form>
       </div>
@@ -275,7 +271,7 @@ export default function AdminAuditPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {logs.map(log => {
-                  const CatIcon = CATEGORY_ICON[log.category] ?? Settings;
+                  const CatIcon = CATEGORY_ICON[log.category] ?? Gear;
                   return (
                     <tr key={log.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-5 py-3 text-[11px] text-slate-500 whitespace-nowrap">
@@ -342,7 +338,7 @@ export default function AdminAuditPage() {
               text-[13px] font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40
               disabled:cursor-not-allowed transition-all"
           >
-            <ChevronLeft className="h-4 w-4" /> Prev
+            <CaretLeft className="h-4 w-4" /> Prev
           </button>
           <span className="text-[13px] text-slate-500">
             {page} / {totalPages}
@@ -354,7 +350,7 @@ export default function AdminAuditPage() {
               text-[13px] font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40
               disabled:cursor-not-allowed transition-all"
           >
-            Next <ChevronRight className="h-4 w-4" />
+            Next <CaretRight className="h-4 w-4" />
           </button>
         </div>
       )}

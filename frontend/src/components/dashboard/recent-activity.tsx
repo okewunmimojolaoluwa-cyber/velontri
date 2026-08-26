@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ShoppingBag, MessageCircle, Wallet, Eye, ShieldCheck, ChevronRight } from 'lucide-react';
+import { ShoppingBag, ChatCircle, Wallet, Eye, ShieldCheck, CaretRight } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 
@@ -37,7 +37,7 @@ const DEFAULT_ACTIVITIES: ActivityItem[] = [
     description: 'Chinedu: Is this still available?',
     time: '15 min ago',
     href: ROUTES.user.messages,
-    icon: MessageCircle,
+    icon: ChatCircle,
   },
   {
     id: '3',
@@ -107,7 +107,7 @@ export function RecentActivity({ activities = DEFAULT_ACTIVITIES }: RecentActivi
                 className="flex items-center gap-3 rounded-xl bg-white border border-slate-200 p-3 no-underline shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md block"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 flex-shrink-0">
-                  <Icon className="h-5 w-5" strokeWidth={1.75} />
+                  <Icon className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-900 truncate">
@@ -121,7 +121,7 @@ export function RecentActivity({ activities = DEFAULT_ACTIVITIES }: RecentActivi
                   <span className="text-[10px] text-slate-400">
                     {activity.time}
                   </span>
-                  <ChevronRight className="h-4 w-4 text-slate-300" />
+                  <CaretRight className="h-4 w-4 text-slate-300" />
                 </div>
               </Link>
             </motion.div>

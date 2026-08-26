@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { Eye, Users, ShoppingBag, DollarSign, TrendingUp, ArrowRight, Store } from 'lucide-react';
+import { Eye, Users, ShoppingBag, CurrencyDollar, TrendUp, ArrowRight, Storefront } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 
@@ -39,11 +39,11 @@ export function StoreAnalytics({ hasStore = true, analytics = DEFAULT_ANALYTICS 
         <div className="overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-violet-50 p-4">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-600 shadow-sm">
-              <Store className="h-5 w-5 text-white" />
+              <Storefront className="h-5 w-5 text-white" />
             </div>
             <div className="flex-1">
               <h3 className="text-sm font-bold text-slate-900 mb-1">
-                Create Your Store
+                Create Your Storefront
               </h3>
               <p className="text-xs text-slate-600 mb-3 leading-relaxed">
                 Build a trusted brand and reach more buyers across Africa.
@@ -68,7 +68,7 @@ export function StoreAnalytics({ hasStore = true, analytics = DEFAULT_ANALYTICS 
     { icon: Eye, label: 'Views', value: analytics.views.toLocaleString(), color: '#4F46E5', bg: '#eef2ff' },
     { icon: Users, label: 'Visitors', value: analytics.visitors.toLocaleString(), color: '#0891B2', bg: '#ecfeff' },
     { icon: ShoppingBag, label: 'Orders', value: analytics.orders.toString(), color: '#059669', bg: '#ecfdf5' },
-    { icon: DollarSign, label: 'Revenue', value: analytics.revenue, color: '#D97706', bg: '#fffbeb' },
+    { icon: CurrencyDollar, label: 'Revenue', value: analytics.revenue, color: '#D97706', bg: '#fffbeb' },
   ];
 
   return (
@@ -80,7 +80,7 @@ export function StoreAnalytics({ hasStore = true, analytics = DEFAULT_ANALYTICS 
     >
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-          Store Analytics
+          Storefront Analytics
         </p>
         <Link
           href={ROUTES.user.storeAnalytics}
@@ -106,7 +106,7 @@ export function StoreAnalytics({ hasStore = true, analytics = DEFAULT_ANALYTICS 
           >
             <div className="flex items-center gap-2 mb-2">
               <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{ background: bg }}>
-                <Icon className="h-3 w-3" style={{ color }} strokeWidth={2} />
+                <Icon className="h-3 w-3" style={{ color }} />
               </div>
               <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">
                 {label}
@@ -129,7 +129,7 @@ export function StoreAnalytics({ hasStore = true, analytics = DEFAULT_ANALYTICS 
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-100">
-              <TrendingUp className="h-3 w-3 text-emerald-600" strokeWidth={2} />
+              <TrendUp className="h-3 w-3 text-emerald-600" />
             </div>
             <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">
               Followers

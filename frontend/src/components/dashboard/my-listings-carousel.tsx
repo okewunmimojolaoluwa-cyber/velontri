@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { Eye, Edit, Zap } from 'lucide-react';
+import { Eye, PencilSimple, Lightning } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 
@@ -127,11 +127,11 @@ export function MyListingsCarousel({ listings = DEFAULT_LISTINGS }: MyListingsCa
               </div>
               <div className="flex gap-2 mt-2">
                 <button className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-slate-100 px-2 py-1.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-200 transition-colors">
-                  <Edit className="h-3 w-3" />
-                  Edit
+                  <PencilSimple className="h-3 w-3" />
+                  PencilSimple
                 </button>
                 <button className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-indigo-50 px-2 py-1.5 text-[10px] font-semibold text-indigo-600 hover:bg-indigo-100 transition-colors">
-                  <Zap className="h-3 w-3" />
+                  <Lightning className="h-3 w-3" />
                   Promote
                 </button>
               </div>

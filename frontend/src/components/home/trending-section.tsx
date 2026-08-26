@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
-import { Heart, Star, BadgeCheck } from 'lucide-react';
+import { Heart, Star, SealCheck } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/badge';
 
 const PRODUCTS = [
@@ -113,7 +113,7 @@ export function TrendingSection() {
                   <Badge variant={BADGE_MAP[p.badge] ?? 'default'}>{p.badge}</Badge>
                 </div>
 
-                {/* Save button */}
+                {/* FloppyDisk button */}
                 <button
                   className="absolute top-3 right-3 h-8 w-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-white shadow-sm"
                   onClick={(e) => e.preventDefault()}
@@ -147,7 +147,7 @@ export function TrendingSection() {
                 <div className="flex items-end justify-between pt-1">
                   <span className="text-lg font-black text-primary">{fmt(p.price, p.currency)}</span>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    {p.verified && <BadgeCheck className="h-3.5 w-3.5 text-emerald-500" />}
+                    {p.verified && <SealCheck className="h-3.5 w-3.5 text-emerald-500" />}
                     <span className="truncate max-w-[80px]">{p.seller}</span>
                   </div>
                 </div>

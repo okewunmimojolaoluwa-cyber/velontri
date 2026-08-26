@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -8,7 +8,7 @@ import { listingKeys } from '@/lib/api/endpoints/listings';
 import { ROUTES } from '@/config/routes';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { MapPin, ChevronRight, ImageIcon, Upload, X, Lock, Zap, ArrowRight } from 'lucide-react';
+import { MapPin, CaretRight, ImageIcon, UploadSimple, X, Lock, Lightning, ArrowRight } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { normalizePhoneNumber } from '@/lib/utils/formatters';
 import Link from 'next/link';
@@ -84,7 +84,7 @@ function ListingLimitGate({
               bg-indigo-600 text-[14px] font-bold text-white no-underline
               hover:bg-indigo-700 transition-colors"
           >
-            <Zap className="h-4 w-4" />
+            <Lightning className="h-4 w-4" />
             Upgrade Plan
           </Link>
           <Link
@@ -179,7 +179,7 @@ export default function CreateListingPage() {
     staleTime: 60_000,
   });
 
-  // Map internal tier names (growth/pro) back to frontend plan names
+  // MapTrifold internal tier names (growth/pro) back to frontend plan names
   const TIER_TO_PLAN: Record<string, string> = {
     starter: 'free',   // internal 'starter' = free plan
     growth:  'starter', // internal 'growth'  = Starter plan (₦2,500/mo)
@@ -387,7 +387,7 @@ export default function CreateListingPage() {
       {(quotaLoading || subLoading) && (
         <div className="flex items-center justify-center py-12">
           <svg className="h-8 w-8 animate-spin text-indigo-600" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+            <circle cx="12" cy="12" r="10" stroke="currentColor"
               strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
           </svg>
         </div>
@@ -453,7 +453,7 @@ export default function CreateListingPage() {
         {warmingUp && (
           <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 flex items-center gap-3">
             <svg className="h-4 w-4 animate-spin text-indigo-600 flex-shrink-0" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+              <circle cx="12" cy="12" r="10" stroke="currentColor"
                 strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
             </svg>
             <p className="text-sm font-medium text-indigo-700">
@@ -771,7 +771,7 @@ export default function CreateListingPage() {
                   bg-indigo-50 py-3.5 text-[13px] font-semibold text-indigo-600
                   hover:bg-indigo-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Upload className="h-4 w-4" />
+                <UploadSimple className="h-4 w-4" />
                 {form.images.length === 0 ? 'Choose from Gallery' : `Gallery (${form.images.length}/6)`}
               </button>
             </div>
@@ -846,7 +846,7 @@ export default function CreateListingPage() {
         )}
       </div>
 
-      {/* Navigation */}
+      {/* NavigationArrow */}
       <div className="flex items-center justify-between">
         <Button
           variant="outline"
@@ -859,7 +859,7 @@ export default function CreateListingPage() {
           {warmingUp ? (
             <span className="flex items-center gap-2">
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+                <circle cx="12" cy="12" r="10" stroke="currentColor"
                   strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
               </svg>
               Connecting…
@@ -867,7 +867,7 @@ export default function CreateListingPage() {
           ) : isPending ? (
             <span className="flex items-center gap-2">
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+                <circle cx="12" cy="12" r="10" stroke="currentColor"
                   strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
               </svg>
               Posting…
@@ -876,7 +876,7 @@ export default function CreateListingPage() {
             'Post Listing →'
           ) : (
             <span className="flex items-center gap-1.5">
-              Continue <ChevronRight className="h-4 w-4" />
+              Continue <CaretRight className="h-4 w-4" />
             </span>
           )}
         </Button>

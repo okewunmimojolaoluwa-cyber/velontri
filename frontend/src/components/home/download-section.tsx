@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
-import { Smartphone, Star, Download, Shield } from 'lucide-react';
+import { DeviceMobile, Star, DownloadSimple, Shield } from '@phosphor-icons/react';
 
 export function DownloadSection() {
   return (
@@ -23,7 +23,7 @@ export function DownloadSection() {
             {/* Left */}
             <div className="space-y-6 text-white">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-4 py-2 text-sm backdrop-blur-sm">
-                <Smartphone className="h-4 w-4 text-amber-300" />
+                <DeviceMobile className="h-4 w-4 text-amber-300" />
                 <span className="text-white/80">Available on iOS & Android</span>
               </div>
 
@@ -44,8 +44,8 @@ export function DownloadSection() {
                     <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
                   </svg>
                   <div className="text-left">
-                    <p className="text-xs text-white/50 leading-none">Download on the</p>
-                    <p className="text-sm font-semibold text-white leading-tight">App Store</p>
+                    <p className="text-xs text-white/50 leading-none">DownloadSimple on the</p>
+                    <p className="text-sm font-semibold text-white leading-tight">App Storefront</p>
                   </div>
                 </button>
 
@@ -106,10 +106,10 @@ export function DownloadSection() {
                         <p className="text-xs text-white/70">{item}</p>
                       </div>
                     ))}
-                    {/* Search bar */}
+                    {/* MagnifyingGlass bar */}
                     <div className="rounded-xl bg-white/8 border border-white/10 px-3 py-2 flex items-center gap-2">
                       <div className="h-3 w-3 rounded-full bg-white/20" />
-                      <p className="text-xs text-white/30">Search listings…</p>
+                      <p className="text-xs text-white/30">MagnifyingGlass listings…</p>
                     </div>
                   </div>
                 </div>
@@ -117,7 +117,7 @@ export function DownloadSection() {
                 {/* Floating badges */}
                 <div className="absolute -left-8 top-8 glass rounded-xl px-3 py-2 border border-white/15 animate-float" style={{ animationDelay: '0.5s' }}>
                   <div className="flex items-center gap-1.5 text-xs text-white/80 font-medium">
-                    <Download className="h-3 w-3 text-emerald-400" />
+                    <DownloadSimple className="h-3 w-3 text-emerald-400" />
                     New order!
                   </div>
                 </div>

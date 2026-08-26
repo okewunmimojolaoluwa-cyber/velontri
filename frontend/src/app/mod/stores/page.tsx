@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
-import { Search, Store, Package, ShieldOff, ShieldCheck, AlertCircle } from 'lucide-react';
+import { MagnifyingGlass, Storefront, Package, ShieldOff, ShieldCheck, WarningCircle } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
@@ -38,7 +38,7 @@ export default function ModStoresPage() {
         id: String(s.id || s.seller_id || ''),
         name: s.name || s.full_name || 'Seller',
         email: s.email || '',
-        store_name: s.store_name || `${s.name || 'Seller'}'s Store`,
+        store_name: s.store_name || `${s.name || 'Seller'}'s Storefront`,
         status: s.status || (s.is_active === false ? 'suspended' : 'active'),
         is_active: s.status !== 'suspended' && s.is_active !== false,
         total_listings: s.total_listings || 0,
@@ -95,7 +95,7 @@ export default function ModStoresPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight">Store Management</h1>
+        <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight">Storefront Management</h1>
         <p className="text-[13px] text-slate-400 mt-0.5">
           {isLoading ? 'Loading…' : `${sellers.length} seller${sellers.length !== 1 ? 's' : ''} registered`}
         </p>
@@ -103,7 +103,7 @@ export default function ModStoresPage() {
 
       {actionError && (
         <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-          <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+          <WarningCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
           <p className="text-[13px] font-medium text-red-600">{actionError}</p>
           <button onClick={() => setActionError('')} className="ml-auto text-red-400 hover:text-red-600 text-xs">✕</button>
         </div>
@@ -132,11 +132,11 @@ export default function ModStoresPage() {
           ))}
         </div>
         <div className="relative ml-auto">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <MagnifyingGlass className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search sellers…"
+            placeholder="MagnifyingGlass sellers…"
             className="h-9 w-52 rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-[13px] text-slate-800 placeholder-slate-400 outline-none focus:border-amber-400 transition-all"
           />
         </div>
@@ -157,7 +157,7 @@ export default function ModStoresPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-20 text-center">
-          <Store className="h-12 w-12 text-slate-200 mb-3" />
+          <Storefront className="h-12 w-12 text-slate-200 mb-3" />
           <p className="text-[15px] font-semibold text-slate-900 mb-1">
             {search ? `No results for "${search}"` : filter !== 'all' ? `No ${filter} sellers` : 'No sellers yet'}
           </p>

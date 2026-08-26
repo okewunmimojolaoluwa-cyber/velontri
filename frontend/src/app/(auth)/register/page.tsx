@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, User, Mail, Phone, Lock, Globe } from 'lucide-react';
+import { Eye, EyeSlash, User, EnvelopeSimple, Phone, Lock, Globe } from '@phosphor-icons/react';
 import { authApi } from '@/lib/api/endpoints/auth';
 import { ROUTES, resolveHomePath } from '@/config/routes';
 import { VelontriApiError } from '@/types/api';
@@ -155,7 +155,7 @@ export default function RegisterPage() {
         {googleLoading ? (
           <div className="w-full h-12 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center">
             <svg className="h-4 w-4 animate-spin text-slate-400" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+              <circle cx="12" cy="12" r="10" stroke="currentColor"
                 strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
             </svg>
           </div>
@@ -188,7 +188,7 @@ export default function RegisterPage() {
         <div className="space-y-1.5">
           <label className="block text-[13px] font-semibold text-slate-700">Email</label>
           <div className="relative">
-            <Mail className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <EnvelopeSimple className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input type="email" placeholder="ada@example.com" value={form.email}
               onChange={set('email')} required autoComplete="email"
               className={`${inputCls} pl-10`} />
@@ -237,7 +237,7 @@ export default function RegisterPage() {
             />
             <button type="button" onClick={() => setShowPw(v => !v)} tabIndex={-1}
               className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
-              {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPw ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
           {pwErr && <p className="text-[12px] text-red-500 font-medium mt-1">{pwErr}</p>}
@@ -261,7 +261,7 @@ export default function RegisterPage() {
           {loading ? (
             <span className="flex items-center justify-center gap-2">
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+                <circle cx="12" cy="12" r="10" stroke="currentColor"
                   strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
               </svg>
               Creating account…

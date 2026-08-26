@@ -1,11 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  UserPlus, Shield, Trash2, Lock, CheckSquare, Square,
-  Eye, EyeOff, Mail, Phone, User, AlertCircle, CheckCircle,
-} from 'lucide-react';
+import { UserPlus, Shield, Trash, Lock, CheckSquare, Square, Eye, EyeSlash, EnvelopeSimple, Phone, User, WarningCircle, CheckCircle } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -27,7 +24,7 @@ const ALL_PERMISSIONS = [
   { key: 'can_moderate_users',     label: 'Moderate Users' },
   { key: 'can_moderate_stores',    label: 'Moderate Stores' },
   { key: 'can_reply_tickets',      label: 'Reply to Tickets' },
-  { key: 'can_send_notifications', label: 'Send Notifications' },
+  { key: 'can_send_notifications', label: 'PaperPlaneRight Notifications' },
   { key: 'can_handle_disputes',    label: 'Handle Disputes' },
 ];
 
@@ -188,7 +185,7 @@ export default function ModeratorsPage() {
               <div className="space-y-1.5">
                 <label className="text-[13px] font-semibold text-slate-700">Email <span className="text-red-500">*</span></label>
                 <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <EnvelopeSimple className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <input type="email" placeholder="mod@velontri.com" value={newMod.email}
                     onChange={e => setNewMod(p => ({ ...p, email: e.target.value }))}
                     required className={`${inputCls} pl-10`} />
@@ -213,7 +210,7 @@ export default function ModeratorsPage() {
                     required minLength={8} className={`${inputCls} pr-11`} />
                   <button type="button" onClick={() => setShowPw(v => !v)} tabIndex={-1}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                    {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPw ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
@@ -258,7 +255,7 @@ export default function ModeratorsPage() {
 
             {createError && (
               <div className="flex items-center gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-                <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
+                <WarningCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
                 <p className="text-[13px] font-medium text-red-600">{createError}</p>
               </div>
             )}
@@ -270,7 +267,7 @@ export default function ModeratorsPage() {
                   disabled:opacity-50 disabled:cursor-not-allowed">
                 {creating ? (
                   <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+                    <circle cx="12" cy="12" r="10" stroke="currentColor"
                       strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
                   </svg>
                 ) : <UserPlus className="h-4 w-4" />}
@@ -378,7 +375,7 @@ export default function ModeratorsPage() {
                     className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200
                       text-slate-400 hover:border-red-200 hover:bg-red-50 hover:text-red-600 transition-all"
                     title="Delete moderator">
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
@@ -391,7 +388,7 @@ export default function ModeratorsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
           <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100">
-              <Trash2 className="h-5 w-5 text-red-600" />
+              <Trash className="h-5 w-5 text-red-600" />
             </div>
             <h3 className="text-[16px] font-black text-slate-900 mb-1">Delete moderator?</h3>
             <p className="text-[13px] text-slate-500 mb-5 leading-relaxed">

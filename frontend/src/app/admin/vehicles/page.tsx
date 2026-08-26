@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Car, Search } from 'lucide-react';
+import { Car, MagnifyingGlass } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 import { ListingsPage } from '@/app/admin/products/page';

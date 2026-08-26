@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
-import { AlertCircle, ChevronDown, ChevronUp, CheckCircle } from 'lucide-react';
+import { WarningCircle, CaretDown, CaretUp, CheckCircle } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
@@ -66,14 +66,14 @@ export default function ModDisputesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight flex items-center gap-2">
-          <AlertCircle className="h-5 w-5 text-amber-500" /> Disputes
+          <WarningCircle className="h-5 w-5 text-amber-500" /> Disputes
         </h1>
         <p className="text-[13px] text-slate-400 mt-0.5">
           {meta?.total != null ? `${meta.total} dispute(s)` : 'Manage user disputes'}
         </p>
       </div>
 
-      {/* Filter tabs */}
+      {/* Funnel tabs */}
       <div className="flex gap-1.5 flex-wrap">
         {(['open', 'under_review', 'resolved', 'all'] as const).map(s => (
           <button key={s} onClick={() => setFilter(s)}
@@ -131,8 +131,8 @@ export default function ModDisputesPage() {
                   </div>
                 </div>
                 {expanded === d.id
-                  ? <ChevronUp className="h-4 w-4 text-slate-400 flex-shrink-0" />
-                  : <ChevronDown className="h-4 w-4 text-slate-400 flex-shrink-0" />}
+                  ? <CaretUp className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                  : <CaretDown className="h-4 w-4 text-slate-400 flex-shrink-0" />}
               </button>
 
               {expanded === d.id && (

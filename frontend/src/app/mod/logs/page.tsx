@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
-import { FileText, Search } from 'lucide-react';
+import { FileText, MagnifyingGlass } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
@@ -53,11 +53,11 @@ export default function ModLogsPage() {
 
       <div className="flex flex-wrap gap-3 items-center">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <MagnifyingGlass className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search logs…"
+            placeholder="MagnifyingGlass logs…"
             className="h-9 w-52 rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-[13px] text-slate-800 placeholder-slate-400 outline-none focus:border-amber-400 transition-all"
           />
         </div>

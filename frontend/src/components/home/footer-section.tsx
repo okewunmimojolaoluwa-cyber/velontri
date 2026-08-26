@@ -1,11 +1,11 @@
-import Link from 'next/link';
-import { Sparkles, Twitter, Instagram, Linkedin, Youtube } from 'lucide-react';
+﻿import Link from 'next/link';
+import { Sparkle, Twitter, Instagram, Linkedin, Youtube } from '@phosphor-icons/react';
 import { siteConfig } from '@/config/site';
 
 const FOOTER_LINKS = {
   Product: [
     { label: 'Browse listings', href: '/listings' },
-    { label: 'AI Search', href: '/search' },
+    { label: 'AI MagnifyingGlass', href: '/search' },
     { label: 'Pricing', href: '/subscriptions/tiers' },
     { label: 'Mobile app', href: '#download' },
     { label: 'Business solutions', href: '/business' },
@@ -65,7 +65,7 @@ export function FooterSection() {
           <div className="space-y-5">
             <Link href="/" className="flex items-center gap-2.5">
               <div className="h-9 w-9 rounded-xl gradient-primary flex items-center justify-center shadow-glow-sm">
-                <Sparkles className="h-4.5 w-4.5 text-white" />
+                <Sparkle className="h-4.5 w-4.5 text-white" />
               </div>
               <span className="text-xl font-black text-gradient-primary">{siteConfig.name}</span>
             </Link>

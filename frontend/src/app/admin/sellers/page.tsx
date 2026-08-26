@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Store, Package, Search, Star } from 'lucide-react';
+import { Storefront, Package, MagnifyingGlass, Star } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -61,9 +61,9 @@ export default function AdminSellersPage() {
           ))}
         </div>
         <div className="relative ml-auto">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <MagnifyingGlass className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search sellers…"
+            placeholder="MagnifyingGlass sellers…"
             className="h-10 w-56 rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-[14px]
               text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-400 transition-all" />
         </div>
@@ -89,7 +89,7 @@ export default function AdminSellersPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-20 text-center">
-          <Store className="h-12 w-12 text-slate-200 mb-3" />
+          <Storefront className="h-12 w-12 text-slate-200 mb-3" />
           <p className="text-[15px] font-semibold text-slate-900 mb-1">
             {search ? `No results for "${search}"` : 'No sellers found'}
           </p>
@@ -100,7 +100,7 @@ export default function AdminSellersPage() {
       ) : (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="hidden lg:grid grid-cols-[1fr_1fr_auto_auto_auto_auto] gap-4 px-5 py-3 border-b border-slate-100 bg-slate-50">
-            {['Seller', 'Store', 'Listings', 'Active', 'Rating', 'Status'].map(h => (
+            {['Seller', 'Storefront', 'Listings', 'Active', 'Rating', 'Status'].map(h => (
               <p key={h} className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400">{h}</p>
             ))}
           </div>
@@ -122,7 +122,7 @@ export default function AdminSellersPage() {
                   </div>
                 </div>
 
-                {/* Store */}
+                {/* Storefront */}
                 <p className="text-[13px] text-slate-600">{seller.store_name}</p>
 
                 {/* Total listings */}

@@ -1,14 +1,11 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
-import {
-  CheckCircle, XCircle, Eye, ChevronDown, ChevronUp,
-  AlertCircle, Tag, MapPin, User, Calendar,
-} from 'lucide-react';
+import { CheckCircle, XCircle, Eye, CaretDown, CaretUp, WarningCircle, Tag, MapPin, User, CalendarBlank } from '@phosphor-icons/react';
 
 interface PendingListing {
   id: string;
@@ -96,13 +93,13 @@ export default function ModPendingListingsPage() {
         </div>
         {pendingCount > 0 && filter === 'pending' && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1 text-[12px] font-bold text-white">
-            <AlertCircle className="h-3.5 w-3.5" />
+            <WarningCircle className="h-3.5 w-3.5" />
             {pendingCount} awaiting review
           </span>
         )}
       </div>
 
-      {/* Filter tabs */}
+      {/* Funnel tabs */}
       <div className="flex gap-1.5 flex-wrap">
         {(['pending', 'approved', 'rejected', 'all'] as const).map(v => (
           <button key={v} onClick={() => setFilter(v)}
@@ -167,7 +164,7 @@ export default function ModPendingListingsPage() {
                     </div>
                     <div className="mt-1 flex flex-wrap gap-3 text-[11px] text-slate-400">
                       <span className="flex items-center gap-1"><User className="h-3 w-3" />{listing.seller_name}{listing.seller_email && ` · ${listing.seller_email}`}</span>
-                      <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{new Date(listing.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                      <span className="flex items-center gap-1"><CalendarBlank className="h-3 w-3" />{new Date(listing.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                     </div>
                   </div>
                 </div>
@@ -209,7 +206,7 @@ export default function ModPendingListingsPage() {
                   >
                     <Eye className="h-3.5 w-3.5" />
                     {isExpanded ? 'Hide' : 'Details'}
-                    {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    {isExpanded ? <CaretUp className="h-3 w-3" /> : <CaretDown className="h-3 w-3" />}
                   </button>
                 </div>
               </div>

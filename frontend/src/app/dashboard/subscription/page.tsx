@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, Zap } from 'lucide-react';
+import { Check, Lightning } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery } from '@tanstack/react-query';
 import { sellerApi } from '@/lib/api/endpoints/seller';
@@ -57,7 +57,7 @@ const PLANS = [
     border: '#ddd6fe',
     features: [
       'Up to 100 active listings',
-      'Store branding & customization',
+      'Storefront branding & customization',
       'Premium search ranking',
       'Advanced analytics',
       'Priority moderation',
@@ -137,7 +137,7 @@ export default function SubscriptionPage() {
       const ref     = (res.data as any)?.data?.reference;
       if (!authUrl) throw new Error('No authorization URL returned');
 
-      // Store pending payment so we can recover if the user gets logged out during checkout
+      // Storefront pending payment so we can recover if the user gets logged out during checkout
       if (typeof window !== 'undefined') {
         localStorage.setItem('velontri_pending_payment', JSON.stringify({
           reference: ref,
@@ -177,7 +177,7 @@ export default function SubscriptionPage() {
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-emerald-100">
-              <svg className="h-7 w-7 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="h-7 w-7 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
@@ -353,11 +353,11 @@ export default function SubscriptionPage() {
                 >
                   {isActivating ? (
                     <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+                      <circle cx="12" cy="12" r="10" stroke="currentColor"
                         strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
                     </svg>
                   ) : (
-                    <Zap className="h-3.5 w-3.5" />
+                    <Lightning className="h-3.5 w-3.5" />
                   )}
                   {isActivating ? 'Activating…' : 'Upgrade'}
                 </button>

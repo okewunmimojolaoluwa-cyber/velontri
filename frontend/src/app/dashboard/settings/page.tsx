@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { User, Lock, Eye, EyeOff, AlertTriangle, Mail } from 'lucide-react';
+import { User, Lock, Eye, EyeSlash, Warning, EnvelopeSimple } from '@phosphor-icons/react';
 import { usersApi, userKeys } from '@/lib/api/endpoints/users';
 import { useAuth } from '@/features/auth/auth-provider';
 import { apiClient } from '@/lib/api/client';
@@ -118,7 +118,7 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-xl space-y-5">
-      <h1 className="text-[1.4rem] font-black text-slate-900 tracking-tight">Settings</h1>
+      <h1 className="text-[1.4rem] font-black text-slate-900 tracking-tight">Gear</h1>
 
       {/* Tabs */}
       <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
@@ -168,7 +168,7 @@ export default function SettingsPage() {
                 disabled={updatingProfile}
                 onClick={() => { setProfileErr(''); updateProfile({ full_name: fullNameRef.current?.value, bio: bioRef.current?.value }); }}
                 className="h-11 w-full rounded-xl bg-indigo-600 text-[14px] font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
-                {updatingProfile ? 'Saving…' : 'Save changes'}
+                {updatingProfile ? 'Saving…' : 'FloppyDisk changes'}
               </button>
             </div>
           )}
@@ -203,7 +203,7 @@ export default function SettingsPage() {
                         className={`${inputCls} pr-11`} autoComplete="current-password" />
                       <button type="button" onClick={() => setShowCur(v => !v)} tabIndex={-1}
                         className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                        {showCur ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showCur ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
                   </div>
@@ -215,7 +215,7 @@ export default function SettingsPage() {
                         className={`${inputCls} pr-11`} autoComplete="new-password" />
                       <button type="button" onClick={() => setShowNew(v => !v)} tabIndex={-1}
                         className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                        {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showNew ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
                     <PwStrength pw={newPw} />
@@ -224,7 +224,7 @@ export default function SettingsPage() {
                     disabled={requestingPwChange || !curPw || newPw.length < 8}
                     onClick={() => { setPwErr(''); requestPwChange(); }}
                     className="h-11 w-full rounded-xl bg-indigo-600 text-[14px] font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
-                    {requestingPwChange ? 'Sending code…' : 'Send Verification Code'}
+                    {requestingPwChange ? 'Sending code…' : 'PaperPlaneRight Verification Code'}
                   </button>
                 </>
               )}
@@ -233,7 +233,7 @@ export default function SettingsPage() {
               {pwStep === 'otp' && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 rounded-xl bg-indigo-50 border border-indigo-100 px-4 py-3">
-                    <Mail className="h-4 w-4 text-indigo-500 flex-shrink-0" />
+                    <EnvelopeSimple className="h-4 w-4 text-indigo-500 flex-shrink-0" />
                     <p className="text-[13px] text-indigo-700">
                       A 6-digit code was sent to your email. Enter it to confirm the change.
                     </p>
@@ -282,7 +282,7 @@ export default function SettingsPage() {
               <div className="rounded-2xl border-2 border-red-200 bg-white p-6 shadow-sm">
                 <div className="flex items-start gap-3 mb-4">
                   <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-red-100">
-                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                    <Warning className="h-5 w-5 text-red-600" />
                   </div>
                   <div>
                     <h2 className="text-[14px] font-bold text-red-900">Deactivate Account</h2>
@@ -313,7 +313,7 @@ export default function SettingsPage() {
                       />
                       <button type="button" onClick={() => setShowDeactivatePw(v => !v)} tabIndex={-1}
                         className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                        {showDeactivatePw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showDeactivatePw ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
                     {deactivateErr && <p className="text-[12px] font-medium text-red-600">{deactivateErr}</p>}

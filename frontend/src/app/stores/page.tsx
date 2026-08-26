@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Store, Star, BadgeCheck, Search } from 'lucide-react';
+import { Storefront, Star, SealCheck, MagnifyingGlass } from '@phosphor-icons/react';
 import { Navbar } from '@/components/layout/navbar';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
@@ -48,12 +48,12 @@ export default function StoresPage() {
           <h1 className="text-[2rem] font-black text-slate-900 tracking-tight mb-1">Browse Stores</h1>
           <p className="text-[14px] text-slate-500">Discover trusted sellers and their collections</p>
 
-          {/* Search */}
+          {/* MagnifyingGlass */}
           <div className="relative mt-5 max-w-md">
-            <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <MagnifyingGlass className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Search stores…"
+              placeholder="MagnifyingGlass stores…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full h-11 rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-[14px]
@@ -78,7 +78,7 @@ export default function StoresPage() {
           </div>
         ) : stores.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-20 text-center">
-            <Store className="h-12 w-12 text-slate-200 mb-3" />
+            <Storefront className="h-12 w-12 text-slate-200 mb-3" />
             <p className="text-[15px] font-semibold text-slate-900 mb-1">
               {search ? `No results for "${search}"` : 'No stores yet'}
             </p>
@@ -107,7 +107,7 @@ export default function StoresPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
                         <p className="text-[14px] font-bold text-slate-900 truncate">{store.name}</p>
-                        {store.verified && <BadgeCheck className="h-4 w-4 text-indigo-600 flex-shrink-0" />}
+                        {store.verified && <SealCheck className="h-4 w-4 text-indigo-600 flex-shrink-0" />}
                       </div>
                       <p className="text-[12px] text-slate-400">{fmt(store.listings_count)} listings</p>
                     </div>
@@ -128,7 +128,7 @@ export default function StoresPage() {
                       href={`/listings?seller_id=${store.owner_id ?? store.id}`}
                       className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-indigo-600 px-4
                         text-[12px] font-bold text-white no-underline hover:bg-indigo-700 transition-colors">
-                      <Store className="h-3.5 w-3.5" /> Visit Store
+                      <Storefront className="h-3.5 w-3.5" /> Visit Storefront
                     </Link>
                   </div>
                 </div>

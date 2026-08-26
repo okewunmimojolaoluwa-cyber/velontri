@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/features/auth/auth-provider';
@@ -7,7 +7,7 @@ import { apiClient } from '@/lib/api/client';
 import { usersApi, userKeys } from '@/lib/api/endpoints/users';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Crown, Shield, CheckCircle } from 'lucide-react';
+import { Crown, Shield, CheckCircle } from '@phosphor-icons/react';
 
 export default function AdminProfilePage() {
   const { session } = useAuth();
@@ -156,7 +156,7 @@ export default function AdminProfilePage() {
           )}
 
           <Button type="submit" disabled={isPending || isLoading} className="w-full">
-            {isPending ? 'Saving…' : 'Save Changes'}
+            {isPending ? 'Saving…' : 'FloppyDisk Changes'}
           </Button>
         </form>
       </div>

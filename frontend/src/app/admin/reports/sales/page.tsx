@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { BarChart3, Download, BarChart2 } from 'lucide-react';
+import { BarChart3, DownloadSimple, ChartBar } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -56,7 +56,7 @@ export default function SalesReportsPage() {
           <p className="text-sm text-slate-500 mt-0.5">Monthly sales breakdown across all categories</p>
         </div>
         <button className="flex items-center gap-2 h-10 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white hover:bg-indigo-700 transition-colors">
-          <Download className="h-4 w-4" /> Export CSV
+          <DownloadSimple className="h-4 w-4" /> Export CSV
         </button>
       </div>
 
@@ -84,7 +84,7 @@ export default function SalesReportsPage() {
           </div>
         ) : monthly.length === 0 ? (
           <div className="h-48 flex flex-col items-center justify-center gap-2">
-            <BarChart2 className="h-10 w-10 text-slate-200" />
+            <ChartBar className="h-10 w-10 text-slate-200" />
             <p className="text-sm text-slate-400">No sales data available yet</p>
           </div>
         ) : (
@@ -120,7 +120,7 @@ export default function SalesReportsPage() {
           </div>
         ) : byCategory.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center">
-            <BarChart2 className="h-10 w-10 text-slate-200 mb-2" />
+            <ChartBar className="h-10 w-10 text-slate-200 mb-2" />
             <p className="text-sm text-slate-400">No category sales data yet</p>
           </div>
         ) : (

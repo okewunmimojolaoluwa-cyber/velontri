@@ -1,17 +1,14 @@
-'use client';
+﻿'use client';
 
-import {
-  Bell, Package, MessageCircle, DollarSign, ShieldCheck,
-  CheckCheck, CheckCircle, XCircle, ExternalLink, User,
-} from 'lucide-react';
+import { Bell, Package, ChatCircle, CurrencyDollar, ShieldCheck, CheckCheck, CheckCircle, XCircle, ArrowSquareOut, User } from '@phosphor-icons/react';
 import { useNotifications } from '@/lib/hooks/use-notifications';
 import type { Notification } from '@/lib/hooks/use-notifications';
 import Link from 'next/link';
 
 const TYPE_ICON: Record<string, typeof Bell> = {
   order:            Package,
-  message:          MessageCircle,
-  payment:          DollarSign,
+  message:          ChatCircle,
+  payment:          CurrencyDollar,
   listing:          Package,
   listing_approved: Package,
   listing_rejected: XCircle,
@@ -145,7 +142,7 @@ export default function UserNotificationsPage() {
                             className="inline-flex items-center gap-1 h-7 rounded-lg bg-indigo-50 border border-indigo-200
                               px-2.5 text-[11px] font-semibold text-indigo-600 no-underline hover:bg-indigo-100 transition-colors"
                           >
-                            <ExternalLink className="h-3 w-3" /> View
+                            <ArrowSquareOut className="h-3 w-3" /> View
                           </Link>
                         )}
                         {isRejection && (
@@ -154,7 +151,7 @@ export default function UserNotificationsPage() {
                             className="inline-flex items-center gap-1 h-7 rounded-lg bg-slate-50 border border-slate-200
                               px-2.5 text-[11px] font-semibold text-slate-600 no-underline hover:bg-slate-100 transition-colors"
                           >
-                            Edit &amp; Resubmit
+                            PencilSimple &amp; Resubmit
                           </Link>
                         )}
                       </div>

@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FileText, Plus, Edit2, Trash2 } from 'lucide-react';
+import { FileText, Plus, PencilSimple, Trash } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -65,7 +65,7 @@ export default function CmsPage() {
                   <td className="px-5 py-3">
                     <div className="flex gap-2">
                       <button className="h-8 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-1 transition-colors">
-                        <Edit2 className="h-3 w-3" /> Edit
+                        <PencilSimple className="h-3 w-3" /> PencilSimple
                       </button>
                     </div>
                   </td>

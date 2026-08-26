@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle, Mail, RefreshCw } from 'lucide-react';
+import { CheckCircle, EnvelopeSimple, ArrowClockwise } from '@phosphor-icons/react';
 import { useVerifyPhone, useResendOtp } from '@/features/auth/hooks';
 import { OTPInput } from '@/components/auth/otp-input';
 import { ROUTES } from '@/config/routes';
@@ -74,7 +74,7 @@ function VerifyEmailInner() {
       {/* Header */}
       <div className="text-center space-y-2">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 mx-auto">
-          <Mail className="h-7 w-7 text-indigo-600" />
+          <EnvelopeSimple className="h-7 w-7 text-indigo-600" />
         </div>
         <h1 className="text-[1.75rem] font-black tracking-tight text-slate-900">
           Check your email
@@ -129,7 +129,7 @@ function VerifyEmailInner() {
           {verifyPhone.isPending && (
             <div className="flex items-center justify-center gap-2 text-[13px] text-slate-500">
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+                <circle cx="12" cy="12" r="10" stroke="currentColor"
                   strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
               </svg>
               Verifying…
@@ -146,7 +146,7 @@ function VerifyEmailInner() {
                 className="flex items-center justify-center gap-1.5 mx-auto text-[13px]
                   font-semibold text-indigo-600 hover:underline disabled:opacity-50"
               >
-                <RefreshCw className={`h-3.5 w-3.5 ${resendOtp.isPending ? 'animate-spin' : ''}`} />
+                <ArrowClockwise className={`h-3.5 w-3.5 ${resendOtp.isPending ? 'animate-spin' : ''}`} />
                 {resendOtp.isPending ? 'Sending…' : 'Resend code'}
               </button>
             ) : (
@@ -176,7 +176,7 @@ export default function VerifyEmailPage() {
     <Suspense fallback={
       <div className="flex items-center justify-center py-16">
         <svg className="h-6 w-6 animate-spin text-indigo-600" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+          <circle cx="12" cy="12" r="10" stroke="currentColor"
             strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
         </svg>
       </div>

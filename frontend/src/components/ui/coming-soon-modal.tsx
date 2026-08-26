@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { X } from '@phosphor-icons/react';
 
 interface ComingSoonModalProps {
   store: 'google' | 'apple' | null;
@@ -70,7 +70,7 @@ export function ComingSoonModal({ store, onClose }: ComingSoonModalProps) {
           </button>
 
           <div className="relative z-10 px-8 py-10 text-center">
-            {/* Store icon */}
+            {/* Storefront icon */}
             <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl shadow-lg"
               style={{
                 background: isGoogle
@@ -99,7 +99,7 @@ export function ComingSoonModal({ store, onClose }: ComingSoonModalProps) {
                 className="block text-[11px] font-bold uppercase tracking-[0.2em] mb-3"
                 style={{ color: isGoogle ? '#818cf8' : '#a5b4fc' }}
               >
-                {isGoogle ? 'Google Play Store' : 'Apple App Store'}
+                {isGoogle ? 'Google Play Storefront' : 'Apple App Storefront'}
               </span>
               <h2
                 className="font-black text-white leading-tight"

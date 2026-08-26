@@ -1,11 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  MessageCircle, Send, Search, RefreshCw, ArrowLeft,
-  Users, Megaphone, CheckCircle, AlertCircle, X,
-} from 'lucide-react';
+import { ChatCircle, PaperPlaneRight, MagnifyingGlass, ArrowClockwise, ArrowLeft, Users, Megaphone, CheckCircle, WarningCircle, X } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/features/auth/auth-provider';
 import type { ApiResponse } from '@/types/api';
@@ -79,7 +76,7 @@ function BroadcastModal({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between mb-4">
           <div>
             <p className="text-[15px] font-black text-slate-900">Broadcast Message</p>
-            <p className="text-[12px] text-slate-400">Send to all moderators or all users</p>
+            <p className="text-[12px] text-slate-400">PaperPlaneRight to all moderators or all users</p>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
             <X className="h-5 w-5" />
@@ -123,7 +120,7 @@ function BroadcastModal({ onClose }: { onClose: () => void }) {
 
             {err && (
               <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2">
-                <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                <WarningCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
                 <p className="text-[12px] font-medium text-red-600">{err}</p>
               </div>
             )}
@@ -134,7 +131,7 @@ function BroadcastModal({ onClose }: { onClose: () => void }) {
                 disabled={isPending || !msg.trim()}
                 className="flex-1 h-10 rounded-xl bg-indigo-600 text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors disabled:opacity-50"
               >
-                {isPending ? 'Sending…' : 'Send Broadcast'}
+                {isPending ? 'Sending…' : 'PaperPlaneRight Broadcast'}
               </button>
               <button onClick={onClose} className="h-10 rounded-xl border border-slate-200 px-4 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
                 Cancel
@@ -197,7 +194,7 @@ export default function AdminMessagesPage() {
     staleTime: 2_000,
   });
 
-  /* ── Send message ─────────────────────────────────────── */
+  /* ── PaperPlaneRight message ─────────────────────────────────────── */
   const { mutate: sendMsg, isPending: sending } = useMutation({
     mutationFn: async () => {
       const thread = threads.find(t => t.id === active);
@@ -246,7 +243,7 @@ export default function AdminMessagesPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <MessageCircle className="h-6 w-6 text-indigo-600" /> Messages
+            <ChatCircle className="h-6 w-6 text-indigo-600" /> Messages
           </h1>
           <p className="text-[13px] text-slate-400 mt-0.5">
             Reply to users &amp; moderators · Message individually · Broadcast to all
@@ -270,13 +267,13 @@ export default function AdminMessagesPage() {
             <p className="text-[15px] font-black text-slate-900">Conversations</p>
             <button onClick={() => refetchThreads()}
               className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 transition-colors">
-              <RefreshCw className="h-3.5 w-3.5" />
+              <ArrowClockwise className="h-3.5 w-3.5" />
             </button>
           </div>
           <div className="px-3 py-2.5 border-b border-slate-100">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search…"
+              <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="MagnifyingGlass…"
                 className="w-full h-9 rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-[13px] text-slate-700 placeholder-slate-400 outline-none focus:border-indigo-400 focus:bg-white transition-all" />
             </div>
           </div>
@@ -335,7 +332,7 @@ export default function AdminMessagesPage() {
         {!active && (
           <div className="hidden md:flex flex-1 flex-col items-center justify-center gap-3 text-center p-8">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50">
-              <MessageCircle className="h-8 w-8 text-indigo-400" />
+              <ChatCircle className="h-8 w-8 text-indigo-400" />
             </div>
             <p className="text-[16px] font-bold text-slate-900">Select a conversation</p>
             <p className="text-[13px] text-slate-400 max-w-xs">
@@ -414,9 +411,9 @@ export default function AdminMessagesPage() {
                 >
                   {sending
                     ? <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
                       </svg>
-                    : <Send className="h-4 w-4" />}
+                    : <PaperPlaneRight className="h-4 w-4" />}
                 </button>
               </div>
             </div>

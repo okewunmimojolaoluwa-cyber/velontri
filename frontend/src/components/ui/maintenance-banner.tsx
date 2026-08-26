@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Eye, EyeOff, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Warning, Eye, EyeSlash, CircleNotch, CheckCircle, XCircle } from '@phosphor-icons/react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1';
 const SECRET_TAPS = 5;           // how many times to tap the title
@@ -91,7 +91,7 @@ export function MaintenanceBanner() {
           /* ── Normal maintenance screen (secret: tap title 5×) ── */
           <>
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 mx-auto mb-5">
-              <AlertTriangle className="h-8 w-8 text-amber-600" />
+              <Warning className="h-8 w-8 text-amber-600" />
             </div>
             <h1
               className="text-[22px] font-black text-slate-900 mb-3 cursor-default select-none"
@@ -113,7 +113,7 @@ export function MaintenanceBanner() {
           <form onSubmit={handleUnlock} className="text-left space-y-4">
             <div className="flex items-center gap-3 mb-2">
               <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-100">
-                <AlertTriangle className="h-5 w-5 text-indigo-600" />
+                <Warning className="h-5 w-5 text-indigo-600" />
               </div>
               <div>
                 <p className="text-[15px] font-black text-slate-900">Admin Override</p>
@@ -155,7 +155,7 @@ export function MaintenanceBanner() {
                   tabIndex={-1}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPw ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
@@ -175,7 +175,7 @@ export function MaintenanceBanner() {
                   bg-indigo-600 text-[14px] font-bold text-white hover:bg-indigo-700
                   transition-colors disabled:opacity-50"
               >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {loading ? <CircleNotch className="h-4 w-4 animate-spin" /> : null}
                 {loading ? 'Verifying…' : 'Disable Maintenance'}
               </button>
               <button

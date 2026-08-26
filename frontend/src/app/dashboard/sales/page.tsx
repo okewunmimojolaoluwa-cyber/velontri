@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { Package, MapPin, Eye, TrendingUp, PlusCircle } from 'lucide-react';
+import { Package, MapPin, Eye, TrendUp, PlusCircle } from '@phosphor-icons/react';
 import { sellerApi } from '@/lib/api/endpoints/seller';
 import { useAuth } from '@/features/auth/auth-provider';
 import { ROUTES } from '@/config/routes';
@@ -81,7 +81,7 @@ export default function UserSalesPage() {
 
       {/* Info banner */}
       <div className="flex items-start gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 p-4">
-        <TrendingUp className="h-4 w-4 text-indigo-600 flex-shrink-0 mt-0.5" />
+        <TrendUp className="h-4 w-4 text-indigo-600 flex-shrink-0 mt-0.5" />
         <p className="text-[12px] text-indigo-700 leading-relaxed">
           Buyers contact you directly via <strong>WhatsApp</strong>. Keep your number updated on each listing
           so serious buyers can reach you instantly.

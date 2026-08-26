@@ -1,13 +1,13 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  ArrowLeft, MapPin, BadgeCheck, MessageCircle,
-  ChevronRight, Heart, Share2, Star,
-  ChevronLeft, X, Send, CheckCircle, AlertCircle,
-  AlertTriangle,
-} from 'lucide-react';
+  ArrowLeft, MapPin, SealCheck, ChatCircle,
+  CaretRight, Heart, ShareNetwork, Star,
+  CaretLeft, X, PaperPlaneRight, CheckCircle, WarningCircle,
+  Warning,
+} from '@phosphor-icons/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useListing } from '@/features/listings/hooks/use-listings';
 import { listingKeys } from '@/lib/api/endpoints/listings';
@@ -49,7 +49,7 @@ function SafetyNotice() {
   return (
     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
       <div className="flex items-center gap-2 mb-3">
-        <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+        <Warning className="h-4 w-4 text-amber-600 flex-shrink-0" />
         <p className="text-[13px] font-black text-amber-800">Stay Safe</p>
       </div>
       <ul className="space-y-2">
@@ -109,7 +109,7 @@ function MessagePanel({ listingId, sellerId, sellerName, listingTitle, onClose }
         className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[14px] text-slate-800 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 resize-none" />
       {sendError && (
         <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5">
-          <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+          <WarningCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
           <p className="text-[12px] font-medium text-red-600">{sendError}</p>
         </div>
       )}
@@ -117,8 +117,8 @@ function MessagePanel({ listingId, sellerId, sellerName, listingTitle, onClose }
         <button onClick={onClose} className="flex-1 h-10 rounded-xl border border-slate-200 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors">Cancel</button>
         <button onClick={send} disabled={loading || !text.trim()}
           className="flex-1 h-10 rounded-xl bg-indigo-600 text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-          {loading ? <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" /></svg> : <Send className="h-4 w-4" />}
-          Send
+          {loading ? <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" /></svg> : <PaperPlaneRight className="h-4 w-4" />}
+          PaperPlaneRight
         </button>
       </div>
     </div>
@@ -179,12 +179,12 @@ function ImageViewer({ images, startIdx, onClose }: { images: string[]; startIdx
             <button onClick={e => { e.stopPropagation(); prev(); }}
               className="absolute left-2 sm:left-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/30 transition-colors active:scale-95 backdrop-blur-sm"
               aria-label="Previous image">
-              <ChevronLeft className="h-6 w-6" />
+              <CaretLeft className="h-6 w-6" />
             </button>
             <button onClick={e => { e.stopPropagation(); next(); }}
               className="absolute right-2 sm:right-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/30 transition-colors active:scale-95 backdrop-blur-sm"
               aria-label="Next image">
-              <ChevronRight className="h-6 w-6" />
+              <CaretRight className="h-6 w-6" />
             </button>
           </>
         )}
@@ -360,9 +360,9 @@ export default function ListingDetailPage() {
           <button onClick={() => router.back()} className="flex items-center gap-1.5 hover:text-slate-700 transition-colors cursor-pointer">
             <ArrowLeft className="h-3.5 w-3.5" /> Back
           </button>
-          <ChevronRight className="h-3.5 w-3.5 opacity-40" />
+          <CaretRight className="h-3.5 w-3.5 opacity-40" />
           <button onClick={() => router.push('/listings')} className="hover:text-slate-700 transition-colors cursor-pointer">Listings</button>
-          {listing && (<><ChevronRight className="h-3.5 w-3.5 opacity-40" /><span className="text-slate-700 truncate max-w-[200px]">{listing.title}</span></>)}
+          {listing && (<><CaretRight className="h-3.5 w-3.5 opacity-40" /><span className="text-slate-700 truncate max-w-[200px]">{listing.title}</span></>)}
         </nav>
 
         {isError && (
@@ -427,19 +427,19 @@ export default function ListingDetailPage() {
                             className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/85 shadow-md hover:bg-white transition-colors active:scale-95"
                             aria-label="Previous image"
                           >
-                            <ChevronLeft className="h-5 w-5 text-slate-700" />
+                            <CaretLeft className="h-5 w-5 text-slate-700" />
                           </button>
                           <button
                             onClick={e => { e.stopPropagation(); nextImg(); }}
                             className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/85 shadow-md hover:bg-white transition-colors active:scale-95"
                             aria-label="Next image"
                           >
-                            <ChevronRight className="h-5 w-5 text-slate-700" />
+                            <CaretRight className="h-5 w-5 text-slate-700" />
                           </button>
                         </>
                       )}
 
-                      {/* Save + Share — top right */}
+                      {/* FloppyDisk + Share — top right */}
                       <div className="absolute top-3 right-3 flex gap-2" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={() => { if (!session.isAuthenticated) { router.push(`${ROUTES.login}?redirect=/listings/${id}`); return; } toggleSave(); }}
@@ -448,7 +448,7 @@ export default function ListingDetailPage() {
                           <Heart className={`h-4 w-4 ${isSaved ? 'fill-white' : ''}`} />
                         </button>
                         <button onClick={handleShare} className="h-9 w-9 rounded-xl bg-white/90 backdrop-blur-sm border border-white/50 flex items-center justify-center text-slate-600 shadow-sm hover:bg-white">
-                          <Share2 className="h-4 w-4" />
+                          <ShareNetwork className="h-4 w-4" />
                         </button>
                       </div>
                     </>
@@ -644,18 +644,18 @@ export default function ListingDetailPage() {
                 {/* ── Velontri Messages — secondary ───────── */}
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
                   <div className="flex items-center gap-2 mb-2.5">
-                    <MessageCircle className="h-4 w-4 text-indigo-500 flex-shrink-0" />
+                    <ChatCircle className="h-4 w-4 text-indigo-500 flex-shrink-0" />
                     <div>
                       <p className="text-[12px] font-bold text-slate-800 leading-tight">Velontri Messages</p>
                       <p className="text-[11px] text-slate-500 leading-tight">
-                        {session.isAuthenticated ? 'Send an in-app message' : 'Sign in to send an in-app message'}
+                        {session.isAuthenticated ? 'PaperPlaneRight an in-app message' : 'Sign in to send an in-app message'}
                       </p>
                     </div>
                   </div>
                   {session.isAuthenticated ? (
                     <button onClick={handleMessage}
                       className="flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-white text-[13px] font-semibold text-indigo-600 py-2.5 hover:bg-indigo-50 active:scale-[0.99] transition-all">
-                      <MessageCircle className="h-3.5 w-3.5" />
+                      <ChatCircle className="h-3.5 w-3.5" />
                       Message Seller
                     </button>
                   ) : (
@@ -700,7 +700,7 @@ export default function ListingDetailPage() {
                         <p className="text-[15px] font-bold text-slate-900 leading-tight">{sellerName}</p>
                         {isVerifiedSeller && (
                           <span className="inline-flex items-center gap-0.5 rounded-full bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 text-[9px] font-bold text-indigo-700 flex-shrink-0 whitespace-nowrap">
-                            <BadgeCheck className="h-2.5 w-2.5" />
+                            <SealCheck className="h-2.5 w-2.5" />
                             Verified
                           </span>
                         )}
@@ -727,7 +727,7 @@ export default function ListingDetailPage() {
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-slate-500">
                     {(sellerData?.data?.active_listing_count ?? 0) > 0 && (
                       <span className="flex items-center gap-1">
-                        <svg className="h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg className="h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                         </svg>
                         {sellerData?.data?.active_listing_count} listing{sellerData?.data?.active_listing_count !== 1 ? 's' : ''}
@@ -743,7 +743,7 @@ export default function ListingDetailPage() {
                     )}
                   </div>
 
-                  {/* Navigation actions */}
+                  {/* NavigationArrow actions */}
                   <div className="flex gap-2 pt-1">
                     <button
                       onClick={() => router.push(`/listings?seller_id=${listing.seller_id}&seller_name=${encodeURIComponent(sellerName)}`)}
@@ -755,7 +755,7 @@ export default function ListingDetailPage() {
                       onClick={() => router.push(`/listings?seller_id=${listing.seller_id}&seller_name=${encodeURIComponent(sellerName)}`)}
                       className="flex-1 h-9 rounded-xl border border-indigo-200 bg-indigo-50 text-[12px] font-semibold text-indigo-700 hover:bg-indigo-100 active:scale-[0.99] transition-all"
                     >
-                      View Store
+                      View Storefront
                     </button>
                   </div>
                 </div>

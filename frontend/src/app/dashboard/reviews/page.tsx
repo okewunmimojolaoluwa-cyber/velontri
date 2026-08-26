@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Star, MessageSquarePlus, ShoppingBag, Package } from 'lucide-react';
+import { Star, MessageSquarePlus, ShoppingBag, Package } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
@@ -98,7 +98,7 @@ export default function UserReviewsPage() {
         )}
       </div>
 
-      {/* Filter tabs */}
+      {/* Funnel tabs */}
       <div className="flex gap-2">
         {(['given', 'received'] as const).map(f => (
           <button

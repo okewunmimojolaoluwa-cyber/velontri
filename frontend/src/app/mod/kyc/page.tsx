@@ -1,11 +1,11 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
-import { FileCheck, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { FileCheck, CheckCircle, XCircle, WarningCircle } from '@phosphor-icons/react';
 
 interface KycRequest {
   id: string;
@@ -69,7 +69,7 @@ export default function ModKycPage() {
         <p className="text-[13px] text-slate-400 mt-0.5">Review identity verification requests</p>
       </div>
 
-      {/* Filter tabs */}
+      {/* Funnel tabs */}
       <div className="flex gap-1.5">
         {(['all', 'pending', 'approved', 'rejected'] as const).map((s) => (
           <button
@@ -89,7 +89,7 @@ export default function ModKycPage() {
       {/* Error */}
       {actionError && (
         <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-          <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+          <WarningCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
           <p className="text-[13px] font-medium text-red-600">{actionError}</p>
           <button onClick={() => setActionError('')} className="ml-auto text-red-400 hover:text-red-600 text-xs">✕</button>
         </div>

@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Tag, Plus, Trash2 } from 'lucide-react';
+import { Tag, Plus, Trash } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -104,7 +104,7 @@ export default function CouponsPage() {
                     </td>
                     <td className="px-5 py-3">
                       <button onClick={() => remove(c.id)} className="h-7 w-7 rounded-lg border border-red-200 bg-red-50 flex items-center justify-center text-red-500 hover:bg-red-100 transition-colors">
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash className="h-3.5 w-3.5" />
                       </button>
                     </td>
                   </tr>

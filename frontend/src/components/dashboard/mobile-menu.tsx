@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { X, LayoutDashboard, Package, ShoppingCart, Bookmark, Wallet, ShieldCheck, Store, BarChart3, MessageCircle, Bell, User, Lock, Settings, HelpCircle, LogOut } from 'lucide-react';
+import { X, SquaresFour, Package, ShoppingCart, BookmarkSimple, Wallet, ShieldCheck, Storefront, BarChart3, ChatCircle, Bell, User, Lock, Gear, Question, SignOut } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 import { useAuth } from '@/features/auth/auth-provider';
@@ -14,20 +14,20 @@ interface MobileMenuProps {
 }
 
 const NAV_ITEMS = [
-  { icon: LayoutDashboard, label: 'Overview', href: ROUTES.user.overview },
+  { icon: SquaresFour, label: 'Overview', href: ROUTES.user.overview },
   { icon: Package, label: 'My Listings', href: ROUTES.user.listings },
   { icon: ShoppingCart, label: 'Orders', href: ROUTES.user.orders },
-  { icon: Bookmark, label: 'Saved', href: ROUTES.user.saved },
+  { icon: BookmarkSimple, label: 'Saved', href: ROUTES.user.saved },
   { icon: Wallet, label: 'Wallet', href: ROUTES.user.wallet },
   { icon: ShieldCheck, label: 'Escrow', href: ROUTES.user.escrow },
-  { icon: Store, label: 'Store', href: ROUTES.user.store },
+  { icon: Storefront, label: 'Storefront', href: ROUTES.user.store },
   { icon: BarChart3, label: 'Analytics', href: ROUTES.user.storeAnalytics },
-  { icon: MessageCircle, label: 'Messages', href: ROUTES.user.messages },
+  { icon: ChatCircle, label: 'Messages', href: ROUTES.user.messages },
   { icon: Bell, label: 'Notifications', href: ROUTES.user.notifications },
   { icon: User, label: 'Profile', href: ROUTES.user.profile },
   { icon: Lock, label: 'Security', href: ROUTES.user.security },
-  { icon: Settings, label: 'Settings', href: ROUTES.user.settings },
-  { icon: HelpCircle, label: 'Help', href: ROUTES.user.help },
+  { icon: Gear, label: 'Gear', href: ROUTES.user.settings },
+  { icon: Question, label: 'Help', href: ROUTES.user.help },
 ];
 
 export function MobileMenu({ onClose }: MobileMenuProps) {
@@ -74,7 +74,7 @@ export function MobileMenu({ onClose }: MobileMenuProps) {
           </button>
         </div>
 
-        {/* Navigation */}
+        {/* NavigationArrow */}
         <nav className="p-4 space-y-1">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
@@ -97,7 +97,6 @@ export function MobileMenu({ onClose }: MobileMenuProps) {
                     'h-5 w-5 flex-shrink-0',
                     active ? 'text-indigo-600' : 'text-slate-400'
                   )}
-                  strokeWidth={active ? 2.25 : 1.75}
                 />
                 {item.label}
               </Link>
@@ -111,7 +110,7 @@ export function MobileMenu({ onClose }: MobileMenuProps) {
             onClick={logout}
             className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
           >
-            <LogOut className="h-5 w-5 flex-shrink-0" strokeWidth={1.75} />
+            <SignOut className="h-5 w-5 flex-shrink-0" />
             Sign Out
           </button>
         </div>

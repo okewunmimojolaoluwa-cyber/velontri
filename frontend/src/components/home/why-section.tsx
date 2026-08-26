@@ -1,4 +1,4 @@
-import { Shield, Zap, Globe, Sparkles, TrendingUp, Headphones } from 'lucide-react';
+﻿import { Shield, Lightning, Globe, Sparkle, TrendUp, Headphones } from '@phosphor-icons/react';
 
 const FEATURES = [
   {
@@ -10,7 +10,7 @@ const FEATURES = [
     border: 'border-emerald-500/20',
   },
   {
-    icon: Sparkles,
+    icon: Sparkle,
     title: 'AI-powered matching',
     desc: "Describe what you want in plain English. Our AI finds the best matches across millions of listings.",
     color: 'text-primary',
@@ -26,7 +26,7 @@ const FEATURES = [
     border: 'border-violet-500/20',
   },
   {
-    icon: Zap,
+    icon: Lightning,
     title: 'Instant multi-currency',
     desc: 'NGN, GHS, KES, ZAR and more. Accept any African currency with zero conversion friction.',
     color: 'text-amber-500',
@@ -34,7 +34,7 @@ const FEATURES = [
     border: 'border-amber-500/20',
   },
   {
-    icon: TrendingUp,
+    icon: TrendUp,
     title: 'Business analytics',
     desc: 'Real-time dashboards, revenue charts, buyer insights, and AI recommendations for your store.',
     color: 'text-sky-500',

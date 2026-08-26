@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { Plus, ShoppingBag, MessageCircle, Heart, Store, Wallet, Package, Settings } from 'lucide-react';
+import { Plus, ShoppingBag, ChatCircle, Heart, Storefront, Wallet, Package, Gear } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 
@@ -15,12 +15,12 @@ interface QuickAction {
 const QUICK_ACTIONS: QuickAction[] = [
   { icon: Plus, label: 'Post Listing', href: ROUTES.user.create },
   { icon: ShoppingBag, label: 'Browse', href: ROUTES.listings },
-  { icon: MessageCircle, label: 'Messages', href: ROUTES.user.messages },
+  { icon: ChatCircle, label: 'Messages', href: ROUTES.user.messages },
   { icon: Heart, label: 'Wishlist', href: ROUTES.user.saved },
-  { icon: Store, label: 'My Store', href: ROUTES.user.store },
+  { icon: Storefront, label: 'My Storefront', href: ROUTES.user.store },
   { icon: Wallet, label: 'Wallet', href: ROUTES.user.wallet },
   { icon: Package, label: 'Orders', href: ROUTES.user.orders },
-  { icon: Settings, label: 'Settings', href: ROUTES.user.settings },
+  { icon: Gear, label: 'Gear', href: ROUTES.user.settings },
 ];
 
 export function QuickActions() {
@@ -48,7 +48,7 @@ export function QuickActions() {
               className="flex flex-col items-center gap-2 no-underline group"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white border border-slate-200 text-slate-600 shadow-sm transition-all group-hover:-translate-y-0.5 group-hover:shadow-md group-hover:border-indigo-200 group-hover:text-indigo-600">
-                <Icon className="h-5 w-5" strokeWidth={1.75} />
+                <Icon className="h-5 w-5" />
               </div>
               <span className="text-[10px] font-medium text-slate-600 text-center leading-tight">
                 {label}

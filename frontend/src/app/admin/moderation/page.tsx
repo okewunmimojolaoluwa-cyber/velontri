@@ -1,11 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Shield, Search, CheckCircle, XCircle, User,
-  ChevronLeft, ChevronRight, Filter,
-} from 'lucide-react';
+import { Shield, MagnifyingGlass, CheckCircle, XCircle, User, CaretLeft, CaretRight, Funnel } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -124,18 +121,18 @@ export default function AdminModerationPage() {
           className="flex gap-2"
         >
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search action or listing…"
+              placeholder="MagnifyingGlass action or listing…"
               className="h-9 w-56 rounded-xl border border-slate-200 bg-white pl-9 pr-4 text-[13px]
                 text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-400 transition-all"
             />
           </div>
           <button type="submit"
             className="h-9 rounded-xl bg-indigo-600 px-4 text-[12px] font-bold text-white hover:bg-indigo-700 transition-colors">
-            Search
+            MagnifyingGlass
           </button>
           {(committed || modFilter) && (
             <button type="button"
@@ -254,12 +251,12 @@ export default function AdminModerationPage() {
             <div className="flex items-center justify-center gap-3">
               <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
                 className="flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 px-4 text-[13px] font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
-                <ChevronLeft className="h-4 w-4" /> Prev
+                <CaretLeft className="h-4 w-4" /> Prev
               </button>
               <span className="text-[13px] text-slate-500">{page} / {meta.total_pages}</span>
               <button disabled={page >= meta.total_pages} onClick={() => setPage(p => p + 1)}
                 className="flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 px-4 text-[13px] font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
-                Next <ChevronRight className="h-4 w-4" />
+                Next <CaretRight className="h-4 w-4" />
               </button>
             </div>
           )}

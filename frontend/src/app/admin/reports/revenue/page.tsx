@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { DollarSign, Download, BarChart2 } from 'lucide-react';
+import { CurrencyDollar, DownloadSimple, ChartBar } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -54,12 +54,12 @@ export default function RevenueReportsPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <DollarSign className="h-6 w-6 text-emerald-600" /> Revenue Reports
+            <CurrencyDollar className="h-6 w-6 text-emerald-600" /> Revenue Reports
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">Revenue breakdown by stream</p>
         </div>
         <button className="flex items-center gap-2 h-10 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white hover:bg-indigo-700 transition-colors">
-          <Download className="h-4 w-4" /> Export CSV
+          <DownloadSimple className="h-4 w-4" /> Export CSV
         </button>
       </div>
 
@@ -105,7 +105,7 @@ export default function RevenueReportsPage() {
           </div>
         ) : streams.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <BarChart2 className="h-10 w-10 text-slate-200 mb-2" />
+            <ChartBar className="h-10 w-10 text-slate-200 mb-2" />
             <p className="text-sm text-slate-400">No revenue streams data yet</p>
             <p className="text-xs text-slate-400 mt-1">Revenue will appear here after your first successful transactions</p>
           </div>

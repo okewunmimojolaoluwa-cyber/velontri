@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
-import { Eye, EyeOff, LayoutTemplate, GripVertical, Save, CheckCircle } from 'lucide-react';
+import { Eye, EyeSlash, SquaresFour, DotsNine, FloppyDisk, CheckCircle } from '@phosphor-icons/react';
 
 interface Section {
   id: string;
@@ -89,7 +89,7 @@ export default function HomepageManagerPage() {
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <LayoutTemplate className="h-6 w-6 text-indigo-600" />
+            <SquaresFour className="h-6 w-6 text-indigo-600" />
             Homepage Manager
           </h1>
           <p className="text-[13px] text-slate-400 mt-0.5">
@@ -104,8 +104,8 @@ export default function HomepageManagerPage() {
               : 'bg-indigo-600 text-white hover:bg-indigo-700'
           }`}
         >
-          {saved ? <CheckCircle className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-          {saved ? 'Saved!' : 'Save changes'}
+          {saved ? <CheckCircle className="h-4 w-4" /> : <FloppyDisk className="h-4 w-4" />}
+          {saved ? 'Saved!' : 'FloppyDisk changes'}
         </button>
       </div>
 
@@ -115,7 +115,7 @@ export default function HomepageManagerPage() {
           <span className="text-white text-[9px] font-bold">i</span>
         </div>
         <p className="text-[12px] text-blue-700 leading-relaxed">
-          Toggle sections on/off and reorder them using the arrows. Click <strong>Save changes</strong> to apply.
+          Toggle sections on/off and reorder them using the arrows. Click <strong>FloppyDisk changes</strong> to apply.
           Hidden sections are removed from the homepage immediately after saving.
         </p>
       </div>
@@ -184,7 +184,7 @@ export default function HomepageManagerPage() {
                 </button>
                 {s.enabled
                   ? <Eye className="h-4 w-4 text-emerald-500" />
-                  : <EyeOff className="h-4 w-4 text-slate-300" />}
+                  : <EyeSlash className="h-4 w-4 text-slate-300" />}
               </div>
             </li>
           ))}

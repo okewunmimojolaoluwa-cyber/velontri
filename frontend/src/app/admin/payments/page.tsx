@@ -1,11 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-  CreditCard, Search, DollarSign, TrendingUp,
-  Calendar, Package, CheckCircle,
-} from 'lucide-react';
+import { CreditCard, MagnifyingGlass, CurrencyDollar, TrendUp, CalendarBlank, Package, CheckCircle } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -86,11 +83,11 @@ export default function AdminPaymentsPage() {
   const KPI = [
     {
       label: 'Today\'s Revenue', value: fmt(summary?.today ?? 0, currency),
-      icon: DollarSign, color: '#059669', bg: '#ecfdf5',
+      icon: CurrencyDollar, color: '#059669', bg: '#ecfdf5',
     },
     {
       label: 'Monthly Revenue (30d)', value: fmt(summary?.monthly ?? 0, currency),
-      icon: TrendingUp, color: '#4F46E5', bg: '#eef2ff',
+      icon: TrendUp, color: '#4F46E5', bg: '#eef2ff',
     },
     {
       label: 'All-Time Revenue', value: fmt(summary?.all_time ?? 0, currency),
@@ -115,9 +112,9 @@ export default function AdminPaymentsPage() {
             </p>
           </div>
           <div className="relative w-full sm:w-auto">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
             <input
-              placeholder="Search name, email, plan…"
+              placeholder="MagnifyingGlass name, email, plan…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="h-10 w-full sm:w-64 rounded-xl border border-slate-200 pl-9 pr-4 text-sm text-slate-800
@@ -136,7 +133,7 @@ export default function AdminPaymentsPage() {
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{label}</p>
               <div className="flex h-8 w-8 items-center justify-center rounded-xl flex-shrink-0"
                 style={{ background: bg }}>
-                <Icon className="h-4 w-4" style={{ color }} strokeWidth={2} />
+                <Icon className="h-4 w-4" style={{ color }} />
               </div>
             </div>
             <p className="text-[1.3rem] font-black text-slate-900 tracking-tight">{value}</p>
@@ -253,7 +250,7 @@ export default function AdminPaymentsPage() {
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-1 text-[12px] text-slate-500">
-                          <Calendar className="h-3 w-3" />
+                          <CalendarBlank className="h-3 w-3" />
                           {p.paid_at
                             ? new Date(p.paid_at).toLocaleDateString('en-NG', {
                                 day: 'numeric', month: 'short', year: 'numeric',
@@ -269,10 +266,10 @@ export default function AdminPaymentsPage() {
           </>
         )}
 
-        {/* Search no results */}
+        {/* MagnifyingGlass no results */}
         {!isLoading && search && payments.length === 0 && allPayments.length > 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Search className="h-8 w-8 text-slate-200 mb-2" />
+            <MagnifyingGlass className="h-8 w-8 text-slate-200 mb-2" />
             <p className="text-[13px] text-slate-500">No payments match "{search}"</p>
           </div>
         )}

@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { ListChecks, FileCheck, AlertTriangle, Flag, Clock } from 'lucide-react';
+import { ListChecks, FileCheck, Warning, Flag, Clock } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 import Link from 'next/link';
@@ -10,7 +10,7 @@ import { ROUTES } from '@/config/routes';
 const STAT_CARDS = [
   { icon: ListChecks,    label: 'Pending Listings', key: 'pending_listings', color: '#4F46E5', bg: '#eef2ff', href: ROUTES.mod.pendingListings },
   { icon: FileCheck,     label: 'Pending KYC',      key: 'pending_kyc',      color: '#0369A1', bg: '#e0f2fe', href: ROUTES.mod.kyc },
-  { icon: AlertTriangle, label: 'Open Disputes',    key: 'open_disputes',    color: '#DC2626', bg: '#fef2f2', href: ROUTES.mod.disputes },
+  { icon: Warning, label: 'Open Disputes',    key: 'open_disputes',    color: '#DC2626', bg: '#fef2f2', href: ROUTES.mod.disputes },
   { icon: Flag,          label: 'Open Reports',     key: 'open_reports',     color: '#D97706', bg: '#fffbeb', href: ROUTES.mod.reports },
 ];
 
@@ -60,7 +60,7 @@ export default function ModOverviewPage() {
             <div className="flex items-start justify-between mb-3">
               <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400">{label}</p>
               <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: bg }}>
-                <Icon className="h-4 w-4" style={{ color }} strokeWidth={2} />
+                <Icon className="h-4 w-4" style={{ color }} />
               </div>
             </div>
             <p className="text-[2rem] font-black text-slate-900 tracking-tight leading-none">

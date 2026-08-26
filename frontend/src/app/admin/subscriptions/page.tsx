@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Crown, Plus, Trash2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Crown, Plus, Trash, WarningCircle, CheckCircle } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -123,7 +123,7 @@ export default function AdminSubscriptionsPage() {
             </div>
             {formErr && (
               <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5">
-                <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                <WarningCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
                 <p className="text-[12px] font-medium text-red-600">{formErr}</p>
               </div>
             )}
@@ -183,7 +183,7 @@ export default function AdminSubscriptionsPage() {
                 onClick={() => remove(tier.id)}
                 className="flex w-full items-center justify-center gap-1.5 h-8 rounded-xl border border-red-200 bg-red-50 text-[12px] font-semibold text-red-600 hover:bg-red-100 transition-colors"
               >
-                <Trash2 className="h-3.5 w-3.5" /> Delete
+                <Trash className="h-3.5 w-3.5" /> Delete
               </button>
             </div>
           ))}

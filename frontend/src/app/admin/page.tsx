@@ -1,17 +1,11 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  DollarSign, Users, Package, AlertTriangle,
-  FileCheck, TrendingUp, TrendingDown,
-  BarChart3, ShieldCheck, Crown, Zap, Activity,
-  ChevronRight, Store, BarChart2, CreditCard,
-  WrenchIcon, ToggleRight,
-} from 'lucide-react';
+import { CurrencyDollar, Users, Package, Warning, FileCheck, TrendUp, TrendDown, BarChart3, ShieldCheck, Crown, Lightning, Activity, CaretRight, Storefront, ChartBar, CreditCard, WrenchIcon, ToggleRight } from '@phosphor-icons/react';
 import {
   AreaChart, Area,
-  BarChart, Bar,
+  ChartBar, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { ROUTES } from '@/config/routes';
@@ -84,7 +78,7 @@ function KpiCard({
   label, value, change, icon: Icon, color, bg, href,
 }: {
   label: string; value: string; change?: number;
-  icon: typeof DollarSign; color: string; bg: string; href: string;
+  icon: typeof CurrencyDollar; color: string; bg: string; href: string;
 }) {
   return (
     <Link
@@ -96,13 +90,13 @@ function KpiCard({
       <div className="flex items-start justify-between mb-3">
         <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400 leading-tight">{label}</p>
         <div className="flex h-8 w-8 items-center justify-center rounded-xl flex-shrink-0" style={{ background: bg }}>
-          <Icon className="h-4 w-4" style={{ color }} strokeWidth={2} />
+          <Icon className="h-4 w-4" style={{ color }} />
         </div>
       </div>
       <p className="text-[1.4rem] font-black text-slate-900 tracking-tight leading-none">{value}</p>
       {change !== undefined && change !== 0 && (
         <div className={`mt-1.5 flex items-center gap-1 text-[11px] font-semibold ${change > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-          {change > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+          {change > 0 ? <TrendUp className="h-3 w-3" /> : <TrendDown className="h-3 w-3" />}
           {change > 0 ? '+' : ''}{change}%
         </div>
       )}
@@ -112,7 +106,7 @@ function KpiCard({
 
 const QUICK_LINKS = [
   { icon: Users,         label: 'Manage Users',    href: ROUTES.admin.users,        color: '#4F46E5' },
-  { icon: Store,         label: 'Manage Stores',   href: ROUTES.admin.stores,        color: '#7C3AED' },
+  { icon: Storefront,         label: 'Manage Stores',   href: ROUTES.admin.stores,        color: '#7C3AED' },
   { icon: Package,       label: 'Review Listings', href: ROUTES.admin.listings,      color: '#D97706' },
   { icon: CreditCard,    label: 'Payments',        href: ROUTES.admin.payments,      color: '#059669' },
   { icon: Crown,         label: 'Subscriptions',   href: ROUTES.admin.subscriptions, color: '#7C3AED' },
@@ -203,13 +197,13 @@ export default function AdminOverviewPage() {
   const KPI = ov
     ? [
         { label: 'Registered Users',  value: ov.active_users.toLocaleString(),         change: undefined, icon: Users,         color: '#4F46E5', bg: '#eef2ff', href: ROUTES.admin.users },
-        { label: 'New Users Today',   value: (ov.new_users_today ?? 0).toLocaleString(), change: undefined, icon: Zap,           color: '#7C3AED', bg: '#f5f3ff', href: ROUTES.admin.users },
+        { label: 'New Users Today',   value: (ov.new_users_today ?? 0).toLocaleString(), change: undefined, icon: Lightning,           color: '#7C3AED', bg: '#f5f3ff', href: ROUTES.admin.users },
         { label: 'Active Listings',   value: (ov.active_listings ?? 0).toLocaleString(), change: undefined, icon: Package,       color: '#059669', bg: '#ecfdf5', href: ROUTES.admin.listings },
         { label: 'Pending Review',    value: ov.pending_listings.toLocaleString(),       change: undefined, icon: FileCheck,     color: '#D97706', bg: '#fffbeb', href: ROUTES.admin.listings },
-        { label: 'Open Disputes',     value: ov.open_disputes.toLocaleString(),          change: undefined, icon: AlertTriangle, color: '#DC2626', bg: '#fef2f2', href: ROUTES.admin.disputes },
+        { label: 'Open Disputes',     value: ov.open_disputes.toLocaleString(),          change: undefined, icon: Warning, color: '#DC2626', bg: '#fef2f2', href: ROUTES.admin.disputes },
         { label: 'Pending KYC',       value: ov.pending_kyc.toLocaleString(),            change: undefined, icon: ShieldCheck,   color: '#0369A1', bg: '#e0f2fe', href: ROUTES.admin.kyc },
         { label: 'Messages Sent',     value: (ov.total_messages ?? 0).toLocaleString(),  change: undefined, icon: Crown,         color: '#059669', bg: '#ecfdf5', href: ROUTES.admin.users },
-        { label: 'Revenue (30d)',      value: ov.monthly_revenue > 0 ? fmt(ov.monthly_revenue, currency) : '₦0', change: undefined, icon: DollarSign, color: '#059669', bg: '#ecfdf5', href: '/admin/payments' },
+        { label: 'Revenue (30d)',      value: ov.monthly_revenue > 0 ? fmt(ov.monthly_revenue, currency) : '₦0', change: undefined, icon: CurrencyDollar, color: '#059669', bg: '#ecfdf5', href: '/admin/payments' },
       ]
     : null;
 
@@ -260,7 +254,7 @@ export default function AdminOverviewPage() {
                 font-semibold text-amber-700 hover:bg-amber-50 transition-colors no-underline
                 flex items-center"
             >
-              Settings
+              Gear
             </Link>
           </div>
         </div>
@@ -294,7 +288,7 @@ export default function AdminOverviewPage() {
               </div>
             ) : revenueChart.length === 0 || revenueChart.every(p => p.revenue === 0) ? (
               <div className="h-full rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2">
-                <BarChart2 className="h-8 w-8 text-slate-200" />
+                <ChartBar className="h-8 w-8 text-slate-200" />
                 <p className="text-[12px] text-slate-400">No revenue yet</p>
                 <p className="text-[11px] text-slate-300">Revenue will appear here once transactions are processed</p>
               </div>
@@ -314,7 +308,7 @@ export default function AdminOverviewPage() {
                     contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 12 }}
                     formatter={(v: number) => fmt(v, currency)}
                   />
-                  <Area type="monotone" dataKey="revenue" stroke="#4F46E5" strokeWidth={2.5} fill="url(#revGrad)" dot={false} />
+                  <Area type="monotone" dataKey="revenue" stroke="#4F46E5" fill="url(#revGrad)" dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
             )}
@@ -383,18 +377,18 @@ export default function AdminOverviewPage() {
               </div>
             ) : userChart.length === 0 || userChart.every(p => p.new_users === 0) ? (
               <div className="h-full rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2">
-                <BarChart2 className="h-8 w-8 text-slate-200" />
+                <ChartBar className="h-8 w-8 text-slate-200" />
                 <p className="text-[12px] text-slate-400">No daily registration tracking yet</p>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={userChart} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
+                <ChartBar data={userChart} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                   <XAxis dataKey="day" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 12 }} />
                   <Bar dataKey="new_users" fill="#4F46E5" radius={[6, 6, 0, 0]} maxBarSize={40} />
-                </BarChart>
+                </ChartBar>
               </ResponsiveContainer>
             )}
           </div>
@@ -414,12 +408,12 @@ export default function AdminOverviewPage() {
                   className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0"
                   style={{ background: `${color}18` }}
                 >
-                  <Icon className="h-4 w-4" style={{ color }} strokeWidth={2} />
+                  <Icon className="h-4 w-4" style={{ color }} />
                 </div>
                 <span className="flex-1 text-[13px] font-medium text-slate-700 group-hover:text-slate-900">
                   {label}
                 </span>
-                <ChevronRight className="h-3.5 w-3.5 text-slate-300 group-hover:text-slate-500" />
+                <CaretRight className="h-3.5 w-3.5 text-slate-300 group-hover:text-slate-500" />
               </Link>
             ))}
           </div>

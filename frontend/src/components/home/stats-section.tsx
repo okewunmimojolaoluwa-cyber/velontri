@@ -1,14 +1,14 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Users, Package, Globe, ShieldCheck, Building2 } from 'lucide-react';
+import { Users, Package, Globe, ShieldCheck, Buildings } from '@phosphor-icons/react';
 
 const STATS = [
   { value: 15, suffix: 'M+', label: 'Users', icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
   { value: 120, suffix: 'M+', label: 'Listings', icon: Package, color: 'text-amber-500', bg: 'bg-amber-500/10' },
   { value: 12, suffix: '', label: 'Countries', icon: Globe, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
   { value: 99.8, suffix: '%', label: 'Escrow Success', icon: ShieldCheck, color: 'text-violet-500', bg: 'bg-violet-500/10' },
-  { value: 500, suffix: 'K+', label: 'Businesses', icon: Building2, color: 'text-sky-500', bg: 'bg-sky-500/10' },
+  { value: 500, suffix: 'K+', label: 'Businesses', icon: Buildings, color: 'text-sky-500', bg: 'bg-sky-500/10' },
 ];
 
 function CountUp({ target, suffix, active }: { target: number; suffix: string; active: boolean }) {

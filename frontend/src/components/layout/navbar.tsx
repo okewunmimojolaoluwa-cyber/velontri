@@ -1,12 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  Menu, X, ChevronDown, LogOut, LayoutDashboard,
-  User, CreditCard, Store, Plus, Bell,
-} from 'lucide-react';
+import { List, X, CaretDown, SignOut, SquaresFour, User, CreditCard, Storefront, Plus, Bell } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/features/auth/auth-provider';
 import { ROUTES, resolveHomePath } from '@/config/routes';
@@ -189,7 +186,7 @@ export function Navbar() {
                       {initials}
                     </span>
                     <span className="capitalize hidden lg:block">{roleName}</span>
-                    <ChevronDown className={cn(
+                    <CaretDown className={cn(
                       'h-3.5 w-3.5 opacity-40 transition-transform duration-200',
                       userOpen ? 'rotate-180' : '',
                       transparent ? 'text-white' : 'text-slate-500',
@@ -207,8 +204,8 @@ export function Navbar() {
 
                       <div className="py-1.5">
                         {[
-                          { icon: LayoutDashboard, label: 'Dashboard',   href: dashPath },
-                          { icon: Store,           label: 'My listings', href: ROUTES.user.listings },
+                          { icon: SquaresFour, label: 'Dashboard',   href: dashPath },
+                          { icon: Storefront,           label: 'My listings', href: ROUTES.user.listings },
                           { icon: User,            label: 'Profile',     href: ROUTES.user.profile },
                           { icon: CreditCard,      label: 'Plans',       href: ROUTES.user.subscription },
                         ].map(({ icon: Icon, label, href }) => (
@@ -229,7 +226,7 @@ export function Navbar() {
                           onClick={logout}
                           className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-950/40"
                         >
-                          <LogOut className="h-4 w-4 flex-shrink-0" />
+                          <SignOut className="h-4 w-4 flex-shrink-0" />
                           Sign out
                         </button>
                       </div>
@@ -278,7 +275,7 @@ export function Navbar() {
           >
             {menuOpen
               ? <X className="h-5 w-5" />
-              : <Menu className="h-5 w-5" />
+              : <List className="h-5 w-5" />
             }
           </button>
         </div>

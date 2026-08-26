@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { BadgeCheck, Mail, Phone, Globe, Calendar, Camera, Loader2, CheckCircle2, X, Shield, ArrowRight } from 'lucide-react';
+import { SealCheck, EnvelopeSimple, Phone, Globe, CalendarBlank, Camera, CircleNotch, CheckCircle, X, Shield, ArrowRight } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import { usersApi, userKeys } from '@/lib/api/endpoints/users';
 import type { ApiResponse } from '@/types/api';
@@ -29,7 +29,7 @@ function SellerVerificationBadge() {
     return (
       <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
         <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100">
-          <BadgeCheck className="h-5 w-5 text-emerald-600" />
+          <SealCheck className="h-5 w-5 text-emerald-600" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-bold text-emerald-900">Verified Seller</p>
@@ -127,7 +127,7 @@ export default function UserProfilePage() {
     }
   }, [data]);
 
-  /* ── Save profile text ─────────────────────────────────── */
+  /* ── FloppyDisk profile text ─────────────────────────────────── */
   const { mutate: save, isPending: saving } = useMutation({
     mutationFn: () =>
       apiClient
@@ -142,7 +142,7 @@ export default function UserProfilePage() {
       setTimeout(() => setMsg(''), 3000);
     },
     onError: (e: any) => {
-      setErr(e?.response?.data?.error?.message ?? e?.message ?? 'Save failed.');
+      setErr(e?.response?.data?.error?.message ?? e?.message ?? 'FloppyDisk failed.');
     },
   });
 
@@ -158,7 +158,7 @@ export default function UserProfilePage() {
     },
     onError: (e: any) => {
       setUploadErr(
-        e?.response?.data?.error?.message ?? e?.message ?? 'Upload failed.'
+        e?.response?.data?.error?.message ?? e?.message ?? 'UploadSimple failed.'
       );
     },
   });
@@ -255,7 +255,7 @@ export default function UserProfilePage() {
                     disabled:opacity-60 transition-all active:scale-95"
                 >
                   {uploading
-                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ? <CircleNotch className="h-3.5 w-3.5 animate-spin" />
                     : <Camera className="h-3.5 w-3.5" />
                   }
                 </button>
@@ -272,7 +272,7 @@ export default function UserProfilePage() {
               )}
             </div>
 
-            {/* Upload error */}
+            {/* UploadSimple error */}
             {uploadErr && (
               <div className="mb-4 flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 px-4 py-2.5">
                 <X className="h-4 w-4 text-red-500 flex-shrink-0" />
@@ -280,15 +280,15 @@ export default function UserProfilePage() {
               </div>
             )}
 
-            {/* Upload success hint */}
+            {/* UploadSimple success hint */}
             {uploading && (
               <div className="mb-4 flex items-center gap-2 rounded-xl bg-indigo-50 border border-indigo-200 px-4 py-2.5">
-                <Loader2 className="h-4 w-4 text-indigo-500 animate-spin flex-shrink-0" />
+                <CircleNotch className="h-4 w-4 text-indigo-500 animate-spin flex-shrink-0" />
                 <p className="text-[13px] text-indigo-600">Uploading photo…</p>
               </div>
             )}
 
-            {/* ── Edit form ─────────────────────────────── */}
+            {/* ── PencilSimple form ─────────────────────────────── */}
             {edit ? (
               <div className="space-y-4">
                 <div className="space-y-1.5">
@@ -327,8 +327,8 @@ export default function UserProfilePage() {
                     className="h-11 rounded-xl bg-indigo-600 px-6 text-[14px] font-bold text-white
                       hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center gap-2"
                   >
-                    {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {saving ? 'Saving…' : 'Save changes'}
+                    {saving && <CircleNotch className="h-4 w-4 animate-spin" />}
+                    {saving ? 'Saving…' : 'FloppyDisk changes'}
                   </button>
                   <button
                     onClick={() => { setEdit(false); setErr(''); }}
@@ -344,7 +344,7 @@ export default function UserProfilePage() {
               <div className="space-y-3">
                 {[
                   {
-                    icon: Mail,
+                    icon: EnvelopeSimple,
                     label: 'Email',
                     value: profile.email,
                     verified: profile.is_email_verified,
@@ -362,7 +362,7 @@ export default function UserProfilePage() {
                     verified: null,
                   },
                   {
-                    icon: Calendar,
+                    icon: CalendarBlank,
                     label: 'Joined',
                     value: new Date(profile.created_at).toLocaleDateString('en-NG', {
                       month: 'long',
@@ -385,7 +385,7 @@ export default function UserProfilePage() {
                       </p>
                     </div>
                     {verified === true && (
-                      <BadgeCheck className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                      <SealCheck className="h-4 w-4 text-emerald-500 flex-shrink-0" />
                     )}
                     {verified === false && (
                       <span className="text-[11px] font-semibold text-amber-500">
@@ -397,7 +397,7 @@ export default function UserProfilePage() {
 
                 {msg && (
                   <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-2.5">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                    <CheckCircle className="h-4 w-4 text-emerald-500 flex-shrink-0" />
                     <p className="text-[13px] font-semibold text-emerald-600">{msg}</p>
                   </div>
                 )}
@@ -410,7 +410,7 @@ export default function UserProfilePage() {
                   className="h-11 w-full rounded-xl border border-slate-200 text-[14px] font-semibold
                     text-slate-700 hover:bg-slate-50 transition-colors"
                 >
-                  Edit profile
+                  PencilSimple profile
                 </button>
               </div>
             )}

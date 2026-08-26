@@ -1,4 +1,4 @@
-import type { VelontriRole, SubscriptionTier } from '@/types/auth';
+﻿import type { VelontriRole, SubscriptionTier } from '@/types/auth';
 
 export type Permission =
   // Marketplace
@@ -42,7 +42,7 @@ export type Permission =
   | 'campaigns:email'
   | 'campaigns:sms'
   | 'campaigns:push'
-  // Store
+  // Storefront
   | 'store:create'
   | 'store:edit:own'
   | 'store:edit:any'
@@ -114,7 +114,7 @@ export const ROLE_PERMISSIONS: Record<VelontriRole, Permission[]> = {
     'reviews:reply:own',
     'reviews:delete:own',
     'notifications:read',
-    // Store
+    // Storefront
     'store:create',
     'store:edit:own',
     'store:delete:own',
@@ -128,7 +128,7 @@ export const ROLE_PERMISSIONS: Record<VelontriRole, Permission[]> = {
     'listings:approve',
     'listings:reject',
     'listings:suspend',
-    // Store moderation
+    // Storefront moderation
     'store:read',
     'moderation:approve_stores',
     'moderation:reject_stores',

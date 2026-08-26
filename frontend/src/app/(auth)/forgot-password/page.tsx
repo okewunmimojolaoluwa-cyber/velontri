@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, CheckCircle, RefreshCw, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { EnvelopeSimple, Lock, CheckCircle, ArrowClockwise, ArrowLeft, Eye, EyeSlash } from '@phosphor-icons/react';
 import { authApi } from '@/lib/api/endpoints';
 import { OTPInput } from '@/components/auth/otp-input';
 import { ROUTES } from '@/config/routes';
@@ -153,7 +153,7 @@ function ForgotPasswordInner() {
                     Email Address
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                    <EnvelopeSimple className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                     <input
                       id="fp-email"
                       type="email"
@@ -175,7 +175,7 @@ function ForgotPasswordInner() {
                     text-white font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed
                     hover:from-violet-500 hover:to-indigo-500 transition-all active:scale-[0.98]"
                 >
-                  {isLoading ? 'Sending…' : 'Send Verification Code'}
+                  {isLoading ? 'Sending…' : 'PaperPlaneRight Verification Code'}
                 </button>
                 <p className="text-center text-sm text-slate-500">
                   <Link href={ROUTES.login} className="text-violet-400 hover:text-violet-300 font-medium no-underline">
@@ -213,7 +213,7 @@ function ForgotPasswordInner() {
                         className="flex items-center justify-center gap-1.5 mx-auto text-[13px]
                           font-semibold text-violet-400 hover:text-violet-300 transition-colors"
                       >
-                        <RefreshCw className="h-3.5 w-3.5" />
+                        <ArrowClockwise className="h-3.5 w-3.5" />
                         Resend code
                       </button>
                     ) : (
@@ -241,7 +241,7 @@ function ForgotPasswordInner() {
                     />
                     <button type="button" onClick={() => setShowPw(p => !p)}
                       className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
-                      {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showPw ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                   <div className="relative">
@@ -258,7 +258,7 @@ function ForgotPasswordInner() {
                     />
                     <button type="button" onClick={() => setShowConfirmPw(p => !p)}
                       className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
-                      {showConfirmPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showConfirmPw ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
@@ -307,7 +307,7 @@ export default function ForgotPasswordPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-[#0a0f1e] flex items-center justify-center">
         <svg className="h-8 w-8 animate-spin text-violet-500" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+          <circle cx="12" cy="12" r="10" stroke="currentColor"
             strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
         </svg>
       </div>

@@ -1,10 +1,8 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Heart, MapPin, Trash2, ShoppingBag, ExternalLink,
-} from 'lucide-react';
+import { Heart, MapPin, Trash, ShoppingBag, ArrowSquareOut } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/features/auth/auth-provider';
 import type { ApiResponse } from '@/types/api';
@@ -129,7 +127,7 @@ function SavedCard({
               bg-indigo-600 text-[12px] font-bold text-white no-underline
               hover:bg-indigo-700 transition-colors"
           >
-            <ExternalLink className="h-3.5 w-3.5" />
+            <ArrowSquareOut className="h-3.5 w-3.5" />
             View listing
           </Link>
           <button
@@ -140,7 +138,7 @@ function SavedCard({
               border border-slate-200 text-slate-400 hover:border-red-300 hover:bg-red-50
               hover:text-red-500 transition-all disabled:opacity-40"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>

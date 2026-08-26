@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
-import { Check, Zap, ArrowLeft } from 'lucide-react';
+import { Check, Lightning, ArrowLeft } from '@phosphor-icons/react';
 import { Navbar } from '@/components/layout/navbar';
 import { ROUTES } from '@/config/routes';
 
@@ -59,7 +59,7 @@ const PLANS = [
     bgColor: '#f5f3ff',
     features: [
       'Up to 100 active listings',
-      'Store branding & customization',
+      'Storefront branding & customization',
       'Premium search ranking',
       'Advanced analytics',
       'Priority moderation',
@@ -112,7 +112,7 @@ export default function PlansPage() {
         <div className="text-center mb-14">
           <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 border border-indigo-200
             px-4 py-1.5 mb-5">
-            <Zap className="h-3.5 w-3.5 text-indigo-600" />
+            <Lightning className="h-3.5 w-3.5 text-indigo-600" />
             <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-indigo-600">
               Subscription Plans
             </span>
@@ -174,7 +174,7 @@ export default function PlansPage() {
                 {plan.features.map(f => (
                   <li key={f} className="flex items-start gap-2.5 text-[13px] text-slate-600">
                     <Check className="h-4 w-4 flex-shrink-0 mt-0.5"
-                      style={{ color: plan.color }} strokeWidth={2.5} />
+                      style={{ color: plan.color }} />
                     {f}
                   </li>
                 ))}
@@ -249,7 +249,7 @@ export default function PlansPage() {
           <Link href={ROUTES.user.subscription}
             className="inline-flex h-11 items-center gap-2 rounded-xl bg-indigo-600 px-6
               text-[13px] font-bold text-white no-underline hover:bg-indigo-700 transition-colors">
-            <Zap className="h-4 w-4" />
+            <Lightning className="h-4 w-4" />
             Manage your subscription
           </Link>
         </div>

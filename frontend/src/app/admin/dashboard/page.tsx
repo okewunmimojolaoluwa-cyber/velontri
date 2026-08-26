@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
@@ -6,10 +6,7 @@ import {
   AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import {
-  Users, Package, DollarSign, AlertTriangle, Shield, Activity,
-  TrendingUp, Server, ArrowRight, BarChart2,
-} from 'lucide-react';
+import { Users, Package, CurrencyDollar, Warning, Shield, Activity, TrendUp, HardDrive, ArrowRight, ChartBar } from '@phosphor-icons/react';
 import { StatCard } from '@/components/ui/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -147,19 +144,19 @@ export default function AdminDashboardPage() {
           <StatCard
             label="Today's Revenue"
             value={statsLoading ? '…' : stats ? fmt(stats.gmv_today, currency) : '—'}
-            icon={DollarSign}
+            icon={CurrencyDollar}
             color="#059669" bg="#ecfdf5"
           />
           <StatCard
             label="Weekly Revenue"
             value={statsLoading ? '…' : stats ? fmt(stats.gmv_week, currency) : '—'}
-            icon={DollarSign}
+            icon={CurrencyDollar}
             color="#059669" bg="#ecfdf5"
           />
           <StatCard
             label="Monthly Revenue"
             value={statsLoading ? '…' : stats ? fmt(stats.gmv_month, currency) : '—'}
-            icon={DollarSign}
+            icon={CurrencyDollar}
             color="#059669" bg="#ecfdf5"
           />
           <StatCard
@@ -189,7 +186,7 @@ export default function AdminDashboardPage() {
                 </div>
               ) : chart.length === 0 ? (
                 <div className="h-full rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2">
-                  <BarChart2 className="h-8 w-8 text-muted-foreground/20" />
+                  <ChartBar className="h-8 w-8 text-muted-foreground/20" />
                   <p className="text-xs text-muted-foreground">No analytics available yet</p>
                 </div>
               ) : (
@@ -208,7 +205,7 @@ export default function AdminDashboardPage() {
                       contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '12px', fontSize: '12px' }}
                       formatter={(val: number) => fmt(val, currency)}
                     />
-                    <Area type="monotone" dataKey="gmv" stroke="hsl(243 75% 59%)" strokeWidth={2.5} fill="url(#adminGrad)" dot={false} />
+                    <Area type="monotone" dataKey="gmv" stroke="hsl(243 75% 59%)" fill="url(#adminGrad)" dot={false} />
                   </AreaChart>
                 </ResponsiveContainer>
               )}
@@ -218,7 +215,7 @@ export default function AdminDashboardPage() {
           {/* System health */}
           <div className="card-premium p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Server className="h-4 w-4 text-primary" />
+              <HardDrive className="h-4 w-4 text-primary" />
               <h2 className="font-semibold">System Health</h2>
             </div>
             {healthLoading ? (
@@ -232,7 +229,7 @@ export default function AdminDashboardPage() {
               </div>
             ) : health.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Server className="h-8 w-8 text-muted-foreground/20 mb-2" />
+                <HardDrive className="h-8 w-8 text-muted-foreground/20 mb-2" />
                 <p className="text-xs text-muted-foreground">Health data unavailable</p>
               </div>
             ) : (
@@ -286,7 +283,7 @@ export default function AdminDashboardPage() {
                   color: 'text-amber-600 bg-amber-100 dark:bg-amber-900/30',
                 },
                 {
-                  icon: AlertTriangle,
+                  icon: Warning,
                   label: 'Resolve Disputes',
                   desc: stats ? `${stats.pending_disputes} open` : 'Loading…',
                   href: ROUTES.admin.disputes,

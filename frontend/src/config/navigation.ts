@@ -1,4 +1,4 @@
-import type { VelontriRole } from '@/types/auth';
+﻿import type { VelontriRole } from '@/types/auth';
 import { ROUTES } from '@/config/routes';
 
 export interface NavItem {
@@ -9,7 +9,7 @@ export interface NavItem {
 
 export const publicNav: NavItem[] = [
   { label: 'Browse', href: ROUTES.listings },
-  { label: 'Search', href: ROUTES.search },
+  { label: 'MagnifyingGlass', href: ROUTES.search },
   { label: 'Stores', href: ROUTES.stores },
   { label: 'Pricing', href: '/subscriptions/tiers' },
 ];

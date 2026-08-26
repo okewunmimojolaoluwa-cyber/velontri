@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useTheme } from '@/lib/hooks/use-theme';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, MoonStars } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 
 interface ThemeToggleProps {
@@ -34,7 +34,7 @@ export function ThemeToggle({ variant = 'icon', className }: ThemeToggleProps) {
           <Sun className="h-3 w-3 text-amber-400" />
         </span>
         <span className="absolute right-1 flex h-4 w-4 items-center justify-center opacity-60">
-          <Moon className="h-3 w-3 text-indigo-200" />
+          <MoonStars className="h-3 w-3 text-indigo-200" />
         </span>
 
         {/* Thumb */}
@@ -48,7 +48,7 @@ export function ThemeToggle({ variant = 'icon', className }: ThemeToggleProps) {
           )}
         >
           {isDark
-            ? <Moon className="h-3 w-3 text-indigo-600" />
+            ? <MoonStars className="h-3 w-3 text-indigo-600" />
             : <Sun className="h-3 w-3 text-amber-500" />}
         </span>
       </button>
@@ -74,7 +74,7 @@ export function ThemeToggle({ variant = 'icon', className }: ThemeToggleProps) {
             'absolute inset-0 h-4 w-4 transition-all duration-300',
             isDark ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100',
           )} />
-          <Moon className={cn(
+          <MoonStars className={cn(
             'absolute inset-0 h-4 w-4 transition-all duration-300',
             isDark ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-0 opacity-0',
           )} />
@@ -103,8 +103,8 @@ export function ThemeToggle({ variant = 'icon', className }: ThemeToggleProps) {
         'absolute h-4 w-4 transition-all duration-300',
         isDark ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100',
       )} />
-      {/* Moon icon — visible in dark mode */}
-      <Moon className={cn(
+      {/* MoonStars icon — visible in dark mode */}
+      <MoonStars className={cn(
         'absolute h-4 w-4 transition-all duration-300',
         isDark ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-0 opacity-0',
       )} />

@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { DollarSign, TrendingUp, CreditCard, Crown, BarChart2 } from 'lucide-react';
+import { CurrencyDollar, TrendUp, CreditCard, Crown, ChartBar } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 import {
@@ -60,8 +60,8 @@ export default function AdminRevenuePage() {
   const hasRevenue = chart.some(p => p.revenue > 0);
 
   const KPIs = summary ? [
-    { label: "Today's Revenue",  value: fmt(summary.today),         icon: DollarSign,  color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Monthly Revenue',  value: fmt(summary.monthly),       icon: TrendingUp,  color: 'text-indigo-600',  bg: 'bg-indigo-50'  },
+    { label: "Today's Revenue",  value: fmt(summary.today),         icon: CurrencyDollar,  color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Monthly Revenue',  value: fmt(summary.monthly),       icon: TrendUp,  color: 'text-indigo-600',  bg: 'bg-indigo-50'  },
     { label: 'All-time Revenue', value: fmt(summary.all_time),      icon: Crown,       color: 'text-violet-600',  bg: 'bg-violet-50'  },
     { label: 'Total Payments',   value: summary.total_payments.toLocaleString(), icon: CreditCard, color: 'text-amber-600', bg: 'bg-amber-50' },
   ] : null;
@@ -130,7 +130,7 @@ export default function AdminRevenuePage() {
             </div>
           ) : !hasRevenue ? (
             <div className="h-full rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2">
-              <BarChart2 className="h-10 w-10 text-slate-200" />
+              <ChartBar className="h-10 w-10 text-slate-200" />
               <p className="text-[13px] text-slate-400">No revenue yet</p>
               <p className="text-[11px] text-slate-300">Revenue appears after the first Paystack payment</p>
             </div>
@@ -150,7 +150,7 @@ export default function AdminRevenuePage() {
                   contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 12 }}
                   formatter={(v: number) => fmt(v)}
                 />
-                <Area type="monotone" dataKey="revenue" stroke="#4F46E5" strokeWidth={2.5} fill="url(#revGrad)" dot={false} />
+                <Area type="monotone" dataKey="revenue" stroke="#4F46E5" fill="url(#revGrad)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           )}

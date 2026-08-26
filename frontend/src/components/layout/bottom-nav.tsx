@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Heart, Plus, MessageCircle, LayoutDashboard, X } from 'lucide-react';
+import { House, Heart, Plus, ChatCircle, SquaresFour, X } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils/cn';
@@ -49,10 +49,10 @@ export function BottomNav() {
   const isActive = (href: string) => (pathname as string) === href || pathname.startsWith(href + '/');
 
   const NAV = [
-    { icon: Home,           label: 'Home',      href: ROUTES.home },
+    { icon: House,           label: 'House',      href: ROUTES.home },
     { icon: Heart,          label: 'Saved',     href: ROUTES.user.wishlist },
-    { icon: MessageCircle,  label: 'Messages',  href: ROUTES.user.messages },
-    { icon: LayoutDashboard,label: 'Dashboard', href: ROUTES.user.overview },
+    { icon: ChatCircle,  label: 'Messages',  href: ROUTES.user.messages },
+    { icon: SquaresFour,label: 'Dashboard', href: ROUTES.user.overview },
   ];
 
   // Never show on:
@@ -132,7 +132,7 @@ export function BottomNav() {
                   isActive(href) ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600',
                 )}
               >
-                <Icon className="h-5 w-5" strokeWidth={isActive(href) ? 2.5 : 1.75} />
+                <Icon className="h-5 w-5" />
                 <span className="text-[10px] font-semibold">{label}</span>
               </Link>
             ))}
@@ -147,7 +147,7 @@ export function BottomNav() {
                 style={{ width: 52, height: 52 }}
                 aria-label="Sell something"
               >
-                <Plus className="h-6 w-6" strokeWidth={2.5} />
+                <Plus className="h-6 w-6" />
               </button>
               <span className="text-[10px] font-semibold text-indigo-600 -mt-1">Sell</span>
             </div>
@@ -162,7 +162,7 @@ export function BottomNav() {
                   isActive(href) ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600',
                 )}
               >
-                <Icon className="h-5 w-5" strokeWidth={isActive(href) ? 2.5 : 1.75} />
+                <Icon className="h-5 w-5" />
                 <span className="text-[10px] font-semibold">{label}</span>
               </Link>
             ))}
@@ -179,7 +179,7 @@ export function BottomNav() {
                   isActive(href) ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600',
                 )}
               >
-                <Icon className="h-5 w-5" strokeWidth={isActive(href) ? 2.5 : 1.75} />
+                <Icon className="h-5 w-5" />
                 <span className="text-[10px] font-semibold">{label}</span>
               </Link>
             ))}

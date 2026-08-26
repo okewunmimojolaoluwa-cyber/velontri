@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { Users, MapPin, ExternalLink, Store } from 'lucide-react';
+import { Users, MapPin, ArrowSquareOut, Storefront } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/features/auth/auth-provider';
 import type { ApiResponse } from '@/types/api';
@@ -34,7 +34,7 @@ export default function UserFollowingPage() {
   const saved: SavedListing[] = Array.isArray(data?.data) ? data.data : [];
 
   // Group saved listings by seller_id to create "following" list
-  const sellerMap = new Map<string, { sellerId: string; listings: SavedListing[] }>();
+  const sellerMap = new MapTrifold<string, { sellerId: string; listings: SavedListing[] }>();
   for (const item of saved) {
     const sid = item.seller_id ?? 'unknown';
     if (!sellerMap.has(sid)) {
@@ -71,7 +71,7 @@ export default function UserFollowingPage() {
             <Users className="h-12 w-12 text-slate-200 mb-3" />
             <p className="text-[14px] font-semibold text-slate-900 mb-1">No sellers yet</p>
             <p className="text-[12px] text-slate-400 mb-4">
-              Save listings to start tracking sellers you&apos;re interested in.
+              FloppyDisk listings to start tracking sellers you&apos;re interested in.
             </p>
             <Link href="/listings"
               className="inline-flex h-9 items-center gap-2 rounded-xl bg-indigo-600 px-4
@@ -90,7 +90,7 @@ export default function UserFollowingPage() {
                   {/* Avatar */}
                   <div className="h-12 w-12 flex-shrink-0 rounded-full bg-indigo-100
                     flex items-center justify-center text-[14px] font-bold text-indigo-700">
-                    <Store className="h-5 w-5" />
+                    <Storefront className="h-5 w-5" />
                   </div>
 
                   {/* Info */}
@@ -124,7 +124,7 @@ export default function UserFollowingPage() {
                       bg-slate-50 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition-colors no-underline"
                     title="View listing"
                   >
-                    <ExternalLink className="h-4 w-4" />
+                    <ArrowSquareOut className="h-4 w-4" />
                   </Link>
                 </li>
               );

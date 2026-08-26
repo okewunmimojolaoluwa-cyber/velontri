@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
-import { HelpCircle, ChevronDown, Search, MessageCircle } from 'lucide-react';
+import { Question, CaretDown, MagnifyingGlass, ChatCircle } from '@phosphor-icons/react';
 
 const CATEGORIES = [
   { id: 'all',            name: 'All Topics' },
@@ -50,7 +50,7 @@ const FAQS = [
             a: 'If your paid subscription expires, listings beyond the free limit (3) are automatically archived. Renew your subscription to restore them instantly.',
             cat: 'selling' },
   { id: 11, q: 'How do I edit or delete a listing?',
-            a: 'Go to My Listings in your dashboard, find the listing, then click Edit or Delete. Deletion is permanent.',
+            a: 'Go to My Listings in your dashboard, find the listing, then click PencilSimple or Delete. Deletion is permanent.',
             cat: 'selling' },
   { id: 12, q: 'Does Velontri take a commission on my sales?',
             a: 'No. Velontri never charges a commission or transaction fee. Revenue comes only from subscription plans. You keep 100% of your sale price.',
@@ -72,7 +72,7 @@ const FAQS = [
             a: 'Click "Forgot Password" on the login page. Enter your email and we\'ll send a reset link within a few seconds.',
             cat: 'account' },
   { id: 17, q: 'How do I update my WhatsApp number on my listings?',
-            a: 'Edit each listing individually and update the WhatsApp number field. Make sure the number is in international format (e.g. +2348012345678).',
+            a: 'PencilSimple each listing individually and update the WhatsApp number field. Make sure the number is in international format (e.g. +2348012345678).',
             cat: 'account' },
   { id: 18, q: 'How do I add a profile photo?',
             a: 'Go to Dashboard → Profile → tap the avatar image and upload a photo from your device.',
@@ -96,7 +96,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
         <p className={`text-[14px] font-semibold leading-snug ${open ? 'text-indigo-700' : 'text-slate-900'}`}>
           {question}
         </p>
-        <ChevronDown className={`h-4 w-4 flex-shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180 text-indigo-500' : ''}`} />
+        <CaretDown className={`h-4 w-4 flex-shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180 text-indigo-500' : ''}`} />
       </button>
       {open && (
         <div className="px-5 pb-4">
@@ -123,12 +123,12 @@ export default function UserHelpPage() {
         <p className="text-[12px] text-slate-400 mt-0.5">Find answers to common questions</p>
       </div>
 
-      {/* Search */}
+      {/* MagnifyingGlass */}
       <div className="relative">
-        <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <MagnifyingGlass className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <input
           type="text"
-          placeholder="Search help topics…"
+          placeholder="MagnifyingGlass help topics…"
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="w-full h-11 rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-[14px]
@@ -154,7 +154,7 @@ export default function UserHelpPage() {
           {/* Contact support */}
           <div className="mt-4 rounded-2xl border border-indigo-200 bg-indigo-50 p-4">
             <div className="flex items-center gap-2 mb-2">
-              <MessageCircle className="h-4 w-4 text-indigo-600" />
+              <ChatCircle className="h-4 w-4 text-indigo-600" />
               <p className="text-[13px] font-bold text-indigo-900">Need more help?</p>
             </div>
             <p className="text-[11px] text-indigo-700 mb-3 leading-relaxed">
@@ -172,7 +172,7 @@ export default function UserHelpPage() {
         <div className="space-y-2">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-12 text-center">
-              <HelpCircle className="h-10 w-10 text-slate-200 mb-2" />
+              <Question className="h-10 w-10 text-slate-200 mb-2" />
               <p className="text-[14px] font-semibold text-slate-500">No results for &quot;{search}&quot;</p>
             </div>
           ) : (

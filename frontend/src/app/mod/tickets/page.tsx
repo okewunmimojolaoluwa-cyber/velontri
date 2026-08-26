@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
-import { MessageSquare } from 'lucide-react';
+import { ChatSquare } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
@@ -47,7 +47,7 @@ export default function ModTicketsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight flex items-center gap-2">
-          <MessageSquare className="h-5 w-5 text-amber-500" /> Support Tickets
+          <ChatSquare className="h-5 w-5 text-amber-500" /> Support Tickets
         </h1>
         <p className="text-[13px] text-slate-400 mt-0.5">Manage user support requests</p>
       </div>
@@ -78,7 +78,7 @@ export default function ModTicketsPage() {
         </div>
       ) : tickets.length === 0 && !isError ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-16 text-center">
-          <MessageSquare className="h-10 w-10 text-slate-200 mb-3" />
+          <ChatSquare className="h-10 w-10 text-slate-200 mb-3" />
           <p className="text-[14px] font-semibold text-slate-900 mb-1">No tickets</p>
           <p className="text-[12px] text-slate-400">
             {filter !== 'all' ? `No ${filter.replace('_', ' ')} tickets.` : 'No support tickets filed.'}

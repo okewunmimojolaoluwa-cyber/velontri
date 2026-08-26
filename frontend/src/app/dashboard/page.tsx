@@ -1,12 +1,8 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Plus, MessageCircle, Heart, ShoppingBag, Store,
-  Package, ArrowRight, Star, Sparkles,
-  ChevronRight, BarChart3, Settings, CreditCard,
-} from 'lucide-react';
+import { Plus, ChatCircle, Heart, ShoppingBag, Storefront, Package, ArrowRight, Star, Sparkle, CaretRight, BarChart3, Gear, CreditCard } from '@phosphor-icons/react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
@@ -63,7 +59,7 @@ export default function DashboardPage() {
       color: '#7C3AED', bg: '#f5f3ff',
     },
     {
-      icon: MessageCircle, label: 'Messages', href: ROUTES.user.messages,
+      icon: ChatCircle, label: 'Messages', href: ROUTES.user.messages,
       value: '—',
       color: '#0891B2', bg: '#ecfeff',
     },
@@ -78,12 +74,12 @@ export default function DashboardPage() {
   const QUICK = [
     { icon: Plus,          label: 'Post listing', href: ROUTES.user.create,         primary: true  },
     { icon: ShoppingBag,   label: 'Browse',       href: ROUTES.listings,            primary: false },
-    { icon: MessageCircle, label: 'Messages',     href: ROUTES.user.messages,       primary: false },
-    { icon: Store,         label: 'My Store',     href: ROUTES.user.store,          primary: false },
+    { icon: ChatCircle, label: 'Messages',     href: ROUTES.user.messages,       primary: false },
+    { icon: Storefront,         label: 'My Storefront',     href: ROUTES.user.store,          primary: false },
     { icon: BarChart3,     label: 'Analytics',    href: ROUTES.user.storeAnalytics, primary: false },
     { icon: CreditCard,    label: 'Plans',        href: ROUTES.user.subscription,   primary: false },
     { icon: Heart,         label: 'Saved',        href: ROUTES.user.saved,          primary: false },
-    { icon: Settings,      label: 'Settings',     href: ROUTES.user.settings,       primary: false },
+    { icon: Gear,      label: 'Gear',     href: ROUTES.user.settings,       primary: false },
   ];
 
   return (
@@ -104,7 +100,7 @@ export default function DashboardPage() {
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center
               rounded-2xl bg-indigo-600 shadow-sm">
-              <Sparkles className="h-5 w-5 text-white" />
+              <Sparkle className="h-5 w-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-[15px] font-black text-slate-900 mb-1">
@@ -145,7 +141,7 @@ export default function DashboardPage() {
               </p>
               <div className="flex h-7 w-7 items-center justify-center rounded-lg flex-shrink-0"
                 style={{ background: bg }}>
-                <Icon className="h-3.5 w-3.5" style={{ color }} strokeWidth={2} />
+                <Icon className="h-3.5 w-3.5" style={{ color }} />
               </div>
             </div>
             <p className="text-[1.25rem] font-black text-slate-900 tracking-tight leading-none">
@@ -169,7 +165,7 @@ export default function DashboardPage() {
                   ? 'bg-indigo-600 text-white hover:bg-indigo-700'
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}>
-              <Icon className="h-5 w-5" strokeWidth={1.75} />
+              <Icon className="h-5 w-5" />
               <span className="leading-tight">{label}</span>
             </Link>
           ))}
@@ -186,7 +182,7 @@ export default function DashboardPage() {
           <Link href={ROUTES.user.storeAnalytics}
             className="flex items-center gap-1 text-[12px] font-semibold text-indigo-600
               no-underline hover:underline">
-            Analytics <ChevronRight className="h-3.5 w-3.5" />
+            Analytics <CaretRight className="h-3.5 w-3.5" />
           </Link>
         </div>
         <div className="h-36">
@@ -205,7 +201,7 @@ export default function DashboardPage() {
                 background: '#fff', border: '1px solid #e2e8f0',
                 borderRadius: 10, fontSize: 12,
               }} />
-              <Area type="monotone" dataKey="v" stroke="#4F46E5" strokeWidth={2}
+              <Area type="monotone" dataKey="v" stroke="#4F46E5"
                 fill="url(#dashGrad)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
@@ -226,7 +222,7 @@ export default function DashboardPage() {
                 href: ROUTES.user.create,        cta: 'Post now',
               },
               {
-                icon: Store,     title: 'Open your store',
+                icon: Storefront,     title: 'Open your store',
                 desc: 'Build a trusted brand on Velontri.',
                 href: ROUTES.user.store,         cta: 'Create store',
               },
@@ -239,7 +235,7 @@ export default function DashboardPage() {
               <div key={title}
                 className="flex gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-50">
-                  <Icon className="h-[18px] w-[18px] text-indigo-600" strokeWidth={1.75} />
+                  <Icon className="h-[18px] w-[18px] text-indigo-600" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-bold text-slate-900 leading-snug">{title}</p>

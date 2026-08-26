@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { Heart, MapPin } from 'lucide-react';
+import { Heart, MapPin } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 
@@ -101,7 +101,7 @@ export function RecommendedSection({ items = DEFAULT_ITEMS }: RecommendedSection
                   whileTap={{ scale: 0.9 }}
                   className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm text-slate-400 hover:text-red-500 transition-colors"
                 >
-                  <Heart className="h-4 w-4" strokeWidth={2} />
+                  <Heart className="h-4 w-4" />
                 </motion.button>
                 <div className="absolute bottom-2 left-2">
                   <span className="px-2 py-1 rounded-full bg-black/60 backdrop-blur-sm text-[10px] font-bold text-white">

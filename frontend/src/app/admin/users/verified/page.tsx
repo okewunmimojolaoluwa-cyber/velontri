@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { BadgeCheck, Search, Mail, Phone, MapPin, Calendar } from 'lucide-react';
+import { SealCheck, MagnifyingGlass, EnvelopeSimple, Phone, MapPin, CalendarBlank } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -45,7 +45,7 @@ function UserCard({ u }: { u: VerifiedUser }) {
           {u.seller_verification_status === 'approved' ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border
               border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-              <BadgeCheck className="h-3 w-3" /> Verified Seller
+              <SealCheck className="h-3 w-3" /> Verified Seller
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border
@@ -59,7 +59,7 @@ function UserCard({ u }: { u: VerifiedUser }) {
       {/* Detail rows */}
       <div className="space-y-1.5 text-[12px] text-slate-600">
         <div className="flex items-center gap-2">
-          <Mail className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+          <EnvelopeSimple className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
           <span className="truncate">{u.email}</span>
         </div>
         <div className="flex items-center gap-2">
@@ -72,7 +72,7 @@ function UserCard({ u }: { u: VerifiedUser }) {
             {u.country_code || '—'}
           </span>
           <span className="flex items-center gap-1.5">
-            <Calendar className="h-3.5 w-3.5 text-slate-400" />
+            <CalendarBlank className="h-3.5 w-3.5 text-slate-400" />
             {new Date(u.created_at).toLocaleDateString('en-NG', {
               day: 'numeric', month: 'short', year: 'numeric',
             })}
@@ -107,21 +107,21 @@ export default function VerifiedUsersPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <BadgeCheck className="h-6 w-6 text-emerald-600 flex-shrink-0" />
+            <SealCheck className="h-6 w-6 text-emerald-600 flex-shrink-0" />
             Verified Users
           </h1>
           <p className="text-[13px] text-slate-500 mt-0.5">Users who have completed seller verification</p>
         </div>
 
-        {/* Search */}
+        {/* MagnifyingGlass */}
         <form
           onSubmit={e => { e.preventDefault(); setCommitted(search); }}
           className="flex gap-2 w-full sm:w-auto"
         >
           <div className="relative flex-1 sm:flex-none">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
             <input
-              placeholder="Search…"
+              placeholder="MagnifyingGlass…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="h-10 w-full sm:w-56 rounded-xl border border-slate-200 pl-9 pr-4
@@ -134,7 +134,7 @@ export default function VerifiedUsersPage() {
             className="h-10 rounded-xl bg-indigo-600 px-4 text-[13px] font-bold
               text-white hover:bg-indigo-700 transition-colors flex-shrink-0"
           >
-            Search
+            MagnifyingGlass
           </button>
         </form>
       </div>
@@ -180,7 +180,7 @@ export default function VerifiedUsersPage() {
       {!isLoading && users.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center
           rounded-2xl border-2 border-dashed border-slate-200 bg-white">
-          <BadgeCheck className="h-12 w-12 text-slate-200 mb-3" />
+          <SealCheck className="h-12 w-12 text-slate-200 mb-3" />
           <p className="text-[14px] font-semibold text-slate-900 mb-1">No verified users found</p>
           <p className="text-[12px] text-slate-400">
             {committed ? `No results for "${committed}"` : 'Verified users will appear here'}
@@ -229,7 +229,7 @@ export default function VerifiedUsersPage() {
                     {u.seller_verification_status === 'approved' ? (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50
                         border border-emerald-200 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-                        <BadgeCheck className="h-3 w-3" /> Verified Seller
+                        <SealCheck className="h-3 w-3" /> Verified Seller
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100

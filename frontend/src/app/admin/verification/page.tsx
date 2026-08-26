@@ -1,11 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  BadgeCheck, Users, Clock, CheckCircle, XCircle, AlertCircle,
-  ChevronDown, ChevronUp, Check, X,
-} from 'lucide-react';
+import { SealCheck, Users, Clock, CheckCircle, XCircle, WarningCircle, CaretDown, CaretUp, Check, X } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 
 /* ── Reject modal ───────────────────────────────────────── */
@@ -124,7 +121,7 @@ function AppRow({ app, onApprove, onReject }: { app: any; onApprove: () => void;
             <button onClick={() => setExpanded(v => !v)}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-100 transition-colors"
               title="View details">
-              {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              {expanded ? <CaretUp className="h-3.5 w-3.5" /> : <CaretDown className="h-3.5 w-3.5" />}
             </button>
             {isPending && (
               <>
@@ -253,7 +250,7 @@ export default function AdminVerificationPage() {
     { label: 'Pending',   value: stats?.pending ?? 0,            color: '#D97706', bg: '#fffbeb', icon: Clock,        filterVal: 'submitted' },
     { label: 'Approved',  value: stats?.approved ?? 0,           color: '#059669', bg: '#ecfdf5', icon: CheckCircle,  filterVal: 'approved' },
     { label: 'Rejected',  value: stats?.rejected ?? 0,           color: '#DC2626', bg: '#fef2f2', icon: XCircle,      filterVal: 'rejected' },
-    { label: 'More Info', value: stats?.more_info_required ?? 0, color: '#B45309', bg: '#fffbeb', icon: AlertCircle,  filterVal: 'more_info_required' },
+    { label: 'More Info', value: stats?.more_info_required ?? 0, color: '#B45309', bg: '#fffbeb', icon: WarningCircle,  filterVal: 'more_info_required' },
   ];
 
   const STATUS_FILTERS = [
@@ -277,7 +274,7 @@ export default function AdminVerificationPage() {
 
       <div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-          <BadgeCheck className="h-6 w-6 text-indigo-600" /> Seller Verification
+          <SealCheck className="h-6 w-6 text-indigo-600" /> Seller Verification
         </h1>
         <p className="text-sm text-slate-500 mt-0.5">Review and action all seller verification applications</p>
       </div>
@@ -345,7 +342,7 @@ export default function AdminVerificationPage() {
           <div className="p-6 space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-14 rounded-xl bg-slate-100 animate-pulse" />)}</div>
         ) : apps.length === 0 ? (
           <div className="py-16 text-center">
-            <BadgeCheck className="h-12 w-12 text-slate-200 mx-auto mb-3" />
+            <SealCheck className="h-12 w-12 text-slate-200 mx-auto mb-3" />
             <p className="text-[14px] font-semibold text-slate-900">No applications found</p>
           </div>
         ) : (

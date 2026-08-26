@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Package, Search, CheckCircle, XCircle, Eye, Archive, RotateCcw } from 'lucide-react';
+import { Package, MagnifyingGlass, CheckCircle, XCircle, Eye, Archive, ArrowCounterClockwise } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
@@ -104,13 +104,13 @@ export default function AdminListingsPage() {
         </div>
         <form onSubmit={e => { e.preventDefault(); setCommitted(search); }} className="flex gap-2 sm:ml-auto w-full sm:w-auto">
           <div className="relative flex-1 sm:flex-none">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-            <input placeholder="Search listings…" value={search} onChange={e => setSearch(e.target.value)}
+            <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <input placeholder="MagnifyingGlass listings…" value={search} onChange={e => setSearch(e.target.value)}
               className="h-9 w-full sm:w-56 rounded-xl border border-slate-200 pl-9 pr-4 text-sm text-slate-800
                 placeholder-slate-400 focus:border-indigo-400 focus:outline-none" />
           </div>
           <button type="submit" className="h-9 rounded-xl bg-slate-100 px-4 text-sm font-medium text-slate-600 hover:bg-slate-200 transition-colors">
-            Search
+            MagnifyingGlass
           </button>
         </form>
       </div>
@@ -259,7 +259,7 @@ export default function AdminListingsPage() {
                             <button onClick={() => moderate({ id: l.id, action: 'restore' })}
                               title="Restore to active"
                               className="flex h-8 items-center gap-1 rounded-lg bg-indigo-50 border border-indigo-200 px-2.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-colors">
-                              <RotateCcw className="h-3 w-3" /> Restore
+                              <ArrowCounterClockwise className="h-3 w-3" /> Restore
                             </button>
                           )}
                         </div>
