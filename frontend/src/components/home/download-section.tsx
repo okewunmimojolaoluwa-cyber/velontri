@@ -106,10 +106,10 @@ export function DownloadSection() {
                         <p className="text-xs text-white/70">{item}</p>
                       </div>
                     ))}
-                    {/* MagnifyingGlass bar */}
+                    {/* Search bar */}
                     <div className="rounded-xl bg-white/8 border border-white/10 px-3 py-2 flex items-center gap-2">
                       <div className="h-3 w-3 rounded-full bg-white/20" />
-                      <p className="text-xs text-white/30">MagnifyingGlass listings…</p>
+                      <p className="text-xs text-white/30">Search listings…</p>
                     </div>
                   </div>
                 </div>

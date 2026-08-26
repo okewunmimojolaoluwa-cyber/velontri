@@ -366,7 +366,7 @@ export default function HomePage() {
                 Millions of premium listings. 12 African countries.
               </p>
 
-              {/* MagnifyingGlass bar */}
+              {/* Search bar */}
               <div className="mb-4 flex items-stretch overflow-hidden rounded-xl border-2 border-slate-200
                 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.07)] transition-colors focus-within:border-indigo-400">
 
@@ -417,7 +417,7 @@ export default function HomePage() {
                       window.location.href = `/search?q=${encodeURIComponent(query.trim())}${loc}`;
                     }
                   }}
-                  placeholder="MagnifyingGlass cars, phones, properties, jobs…"
+                  placeholder="Search cars, phones, properties, jobs…"
                   className="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-[14px] text-slate-800
                     placeholder-slate-400 outline-none"
                 />
@@ -430,7 +430,7 @@ export default function HomePage() {
                   className="m-1.5 flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600
                     px-4 text-[13px] font-bold text-white no-underline transition-colors hover:bg-indigo-700">
                   <MagnifyingGlass size={13} />
-                  <span className="hidden sm:inline">MagnifyingGlass</span>
+                  <span className="hidden sm:inline">Search</span>
                 </Link>
               </div>
 

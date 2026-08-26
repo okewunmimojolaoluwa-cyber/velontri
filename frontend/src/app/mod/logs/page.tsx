@@ -57,7 +57,7 @@ export default function ModLogsPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="MagnifyingGlass logs…"
+            placeholder="Search logs…"
             className="h-9 w-52 rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-[13px] text-slate-800 placeholder-slate-400 outline-none focus:border-amber-400 transition-all"
           />
         </div>

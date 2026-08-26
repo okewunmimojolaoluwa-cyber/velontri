@@ -218,7 +218,7 @@ export default function ModVerificationPage() {
         <div className="relative sm:ml-auto">
           <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="MagnifyingGlass applications…"
+            placeholder="Search applications…"
             className="h-9 w-full sm:w-52 rounded-xl border border-slate-200 bg-white pl-9 pr-4 text-[13px] text-slate-800 placeholder-slate-400 outline-none focus:border-amber-400 transition-all" />
         </div>
       </div>

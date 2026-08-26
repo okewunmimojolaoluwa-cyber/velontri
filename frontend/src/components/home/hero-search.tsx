@@ -32,7 +32,7 @@ export function HeroSearch() {
 
   return (
     <div className="relative">
-      {/* MagnifyingGlass bar */}
+      {/* Search bar */}
       <div className={cn(
         'flex items-center rounded-2xl bg-white/10 backdrop-blur-md border transition-all duration-200',
         focused ? 'border-white/40 shadow-[0_0_0_3px_rgba(255,255,255,0.08)]' : 'border-white/20',
@@ -73,7 +73,7 @@ export function HeroSearch() {
           onFocus={() => setFocused(true)}
           onBlur={() => setTimeout(() => setFocused(false), 150)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          placeholder="MagnifyingGlass listings…"
+          placeholder="Search listings…"
           className="flex-1 bg-transparent px-4 py-4 text-white placeholder:text-white/40 text-base focus:outline-none"
         />
 
@@ -83,7 +83,7 @@ export function HeroSearch() {
           className="flex items-center gap-2 m-1.5 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-foreground hover:bg-white/90 transition-colors"
         >
           <MagnifyingGlass className="h-4 w-4" />
-          <span className="hidden sm:block">MagnifyingGlass</span>
+          <span className="hidden sm:block">Search</span>
         </button>
       </div>
 

@@ -63,7 +63,7 @@ export default function ModListingsPage() {
 
         <div className="flex gap-4">
           <Input
-            placeholder="MagnifyingGlass listings..."
+            placeholder="Search listings..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="max-w-xs"

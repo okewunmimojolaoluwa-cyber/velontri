@@ -38,7 +38,7 @@ export function MobileHeader({ onMenuOpen }: MobileHeaderProps) {
           <Link
             href={ROUTES.listings}
             className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
-            aria-label="MagnifyingGlass"
+            aria-label="Search"
           >
             <MagnifyingGlass className="h-5 w-5" />
           </Link>

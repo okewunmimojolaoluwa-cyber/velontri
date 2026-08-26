@@ -173,7 +173,7 @@ export default function UserMessagesPage() {
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="MagnifyingGlass conversations…"
+                placeholder="Search conversations…"
                 className="w-full h-9 rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-[13px]
                   text-slate-700 placeholder-slate-400 outline-none focus:border-indigo-400 focus:bg-white transition-all"
               />
@@ -338,7 +338,7 @@ export default function UserMessagesPage() {
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="MagnifyingGlass…"
+                placeholder="Search…"
                 className="w-full h-9 rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-[13px]
                   text-slate-700 placeholder-slate-400 outline-none focus:border-indigo-400 focus:bg-white transition-all"
               />

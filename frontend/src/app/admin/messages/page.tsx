@@ -273,7 +273,7 @@ export default function AdminMessagesPage() {
           <div className="px-3 py-2.5 border-b border-slate-100">
             <div className="relative">
               <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="MagnifyingGlass…"
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search…"
                 className="w-full h-9 rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-[13px] text-slate-700 placeholder-slate-400 outline-none focus:border-indigo-400 focus:bg-white transition-all" />
             </div>
           </div>

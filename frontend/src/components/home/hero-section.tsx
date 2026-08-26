@@ -112,7 +112,7 @@ export function HeroSection() {
           protected by escrow and powered by AI.
         </p>
 
-        {/* MagnifyingGlass bar */}
+        {/* Search bar */}
         <div className="mx-auto mb-8 max-w-2xl">
           <form
             onSubmit={(e) => { e.preventDefault(); if (query.trim()) router.push(`/search?q=${encodeURIComponent(query.trim())}`); }}

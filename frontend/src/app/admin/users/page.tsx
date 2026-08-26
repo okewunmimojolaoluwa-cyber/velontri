@@ -190,7 +190,7 @@ export default function AdminUsersPage() {
           <form onSubmit={e => { e.preventDefault(); setCommitted(search); setPage(1); }} className="flex gap-2 w-full sm:w-auto">
             <div className="relative flex-1 sm:flex-none">
               <MagnifyingGlass className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input placeholder="MagnifyingGlass name, email, phone…" value={search} onChange={e => setSearch(e.target.value)}
+              <input placeholder="Search name, email, phone…" value={search} onChange={e => setSearch(e.target.value)}
                 className="h-10 w-full sm:w-64 rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-[14px]
                   text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-400 transition-all" />
             </div>

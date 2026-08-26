@@ -91,7 +91,7 @@ export default function AdminStoresPage() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="MagnifyingGlass sellers…"
+            placeholder="Search sellers…"
             className="h-10 w-56 rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-[14px]
               text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-400 transition-all"
           />
@@ -158,7 +158,7 @@ export default function AdminStoresPage() {
 
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[12px]">
                     <div>
-                      <p className="font-bold uppercase tracking-wide text-slate-400 text-[10px] mb-0.5">Storefront</p>
+                      <p className="font-bold uppercase tracking-wide text-slate-400 text-[10px] mb-0.5">Store</p>
                       <p className="text-slate-700 truncate">{seller.store_name}</p>
                     </div>
                     <div>

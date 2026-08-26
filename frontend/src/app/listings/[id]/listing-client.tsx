@@ -2,12 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import {
-  ArrowLeft, MapPin, SealCheck, ChatCircle,
-  CaretRight, Heart, ShareNetwork, Star,
-  CaretLeft, X, PaperPlaneRight, CheckCircle, WarningCircle,
-  Warning,
-} from '@phosphor-icons/react';
+import { ArrowLeft, MapPin, SealCheck, ChatCircle, CaretRight, Heart, ShareNetwork, Star, CaretLeft, X, PaperPlaneRight, CheckCircle, WarningCircle, Warning } from '@phosphor-icons/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useListing } from '@/features/listings/hooks/use-listings';
 import { listingKeys } from '@/lib/api/endpoints/listings';

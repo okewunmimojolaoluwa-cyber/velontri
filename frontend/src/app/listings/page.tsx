@@ -276,7 +276,7 @@ export default function ListingsPage() {
             <p className="mb-8 text-[15px] text-white/60 max-w-md mx-auto">
               Vehicles, property, electronics, fashion and more — direct from sellers via WhatsApp.
             </p>
-            {/* MagnifyingGlass bar */}
+            {/* Search bar */}
             <form onSubmit={handleSearch}
               className="mx-auto flex max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl shadow-black/30">
               <div className="relative flex-1">
@@ -284,7 +284,7 @@ export default function ListingsPage() {
                 <input
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="MagnifyingGlass listings…"
+                  placeholder="Search listings…"
                   className="h-14 w-full bg-transparent pl-11 pr-4 text-[15px] text-slate-800 placeholder-slate-400 outline-none"
                 />
               </div>

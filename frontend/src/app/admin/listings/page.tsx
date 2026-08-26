@@ -105,7 +105,7 @@ export default function AdminListingsPage() {
         <form onSubmit={e => { e.preventDefault(); setCommitted(search); }} className="flex gap-2 sm:ml-auto w-full sm:w-auto">
           <div className="relative flex-1 sm:flex-none">
             <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-            <input placeholder="MagnifyingGlass listings…" value={search} onChange={e => setSearch(e.target.value)}
+            <input placeholder="Search listings…" value={search} onChange={e => setSearch(e.target.value)}
               className="h-9 w-full sm:w-56 rounded-xl border border-slate-200 pl-9 pr-4 text-sm text-slate-800
                 placeholder-slate-400 focus:border-indigo-400 focus:outline-none" />
           </div>

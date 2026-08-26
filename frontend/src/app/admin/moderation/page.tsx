@@ -125,7 +125,7 @@ export default function AdminModerationPage() {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="MagnifyingGlass action or listing…"
+              placeholder="Search action or listing…"
               className="h-9 w-56 rounded-xl border border-slate-200 bg-white pl-9 pr-4 text-[13px]
                 text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-400 transition-all"
             />

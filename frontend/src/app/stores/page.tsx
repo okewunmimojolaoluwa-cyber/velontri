@@ -53,7 +53,7 @@ export default function StoresPage() {
             <MagnifyingGlass className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
-              placeholder="MagnifyingGlass stores…"
+              placeholder="Search stores…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full h-11 rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-[14px]

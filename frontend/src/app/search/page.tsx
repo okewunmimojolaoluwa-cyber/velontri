@@ -427,7 +427,7 @@ function SearchInner() {
                 onChange={e => { setQuery(e.target.value); setDropOpen(true); }}
                 onFocus={() => setDropOpen(true)}
                 onKeyDown={handleKey}
-                placeholder="MagnifyingGlass for anything — phones, cars, property, fashion…"
+                placeholder="Search for anything — phones, cars, property, fashion…"
                 className="flex-1 bg-transparent text-[15px] text-slate-800 placeholder-slate-400
                   focus:outline-none dark:text-slate-100 dark:placeholder-slate-500"
               />
@@ -533,7 +533,7 @@ function SearchInner() {
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 mx-auto dark:bg-indigo-950/40">
               <MagnifyingGlass className="h-8 w-8 text-indigo-400" />
             </div>
-            <p className="text-[16px] font-bold text-slate-800 dark:text-slate-200">MagnifyingGlass Velontri</p>
+            <p className="text-[16px] font-bold text-slate-800 dark:text-slate-200">Search Velontri</p>
             <p className="text-[13px] text-slate-400 max-w-xs mx-auto">
               Find listings across Africa — type anything and results appear instantly.
             </p>
@@ -543,7 +543,7 @@ function SearchInner() {
         {/* Error */}
         {committed && isError && (
           <div className="py-16 text-center space-y-2">
-            <p className="text-[15px] font-semibold text-slate-700 dark:text-slate-300">MagnifyingGlass failed</p>
+            <p className="text-[15px] font-semibold text-slate-700 dark:text-slate-300">Search failed</p>
             <p className="text-[13px] text-slate-400">Please check your connection and try again.</p>
           </div>
         )}

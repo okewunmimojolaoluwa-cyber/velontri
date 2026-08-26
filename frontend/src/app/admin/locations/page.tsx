@@ -103,7 +103,7 @@ export default function AdminLocationsPage() {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="MagnifyingGlass cities…"
+              placeholder="Search cities…"
               className="w-full h-10 rounded-xl border border-slate-200 bg-white pl-4 pr-4 text-[14px] text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-400 transition-all"
             />
           </div>

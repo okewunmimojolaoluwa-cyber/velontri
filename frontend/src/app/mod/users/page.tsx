@@ -178,7 +178,7 @@ export default function ModUsersPage() {
           <div className="relative flex-1 sm:flex-none">
             <MagnifyingGlass className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
-              placeholder="MagnifyingGlass name, email…"
+              placeholder="Search name, email…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="h-9 w-full sm:w-52 rounded-xl border border-slate-200 bg-white pl-10 pr-4
