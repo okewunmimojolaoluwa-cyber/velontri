@@ -21,13 +21,13 @@ const nextConfig = {
   // HTTP headers for SEO and security
   async headers() {
     return [
-      // Sitemap — text/xml is what Google Search Console requires (not application/xml)
+      // Sitemap — text/xml is required by Google Search Console (not application/xml)
+      // IMPORTANT: no X-Robots-Tag here — sitemaps must NOT be marked noindex
       {
         source: '/sitemap.xml',
         headers: [
           { key: 'Content-Type',  value: 'text/xml; charset=utf-8' },
           { key: 'Cache-Control', value: 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400' },
-          { key: 'X-Robots-Tag',  value: 'noindex' },
         ],
       },
       // Robots.txt — explicit Content-Type

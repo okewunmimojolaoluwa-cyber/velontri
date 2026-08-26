@@ -1,40 +1,18 @@
 import type { MetadataRoute } from 'next';
 
 /**
- * Next.js App Router robots.ts
- * Served at /robots.txt — Content-Type: text/plain; charset=utf-8
+ * robots.ts — Next.js App Router
+ * Served at /robots.txt as text/plain; charset=utf-8
  *
- * NOTE: Cloudflare (pxxl.click) prepends its own managed content block to
- * this file, which includes:
- *   User-agent: Google-Extended
- *   Disallow: /
- * That blocks Google's AI-augmented search crawler but NOT the main
- * Googlebot crawler — which is what Google Search Console uses for indexing.
+ * Cloudflare (pxxl.click) prepends its own managed content block that
+ * includes Content-Signal directives and blocks some AI crawlers.
+ * That block does NOT affect Googlebot (main search crawler).
  *
- * We explicitly allow Googlebot here to make the intent unambiguous.
+ * Our rules come after the Cloudflare block and apply to all agents.
  */
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
-      // ── Explicitly allow Googlebot (main search crawler) ──────────────
-      // This overrides any Cloudflare-injected restrictions for Googlebot.
-      {
-        userAgent: 'Googlebot',
-        allow: ['/'],
-        disallow: [
-          '/dashboard/',
-          '/admin/',
-          '/mod/',
-          '/api/',
-          '/login',
-          '/register',
-          '/forgot-password',
-          '/verify-phone',
-          '/verify-2fa',
-          '/auth/',
-        ],
-      },
-      // ── All other crawlers ─────────────────────────────────────────────
       {
         userAgent: '*',
         allow: [
@@ -42,6 +20,7 @@ export default function robots(): MetadataRoute.Robots {
           '/listings',
           '/listings/',
           '/categories/',
+          '/search',
           '/plans',
           '/stores/',
         ],
@@ -56,11 +35,9 @@ export default function robots(): MetadataRoute.Robots {
           '/verify-phone',
           '/verify-2fa',
           '/auth/',
-          '/search',
         ],
       },
     ],
     sitemap: 'https://velontri.pxxl.click/sitemap.xml',
-    // No 'host' directive — it causes robots.txt parser warnings
   };
 }
