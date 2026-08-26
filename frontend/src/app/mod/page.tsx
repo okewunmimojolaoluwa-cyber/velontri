@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { ListChecks, FileCheck, Warning, Flag, Clock } from '@phosphor-icons/react';
+import { ListChecks, FileText, Warning, Flag, Clock } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 import Link from 'next/link';
@@ -9,7 +9,7 @@ import { ROUTES } from '@/config/routes';
 
 const STAT_CARDS = [
   { icon: ListChecks,    label: 'Pending Listings', key: 'pending_listings', color: '#4F46E5', bg: '#eef2ff', href: ROUTES.mod.pendingListings },
-  { icon: FileCheck,     label: 'Pending KYC',      key: 'pending_kyc',      color: '#0369A1', bg: '#e0f2fe', href: ROUTES.mod.kyc },
+  { icon: FileText,     label: 'Pending KYC',      key: 'pending_kyc',      color: '#0369A1', bg: '#e0f2fe', href: ROUTES.mod.kyc },
   { icon: Warning, label: 'Open Disputes',    key: 'open_disputes',    color: '#DC2626', bg: '#fef2f2', href: ROUTES.mod.disputes },
   { icon: Flag,          label: 'Open Reports',     key: 'open_reports',     color: '#D97706', bg: '#fffbeb', href: ROUTES.mod.reports },
 ];

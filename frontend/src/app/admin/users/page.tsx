@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MagnifyingGlass, Users, ShieldOff, ShieldCheck, ChatCircle, CheckCircle, WarningCircle, X, Trash, CalendarBlank, Phone, EnvelopeSimple, Globe } from '@phosphor-icons/react';
+import { MagnifyingGlass, Users, ShieldSlash, ShieldCheck, ChatCircle, CheckCircle, WarningCircle, X, Trash, CalendarBlank, Phone, EnvelopeSimple, Globe } from '@phosphor-icons/react';
 import { RoleGate } from '@/components/rbac/role-gate';
 import { useAuth } from '@/features/auth/auth-provider';
 import { apiClient } from '@/lib/api/client';
@@ -132,7 +132,7 @@ export default function AdminUsersPage() {
       fallback={
         <div className="flex min-h-[60vh] items-center justify-center">
           <div className="text-center space-y-2">
-            <ShieldOff className="h-10 w-10 text-slate-300 mx-auto" />
+            <ShieldSlash className="h-10 w-10 text-slate-300 mx-auto" />
             <p className="text-[15px] font-semibold text-slate-900">Access Denied</p>
             <p className="text-[13px] text-slate-400">You don&apos;t have permission to view this page.</p>
           </div>
@@ -293,7 +293,7 @@ export default function AdminUsersPage() {
                             ? 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100'
                             : 'border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
                         }`}>
-                        {user.is_active ? <><ShieldOff className="h-3.5 w-3.5" /> Suspend</> : <><ShieldCheck className="h-3.5 w-3.5" /> Restore</>}
+                        {user.is_active ? <><ShieldSlash className="h-3.5 w-3.5" /> Suspend</> : <><ShieldCheck className="h-3.5 w-3.5" /> Restore</>}
                       </button>
                     ) : <div className="flex-1" />}
 

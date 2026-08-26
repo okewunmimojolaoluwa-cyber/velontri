@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ShieldCheck, ShieldOff, Package, CheckCircle, XCircle, MapPin } from '@phosphor-icons/react';
+import { ShieldCheck, ShieldSlash, Package, CheckCircle, XCircle, MapPin } from '@phosphor-icons/react';
 import { RoleGate } from '@/components/rbac/role-gate';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
@@ -52,7 +52,7 @@ export default function ModerationPage() {
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-[#F8F9FA]">
           <div className="text-center space-y-2">
-            <ShieldOff className="h-10 w-10 text-slate-300 mx-auto" />
+            <ShieldSlash className="h-10 w-10 text-slate-300 mx-auto" />
             <p className="text-[15px] font-semibold text-slate-900">Access Denied</p>
           </div>
         </div>

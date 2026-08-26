@@ -1,4 +1,4 @@
-﻿import { PackageOpen } from '@phosphor-icons/react';
+﻿import { Package } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
 
 interface EmptyStateProps {
@@ -17,7 +17,7 @@ export function EmptyState({ title, description, icon, action }: EmptyStateProps
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-16 text-center px-6">
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 mb-4 text-slate-300">
-        {icon ?? <PackageOpen className="h-7 w-7" />}
+        {icon ?? <Package className="h-7 w-7" />}
       </div>
       <p className="text-[15px] font-semibold text-slate-900 mb-1">{title}</p>
       {description && (

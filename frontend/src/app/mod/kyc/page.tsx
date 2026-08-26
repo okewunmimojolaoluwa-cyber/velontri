@@ -5,7 +5,7 @@ import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
-import { FileCheck, CheckCircle, XCircle, WarningCircle } from '@phosphor-icons/react';
+import { FileText, CheckCircle, XCircle, WarningCircle } from '@phosphor-icons/react';
 
 interface KycRequest {
   id: string;
@@ -64,7 +64,7 @@ export default function ModKycPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight flex items-center gap-2">
-          <FileCheck className="h-5 w-5 text-amber-500" /> KYC Verification
+          <FileText className="h-5 w-5 text-amber-500" /> KYC Verification
         </h1>
         <p className="text-[13px] text-slate-400 mt-0.5">Review identity verification requests</p>
       </div>
@@ -111,7 +111,7 @@ export default function ModKycPage() {
         </div>
       ) : kycRequests.length === 0 && !isError ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-16 text-center">
-          <FileCheck className="h-10 w-10 text-slate-200 mb-3" />
+          <FileText className="h-10 w-10 text-slate-200 mb-3" />
           <p className="text-[14px] font-semibold text-slate-900 mb-1">No KYC requests</p>
           <p className="text-[12px] text-slate-400">
             {filter === 'pending' ? 'No pending verifications.' : `No ${filter} requests found.`}

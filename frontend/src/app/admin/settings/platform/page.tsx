@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Gear, Shield, CreditCard, Bell, HardDrive, Globe, FloppyDisk, CircleNotch, CheckCircle, Warning, ToggleLeft, ToggleRight } from '@phosphor-icons/react';
+import { Gear, Shield, CreditCard, Bell, HardDrive, Globe, FloppyDisk, CircleNotch, CheckCircle, Warning, ToggleLeft, ToggleLeft } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -241,7 +241,7 @@ function MaintenanceTab() {
                 {isPending ? (
                   <CircleNotch className="h-4 w-4 animate-spin" />
                 ) : enabled ? (
-                  <ToggleRight className="h-4 w-4" />
+                  <ToggleLeft className="h-4 w-4" />
                 ) : (
                   <ToggleLeft className="h-4 w-4" />
                 )}

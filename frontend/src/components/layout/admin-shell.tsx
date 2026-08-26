@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { SquaresFour, CurrencyDollar, Users, Storefront, Package, ListChecks, Warning, CreditCard, Crown, Megaphone, Image, FileText, Bell, EnvelopeSimple, ChatSquare, ChatCircle, MapPin, Gear, BarChart3, ClipboardList, SignOut, List, X, CaretRight, TrendUp, UserCog, House, Car, Briefcase, Tag, Globe, DownloadSimple, User, Star, DeviceMobile, Shield, SealCheck } from '@phosphor-icons/react';
+import { SquaresFour, CurrencyDollar, Users, Storefront, Package, ListChecks, Warning, CreditCard, Crown, Megaphone, Image, FileText, Bell, EnvelopeSimple, ChatTeardrop, ChatCircle, MapPin, Gear, ChartBar, ClipboardText, SignOut, List, X, CaretRight, TrendUp, UserGear, House, Car, Briefcase, Tag, Globe, DownloadSimple, User, Star, DeviceMobile, Shield, SealCheck } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 import { useAuth } from '@/features/auth/auth-provider';
@@ -35,8 +35,8 @@ const ADMIN_NAV: NavGroup[] = [
   {
     label: 'SALES',
     items: [
-      { icon: BarChart3,       label: "Today's Sales",       href: ROUTES.admin.sales },
-      { icon: BarChart3,       label: 'Sales Analytics',      href: ROUTES.admin.sales },
+      { icon: ChartBar,       label: "Today's Sales",       href: ROUTES.admin.sales },
+      { icon: ChartBar,       label: 'Sales Analytics',      href: ROUTES.admin.sales },
     ],
   },
   {
@@ -76,8 +76,8 @@ const ADMIN_NAV: NavGroup[] = [
   {
     label: 'MODERATORS',
     items: [
-      { icon: UserCog,         label: 'Moderators',          href: ROUTES.admin.moderators },
-      { icon: UserCog,         label: 'Create Moderator',    href: ROUTES.admin.moderators },
+      { icon: UserGear,         label: 'Moderators',          href: ROUTES.admin.moderators },
+      { icon: UserGear,         label: 'Create Moderator',    href: ROUTES.admin.moderators },
     ],
   },
   {
@@ -114,11 +114,11 @@ const ADMIN_NAV: NavGroup[] = [
   {
     label: 'REVIEWS & REPORTS',
     items: [
-      { icon: Shield,          label: 'Moderation Activity', href: '/admin/moderation' },
+      { icon: Shield,          label: 'Moderation Pulse', href: '/admin/moderation' },
       { icon: Star,            label: 'Reviews',             href: ROUTES.admin.reviews },
       { icon: TrendUp,      label: 'Reports',             href: ROUTES.admin.businessReports },
       { icon: Warning,   label: 'Disputes',            href: ROUTES.admin.disputes },
-      { icon: ChatSquare,   label: 'Support Tickets',     href: ROUTES.admin.tickets },
+      { icon: ChatTeardrop,   label: 'Support Tickets',     href: ROUTES.admin.tickets },
     ],
   },
   {
@@ -126,7 +126,7 @@ const ADMIN_NAV: NavGroup[] = [
     items: [
       { icon: ChatCircle,   label: 'Messages',        href: '/admin/messages' },
       { icon: EnvelopeSimple,            label: 'Email Campaigns',     href: ROUTES.admin.emailCampaigns },
-      { icon: ChatSquare,   label: 'SMS Campaigns',       href: ROUTES.admin.smsCampaigns },
+      { icon: ChatTeardrop,   label: 'SMS Campaigns',       href: ROUTES.admin.smsCampaigns },
       { icon: DeviceMobile,      label: 'Push Notifications',  href: ROUTES.admin.pushNotifications },
     ],
   },
@@ -149,7 +149,7 @@ const ADMIN_NAV: NavGroup[] = [
     label: 'REPORTS',
     items: [
       { icon: TrendUp,      label: 'Business Reports',    href: ROUTES.admin.businessReports },
-      { icon: BarChart3,       label: 'Sales Reports',       href: ROUTES.admin.salesReports },
+      { icon: ChartBar,       label: 'Sales Reports',       href: ROUTES.admin.salesReports },
       { icon: CurrencyDollar,      label: 'Revenue Reports',     href: ROUTES.admin.revenueReports },
       { icon: DownloadSimple,        label: 'Export Reports',      href: ROUTES.admin.exportReports },
     ],
@@ -157,8 +157,8 @@ const ADMIN_NAV: NavGroup[] = [
   {
     label: 'AUDIT',
     items: [
-      { icon: Shield,          label: 'Moderation Activity', href: '/admin/moderation' },
-      { icon: ClipboardList,   label: 'Audit Logs',          href: ROUTES.admin.audit },
+      { icon: Shield,          label: 'Moderation Pulse', href: '/admin/moderation' },
+      { icon: ClipboardText,   label: 'Audit Logs',          href: ROUTES.admin.audit },
     ],
   },
   {

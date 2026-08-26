@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Storefront, Package, Star, BarChart3, Plus, MapPin, Trash, Eye } from '@phosphor-icons/react';
+import { Storefront, Package, Star, ChartBar, Plus, MapPin, Trash, Eye } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import { sellerApi, sellerKeys } from '@/lib/api/endpoints/seller';
 import type { ApiResponse } from '@/types/api';
@@ -308,7 +308,7 @@ export default function UserStorePage() {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {[
           { icon: Package,  label: 'All Listings', href: ROUTES.user.listings },
-          { icon: BarChart3, label: 'Analytics',   href: ROUTES.user.storeAnalytics },
+          { icon: ChartBar, label: 'Analytics',   href: ROUTES.user.storeAnalytics },
           { icon: Star,      label: 'Reviews',     href: ROUTES.user.reviews },
         ].map(({ icon: Icon, label, href }) => (
           <Link key={label} href={href}

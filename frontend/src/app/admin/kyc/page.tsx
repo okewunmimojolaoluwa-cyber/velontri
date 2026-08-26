@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SealCheck, FileText, ShieldOff } from '@phosphor-icons/react';
+import { SealCheck, FileText, ShieldSlash } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 

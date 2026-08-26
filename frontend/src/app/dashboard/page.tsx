@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, ChatCircle, Heart, ShoppingBag, Storefront, Package, ArrowRight, Star, Sparkle, CaretRight, BarChart3, Gear, CreditCard } from '@phosphor-icons/react';
+import { Plus, ChatCircle, Heart, ShoppingBag, Storefront, Package, ArrowRight, Star, Sparkle, CaretRight, ChartBar, Gear, CreditCard } from '@phosphor-icons/react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
@@ -76,7 +76,7 @@ export default function DashboardPage() {
     { icon: ShoppingBag,   label: 'Browse',       href: ROUTES.listings,            primary: false },
     { icon: ChatCircle, label: 'Messages',     href: ROUTES.user.messages,       primary: false },
     { icon: Storefront,         label: 'My Storefront',     href: ROUTES.user.store,          primary: false },
-    { icon: BarChart3,     label: 'Analytics',    href: ROUTES.user.storeAnalytics, primary: false },
+    { icon: ChartBar,     label: 'Analytics',    href: ROUTES.user.storeAnalytics, primary: false },
     { icon: CreditCard,    label: 'Plans',        href: ROUTES.user.subscription,   primary: false },
     { icon: Heart,         label: 'Saved',        href: ROUTES.user.saved,          primary: false },
     { icon: Gear,      label: 'Gear',     href: ROUTES.user.settings,       primary: false },
@@ -172,11 +172,11 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Activity chart ─────────────────────────────── */}
+      {/* ── Pulse chart ─────────────────────────────── */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-[14px] font-bold text-slate-900">Activity this week</h2>
+            <h2 className="text-[14px] font-bold text-slate-900">Pulse this week</h2>
             <p className="text-[11px] text-slate-400 mt-0.5">Views on your listings</p>
           </div>
           <Link href={ROUTES.user.storeAnalytics}

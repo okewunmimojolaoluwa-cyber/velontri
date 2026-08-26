@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Star, MessageSquarePlus, ShoppingBag, Package } from '@phosphor-icons/react';
+import { Star, ChatCircleDots, ShoppingBag, Package } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
@@ -147,7 +147,7 @@ export default function UserReviewsPage() {
             {filter === 'given' ? (
               <>
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 mb-4">
-                  <MessageSquarePlus className="h-7 w-7 text-indigo-300" />
+                  <ChatCircleDots className="h-7 w-7 text-indigo-300" />
                 </div>
                 <p className="text-[15px] font-bold text-slate-900 mb-1">
                   No reviews given yet

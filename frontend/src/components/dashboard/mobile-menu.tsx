@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { X, SquaresFour, Package, ShoppingCart, BookmarkSimple, Wallet, ShieldCheck, Storefront, BarChart3, ChatCircle, Bell, User, Lock, Gear, Question, SignOut } from '@phosphor-icons/react';
+import { X, SquaresFour, Package, ShoppingCart, BookmarkSimple, Wallet, ShieldCheck, Storefront, ChartBar, ChatCircle, Bell, User, Lock, Gear, Question, SignOut } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 import { useAuth } from '@/features/auth/auth-provider';
@@ -21,7 +21,7 @@ const NAV_ITEMS = [
   { icon: Wallet, label: 'Wallet', href: ROUTES.user.wallet },
   { icon: ShieldCheck, label: 'Escrow', href: ROUTES.user.escrow },
   { icon: Storefront, label: 'Storefront', href: ROUTES.user.store },
-  { icon: BarChart3, label: 'Analytics', href: ROUTES.user.storeAnalytics },
+  { icon: ChartBar, label: 'Analytics', href: ROUTES.user.storeAnalytics },
   { icon: ChatCircle, label: 'Messages', href: ROUTES.user.messages },
   { icon: Bell, label: 'Notifications', href: ROUTES.user.notifications },
   { icon: User, label: 'Profile', href: ROUTES.user.profile },

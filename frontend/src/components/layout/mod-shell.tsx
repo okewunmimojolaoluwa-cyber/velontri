@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { SquaresFour, ListChecks, FileCheck, Flag, Warning, Users, Storefront, ChatSquare, Megaphone, SignOut, List, X, Lightning, Star, FileText, User, Gear, SealCheck } from '@phosphor-icons/react';
+import { SquaresFour, ListChecks, FileText, Flag, Warning, Users, Storefront, ChatTeardrop, Megaphone, SignOut, List, X, Lightning, Star, FileText, User, Gear, SealCheck } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 import { useAuth } from '@/features/auth/auth-provider';
@@ -17,13 +17,13 @@ const MOD_NAV = [
   { icon: SquaresFour, label: 'Dashboard',           href: ROUTES.mod.overview },
   { icon: ListChecks,      label: 'Pending Listings',   href: ROUTES.mod.pendingListings },
   { icon: Flag,            label: 'Reported Listings',  href: ROUTES.mod.reportedListings },
-  { icon: FileCheck,       label: 'Pending KYC',         href: ROUTES.mod.kyc },
+  { icon: FileText,       label: 'Pending KYC',         href: ROUTES.mod.kyc },
   { icon: SealCheck,      label: 'Seller Verification', href: '/mod/verification' },
   { icon: Users,           label: 'Users',              href: ROUTES.mod.users },
   { icon: Storefront,           label: 'Stores',             href: ROUTES.mod.stores },
   { icon: Star,            label: 'Reported Reviews',   href: ROUTES.mod.reviews },
   { icon: Warning,   label: 'Disputes',           href: ROUTES.mod.disputes },
-  { icon: ChatSquare,   label: 'Support Tickets',    href: ROUTES.mod.tickets },
+  { icon: ChatTeardrop,   label: 'Support Tickets',    href: ROUTES.mod.tickets },
   { icon: Megaphone,       label: 'Announcements',      href: ROUTES.mod.announcements },
   { icon: FileText,        label: 'Moderation Logs',    href: ROUTES.mod.logs },
   { icon: User,            label: 'Profile',             href: ROUTES.mod.profile },

@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useState } from 'react';
-import { MagnifyingGlass, Users, ShieldOff, ShieldCheck, ChatCircle, CheckCircle, WarningCircle, X, CalendarBlank, Phone, EnvelopeSimple, Globe } from '@phosphor-icons/react';
+import { MagnifyingGlass, Users, ShieldSlash, ShieldCheck, ChatCircle, CheckCircle, WarningCircle, X, CalendarBlank, Phone, EnvelopeSimple, Globe } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
@@ -302,7 +302,7 @@ export default function ModUsersPage() {
                     {user.id === session.userId ? 'You'
                       : user.roles.includes('moderator') ? 'Mod'
                       : user.is_active
-                      ? <><ShieldOff className="h-3.5 w-3.5" /> Suspend</>
+                      ? <><ShieldSlash className="h-3.5 w-3.5" /> Suspend</>
                       : <><ShieldCheck className="h-3.5 w-3.5" /> Restore</>}
                   </button>
                 </div>
@@ -367,7 +367,7 @@ export default function ModUsersPage() {
                     }`}>
                     {user.id === session.userId ? 'You'
                       : user.roles.includes('moderator') ? 'Mod'
-                      : user.is_active ? <><ShieldOff className="h-3 w-3" /> Suspend</>
+                      : user.is_active ? <><ShieldSlash className="h-3 w-3" /> Suspend</>
                       : <><ShieldCheck className="h-3 w-3" /> Restore</>}
                   </button>
                 </li>

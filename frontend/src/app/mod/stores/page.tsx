@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useState } from 'react';
-import { MagnifyingGlass, Storefront, Package, ShieldOff, ShieldCheck, WarningCircle } from '@phosphor-icons/react';
+import { MagnifyingGlass, Storefront, Package, ShieldSlash, ShieldCheck, WarningCircle } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
@@ -229,7 +229,7 @@ export default function ModStoresPage() {
                     {isSuspended ? (
                       <><ShieldCheck className="h-3 w-3" /> Restore</>
                     ) : (
-                      <><ShieldOff className="h-3 w-3" /> Suspend</>
+                      <><ShieldSlash className="h-3 w-3" /> Suspend</>
                     )}
                   </button>
                 </div>

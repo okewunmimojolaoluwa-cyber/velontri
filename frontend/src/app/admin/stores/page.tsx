@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Storefront, Package, MagnifyingGlass, ShieldOff, ShieldCheck } from '@phosphor-icons/react';
+import { Storefront, Package, MagnifyingGlass, ShieldSlash, ShieldCheck } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -179,7 +179,7 @@ export default function AdminStoresPage() {
                         : 'border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
                     }`}>
                     {seller.status === 'active'
-                      ? <><ShieldOff className="h-3.5 w-3.5" /> Suspend Seller</>
+                      ? <><ShieldSlash className="h-3.5 w-3.5" /> Suspend Seller</>
                       : <><ShieldCheck className="h-3.5 w-3.5" /> Restore Seller</>}
                   </button>
                 </div>
@@ -218,7 +218,7 @@ export default function AdminStoresPage() {
                         : 'border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
                     }`}>
                     {seller.status === 'active'
-                      ? <><ShieldOff className="h-3 w-3" /> Suspend</>
+                      ? <><ShieldSlash className="h-3 w-3" /> Suspend</>
                       : <><ShieldCheck className="h-3 w-3" /> Restore</>}
                   </button>
                 </div>

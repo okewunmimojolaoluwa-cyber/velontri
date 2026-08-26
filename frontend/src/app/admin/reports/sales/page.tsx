@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { BarChart3, DownloadSimple, ChartBar } from '@phosphor-icons/react';
+import { ChartBar, DownloadSimple, ChartBar } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -51,7 +51,7 @@ export default function SalesReportsPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <BarChart3 className="h-6 w-6 text-indigo-600" /> Sales Reports
+            <ChartBar className="h-6 w-6 text-indigo-600" /> Sales Reports
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">Monthly sales breakdown across all categories</p>
         </div>

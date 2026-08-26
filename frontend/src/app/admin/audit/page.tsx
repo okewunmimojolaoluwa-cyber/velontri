@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ClipboardList, MagnifyingGlass, User, Shield, Gear, Cpu, CheckCircle, XCircle, CalendarBlank, CaretLeft, CaretRight, ArrowClockwise } from '@phosphor-icons/react';
+import { ClipboardText, MagnifyingGlass, User, Shield, Gear, Cpu, CheckCircle, XCircle, CalendarBlank, CaretLeft, CaretRight, ArrowClockwise } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 
@@ -26,7 +26,7 @@ interface AuditEntry {
 type FilterType = 'all' | 'user' | 'admin' | 'system';
 
 const FILTERS: { id: FilterType; label: string; icon: typeof User }[] = [
-  { id: 'all',    label: 'All',    icon: ClipboardList },
+  { id: 'all',    label: 'All',    icon: ClipboardText },
   { id: 'user',   label: 'Users',  icon: User          },
   { id: 'admin',  label: 'Admin',  icon: Shield        },
   { id: 'system', label: 'System', icon: Cpu           },
@@ -140,7 +140,7 @@ export default function AdminAuditPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <ClipboardList className="h-6 w-6 text-indigo-600 flex-shrink-0" /> Audit Logs
+            <ClipboardText className="h-6 w-6 text-indigo-600 flex-shrink-0" /> Audit Logs
           </h1>
           <p className="text-[13px] text-slate-500 mt-0.5">Track all system activities and changes</p>
         </div>
@@ -237,7 +237,7 @@ export default function AdminAuditPage() {
       {!isLoading && logs.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center
           rounded-2xl border-2 border-dashed border-slate-200 bg-white">
-          <ClipboardList className="h-12 w-12 text-slate-200 mb-3" />
+          <ClipboardText className="h-12 w-12 text-slate-200 mb-3" />
           <p className="text-[15px] font-semibold text-slate-900 mb-1">No audit logs found</p>
           <p className="text-[13px] text-slate-400 max-w-xs">
             {committed

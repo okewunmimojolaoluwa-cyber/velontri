@@ -3,7 +3,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { SquaresFour, PlusCircle, Package, Activity, BookmarkSimple, Storefront, BarChart3, ChatCircle, Bell, User, Gear, Lock, Question, SignOut, List, X, CreditCard, Warning, SealCheck } from '@phosphor-icons/react';
+import { SquaresFour, PlusCircle, Package, Pulse, BookmarkSimple, Storefront, ChartBar, ChatCircle, Bell, User, Gear, Lock, Question, SignOut, List, X, CreditCard, Warning, SealCheck } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 import { useAuth } from '@/features/auth/auth-provider';
@@ -26,7 +26,7 @@ const NAV = [
     label: 'MARKETPLACE',
     items: [
       { icon: Package,         label: 'My Listings',  href: ROUTES.user.listings },
-      { icon: Activity,        label: 'Activity',     href: ROUTES.user.orders },
+      { icon: Pulse,        label: 'Pulse',     href: ROUTES.user.orders },
       { icon: BookmarkSimple,        label: 'Saved',        href: ROUTES.user.saved },
     ],
   },
@@ -34,7 +34,7 @@ const NAV = [
     label: 'MY STORE',
     items: [
       { icon: Storefront,           label: 'Storefront',        href: ROUTES.user.store },
-      { icon: BarChart3,       label: 'Analytics',    href: ROUTES.user.storeAnalytics },
+      { icon: ChartBar,       label: 'Analytics',    href: ROUTES.user.storeAnalytics },
     ],
   },
   {

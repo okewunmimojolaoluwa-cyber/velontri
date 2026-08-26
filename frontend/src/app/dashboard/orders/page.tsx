@@ -70,7 +70,7 @@ export default function UserOrdersPage() {
       {/* Header */}
       <div>
         <h1 className="text-[1.4rem] font-black text-slate-900 tracking-tight">
-          Activity
+          Pulse
         </h1>
         <p className="text-[12px] text-slate-400 mt-0.5">
           Your saved listings and conversations

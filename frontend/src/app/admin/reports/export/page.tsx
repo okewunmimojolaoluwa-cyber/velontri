@@ -1,13 +1,13 @@
 ﻿'use client';
 
 import { useState } from 'react';
-import { DownloadSimple, FileText, BarChart3, CurrencyDollar, Users, Package } from '@phosphor-icons/react';
+import { DownloadSimple, FileText, ChartBar, CurrencyDollar, Users, Package } from '@phosphor-icons/react';
 
 const REPORTS = [
   { id: 'users',        label: 'Users Report',         desc: 'All registered users with roles and activity', icon: Users,     format: ['CSV', 'Excel'] },
   { id: 'listings',     label: 'Listings Report',       desc: 'All listings with status, price and category', icon: Package,   format: ['CSV', 'Excel'] },
   { id: 'revenue',      label: 'Revenue Report',        desc: 'Revenue by stream, date and category',         icon: CurrencyDollar,format: ['CSV', 'Excel', 'PDF'] },
-  { id: 'orders',       label: 'Orders Report',         desc: 'Transaction history with amounts and status',  icon: BarChart3, format: ['CSV', 'Excel'] },
+  { id: 'orders',       label: 'Orders Report',         desc: 'Transaction history with amounts and status',  icon: ChartBar, format: ['CSV', 'Excel'] },
   { id: 'kyc',          label: 'KYC Report',            desc: 'Verification status for all users',            icon: FileText,  format: ['CSV', 'Excel'] },
   { id: 'audit',        label: 'Audit Log Export',      desc: 'Complete platform activity audit trail',       icon: FileText,  format: ['CSV', 'Excel'] },
 ];

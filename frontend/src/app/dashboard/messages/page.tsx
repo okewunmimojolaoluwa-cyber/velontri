@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChatCircle, PaperPlaneRight, MagnifyingGlass, Inbox, ArrowClockwise, ArrowLeft, User } from '@phosphor-icons/react';
+import { ChatCircle, PaperPlaneRight, MagnifyingGlass, Tray, ArrowClockwise, ArrowLeft, User } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 import { useAuth } from '@/features/auth/auth-provider';
@@ -196,7 +196,7 @@ export default function UserMessagesPage() {
               </div>
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-                <Inbox className="h-10 w-10 text-slate-200 mb-3" />
+                <Tray className="h-10 w-10 text-slate-200 mb-3" />
                 <p className="text-[14px] font-semibold text-slate-900">No conversations yet</p>
                 <p className="text-[12px] text-slate-400 mt-1 leading-relaxed">
                   Message a seller from any listing to start a conversation.
@@ -360,7 +360,7 @@ export default function UserMessagesPage() {
               </div>
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-                <Inbox className="h-10 w-10 text-slate-200 mb-3" />
+                <Tray className="h-10 w-10 text-slate-200 mb-3" />
                 <p className="text-[13px] font-semibold text-slate-500">No conversations yet</p>
                 <p className="text-[12px] text-slate-400 mt-1">Message a seller from any listing.</p>
               </div>

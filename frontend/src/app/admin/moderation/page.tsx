@@ -90,7 +90,7 @@ export default function AdminModerationPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight flex items-center gap-2">
-          <Shield className="h-6 w-6 text-indigo-600" /> Moderation Activity
+          <Shield className="h-6 w-6 text-indigo-600" /> Moderation Pulse
         </h1>
         <p className="text-[13px] text-slate-400 mt-0.5">
           {meta?.total != null ? `${meta.total.toLocaleString()} actions recorded` : 'Every moderator action, permanently logged'}

@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { Bell, Package, ChatCircle, CurrencyDollar, ShieldCheck, CheckCheck, CheckCircle, XCircle, ArrowSquareOut, User } from '@phosphor-icons/react';
+import { Bell, Package, ChatCircle, CurrencyDollar, ShieldCheck, ChecksFat, CheckCircle, XCircle, ArrowSquareOut, User } from '@phosphor-icons/react';
 import { useNotifications } from '@/lib/hooks/use-notifications';
 import type { Notification } from '@/lib/hooks/use-notifications';
 import Link from 'next/link';
@@ -54,7 +54,7 @@ export default function UserNotificationsPage() {
             onClick={() => markAllRead()}
             className="flex items-center gap-1.5 text-[13px] font-semibold text-indigo-600 hover:underline"
           >
-            <CheckCheck className="h-4 w-4" /> Mark all read
+            <ChecksFat className="h-4 w-4" /> Mark all read
           </button>
         )}
       </div>
