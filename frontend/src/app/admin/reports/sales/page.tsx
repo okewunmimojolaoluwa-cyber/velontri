@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { ChartBar, DownloadSimple, ChartBar } from '@phosphor-icons/react';
+import { ChartBar, DownloadSimple } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 

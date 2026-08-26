@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { SquaresFour, ListChecks, FileText, Flag, Warning, Users, Storefront, ChatTeardrop, Megaphone, SignOut, List, X, Lightning, Star, FileText, User, Gear, SealCheck } from '@phosphor-icons/react';
+import { SquaresFour, ListChecks, FileText, Flag, Warning, Users, Storefront, ChatTeardrop, Megaphone, SignOut, List, X, Lightning, Star, User, Gear, SealCheck } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 import { useAuth } from '@/features/auth/auth-provider';
