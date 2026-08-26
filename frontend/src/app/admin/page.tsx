@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CurrencyDollar, Users, Package, Warning, FileCheck, TrendUp, TrendDown, BarChart3, ShieldCheck, Crown, Lightning, Activity, CaretRight, Storefront, ChartBar, CreditCard, WrenchIcon, ToggleRight } from '@phosphor-icons/react';
+import { CurrencyDollar, Users, Package, Warning, ClipboardText, TrendUp, TrendDown, ChartBar, ShieldCheck, Crown, Lightning, Pulse, CaretRight, Storefront, CreditCard, Wrench, ToggleLeft } from '@phosphor-icons/react';
 import {
   AreaChart, Area,
-  ChartBar, Bar,
+  BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { ROUTES } from '@/config/routes';
@@ -110,7 +110,7 @@ const QUICK_LINKS = [
   { icon: Package,       label: 'Review Listings', href: ROUTES.admin.listings,      color: '#D97706' },
   { icon: CreditCard,    label: 'Payments',        href: ROUTES.admin.payments,      color: '#059669' },
   { icon: Crown,         label: 'Subscriptions',   href: ROUTES.admin.subscriptions, color: '#7C3AED' },
-  { icon: BarChart3,     label: 'View Reports',    href: ROUTES.admin.reports,       color: '#0369A1' },
+  { icon: ChartBar,     label: 'View Reports',    href: ROUTES.admin.reports,       color: '#0369A1' },
 ];
 
 const EVENT_DOT: Record<string, string> = {
@@ -199,7 +199,7 @@ export default function AdminOverviewPage() {
         { label: 'Registered Users',  value: ov.active_users.toLocaleString(),         change: undefined, icon: Users,         color: '#4F46E5', bg: '#eef2ff', href: ROUTES.admin.users },
         { label: 'New Users Today',   value: (ov.new_users_today ?? 0).toLocaleString(), change: undefined, icon: Lightning,           color: '#7C3AED', bg: '#f5f3ff', href: ROUTES.admin.users },
         { label: 'Active Listings',   value: (ov.active_listings ?? 0).toLocaleString(), change: undefined, icon: Package,       color: '#059669', bg: '#ecfdf5', href: ROUTES.admin.listings },
-        { label: 'Pending Review',    value: ov.pending_listings.toLocaleString(),       change: undefined, icon: FileCheck,     color: '#D97706', bg: '#fffbeb', href: ROUTES.admin.listings },
+        { label: 'Pending Review',    value: ov.pending_listings.toLocaleString(),       change: undefined, icon: ClipboardText,  color: '#D97706', bg: '#fffbeb', href: ROUTES.admin.listings },
         { label: 'Open Disputes',     value: ov.open_disputes.toLocaleString(),          change: undefined, icon: Warning, color: '#DC2626', bg: '#fef2f2', href: ROUTES.admin.disputes },
         { label: 'Pending KYC',       value: ov.pending_kyc.toLocaleString(),            change: undefined, icon: ShieldCheck,   color: '#0369A1', bg: '#e0f2fe', href: ROUTES.admin.kyc },
         { label: 'Messages Sent',     value: (ov.total_messages ?? 0).toLocaleString(),  change: undefined, icon: Crown,         color: '#059669', bg: '#ecfdf5', href: ROUTES.admin.users },
@@ -230,7 +230,7 @@ export default function AdminOverviewPage() {
       {maintenanceOn && (
         <div className="flex items-center gap-4 rounded-2xl border-2 border-amber-300 bg-amber-50 px-5 py-4">
           <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-100">
-            <WrenchIcon className="h-5 w-5 text-amber-600" />
+            <Wrench className="h-5 w-5 text-amber-600" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[14px] font-black text-amber-900">Maintenance Mode is ON</p>
@@ -245,7 +245,7 @@ export default function AdminOverviewPage() {
               className="flex items-center gap-2 h-9 rounded-xl bg-amber-600 px-4 text-[12px]
                 font-bold text-white hover:bg-amber-700 transition-colors disabled:opacity-60"
             >
-              <ToggleRight className="h-4 w-4" />
+              <ToggleLeft className="h-4 w-4" />
               {disabling ? 'Disabling…' : 'Disable Now'}
             </button>
             <Link
@@ -318,8 +318,8 @@ export default function AdminOverviewPage() {
         {/* Live activity */}
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
-            <Activity className="h-4 w-4 text-indigo-600" />
-            <h2 className="text-[14px] font-bold text-slate-900">Live Activity</h2>
+            <Pulse className="h-4 w-4 text-indigo-600" />
+            <h2 className="text-[14px] font-bold text-slate-900">Live Pulse</h2>
             <span className="ml-auto flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Real-time
@@ -339,7 +339,7 @@ export default function AdminOverviewPage() {
             </div>
           ) : liveEvents.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center px-5">
-              <Activity className="h-8 w-8 text-slate-200 mb-2" />
+              <Pulse className="h-8 w-8 text-slate-200 mb-2" />
               <p className="text-[12px] text-slate-400">No recent activity</p>
               <p className="text-[11px] text-slate-300 mt-1">Events will appear here as they happen</p>
             </div>
@@ -382,13 +382,13 @@ export default function AdminOverviewPage() {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <ChartBar data={userChart} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
+                <BarChart data={userChart} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                   <XAxis dataKey="day" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 12 }} />
                   <Bar dataKey="new_users" fill="#4F46E5" radius={[6, 6, 0, 0]} maxBarSize={40} />
-                </ChartBar>
+                </BarChart>
               </ResponsiveContainer>
             )}
           </div>

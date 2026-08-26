@@ -6,7 +6,7 @@ import {
   AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { Users, Package, CurrencyDollar, Warning, Shield, Activity, TrendUp, HardDrive, ArrowRight, ChartBar } from '@phosphor-icons/react';
+import { Users, Package, CurrencyDollar, Warning, Shield, Pulse, TrendUp, HardDrive, ArrowRight, ChartBar } from '@phosphor-icons/react';
 import { StatCard } from '@/components/ui/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -312,8 +312,8 @@ export default function AdminDashboardPage() {
           <div className="card-premium overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/60">
               <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-primary" />
-                <h2 className="font-semibold">Live Activity</h2>
+                <Pulse className="h-4 w-4 text-primary" />
+                <h2 className="font-semibold">Live Pulse</h2>
               </div>
               <Badge variant="success">Real-time</Badge>
             </div>
@@ -331,7 +331,7 @@ export default function AdminDashboardPage() {
               </div>
             ) : events.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center px-6">
-                <Activity className="h-8 w-8 text-muted-foreground/20 mb-2" />
+                <Pulse className="h-8 w-8 text-muted-foreground/20 mb-2" />
                 <p className="text-sm font-medium">No recent activity</p>
                 <p className="text-xs text-muted-foreground mt-1">Events will appear here as they happen</p>
               </div>
