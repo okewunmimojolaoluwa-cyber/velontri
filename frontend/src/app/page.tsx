@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { MagnifyingGlass, CaretDown, CaretRight, MapPin, Shield, SealCheck, Lightning, TrendUp, Sparkle, Star, Quotes, List, X } from '@phosphor-icons/react';
+import { MagnifyingGlass, CaretDown, CaretRight, MapPin, Shield, SealCheck, Lightning, TrendUp, Sparkle, Star, Quotes, List, X, ShoppingBag, Car, House, DeviceMobile, TShirt, Briefcase, Wrench } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { listingsApi, listingKeys } from '@/lib/api/endpoints/listings';
 import { ROUTES } from '@/config/routes';
@@ -436,15 +436,15 @@ export default function HomePage() {
 
               {/* Category pills — navigate to filtered listings */}
               <div className="mb-8 flex flex-wrap gap-2">
-                {[
-                  { label: 'All',          href: '/listings',                        emoji: '🛍️' },
-                  { label: 'Vehicles',     href: '/listings?listing_type=vehicle',   emoji: '🚗' },
-                  { label: 'Property',     href: '/listings?listing_type=property',  emoji: '🏠' },
-                  { label: 'Electronics',  href: '/listings?category=Electronics',   emoji: '📱' },
-                  { label: 'Fashion',      href: '/listings?category=Fashion',       emoji: '👗' },
-                  { label: 'Jobs',         href: '/listings?listing_type=job',       emoji: '💼' },
-                  { label: 'Services',     href: '/listings?listing_type=service',   emoji: '🔧' },
-                ].map(({ label, href, emoji }) => (
+                {([
+                  { label: 'All',          href: '/listings',                        Icon: ShoppingBag },
+                  { label: 'Vehicles',     href: '/listings?listing_type=vehicle',   Icon: Car },
+                  { label: 'Property',     href: '/listings?listing_type=property',  Icon: House },
+                  { label: 'Electronics',  href: '/listings?category=Electronics',   Icon: DeviceMobile },
+                  { label: 'Fashion',      href: '/listings?category=Fashion',       Icon: TShirt },
+                  { label: 'Jobs',         href: '/listings?listing_type=job',       Icon: Briefcase },
+                  { label: 'Services',     href: '/listings?listing_type=service',   Icon: Wrench },
+                ] as const).map(({ label, href, Icon }) => (
                   <Link
                     key={label}
                     href={href}
@@ -452,7 +452,7 @@ export default function HomePage() {
                       border-slate-200 bg-white text-slate-600
                       hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700
                       active:scale-[0.97]">
-                    <span>{emoji}</span>
+                    <Icon className="h-3.5 w-3.5 flex-shrink-0" />
                     {label}
                   </Link>
                 ))}
