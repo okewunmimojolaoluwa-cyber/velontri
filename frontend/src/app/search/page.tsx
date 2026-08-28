@@ -362,11 +362,11 @@ function SearchInner() {
     page,
     page_size: 24,
     sort_by: sort,
-    ...(category   ? { category }   : {}),
-    ...(condition  ? { condition }  : {}),
+    ...(category   ? { category }             : {}),
+    ...(condition  ? { condition }             : {}),
     ...(minPrice   ? { price_min: Number(minPrice) } : {}),
     ...(maxPrice   ? { price_max: Number(maxPrice) } : {}),
-    ...(cityParam  ? { city: cityParam } : {}),
+    ...(cityParam  ? { city: cityParam }       : {}),
   };
 
   const { data, isLoading, isError, isFetching } = useQuery({
