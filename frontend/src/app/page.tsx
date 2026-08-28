@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { MagnifyingGlass, CaretDown, CaretRight, MapPin, Shield, SealCheck, Lightning, TrendUp, Sparkle, Star, Quotes, List, X, ShoppingBag, Car, House, DeviceMobile, TShirt, Briefcase, Wrench } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import { ListingImage } from '@/components/ui/listing-image';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { VelontriLogo } from '@/components/ui/velontri-logo';
 import { AutoScrollRow } from '@/components/marketplace/auto-scroll-row';
+import { apiClient } from '@/lib/api/client';
 import { ComingSoonModal } from '@/components/ui/coming-soon-modal';
 
 /* ── Scroll reveal ─────────────────────────────────── */
@@ -166,12 +167,16 @@ function CardSkeleton() {
 ═══════════════════════════════════════════════════ */
 export default function HomePage() {
   useReveal();
-  const [query,    setQuery]    = useState('');
-  const [cat,      setCat]      = useState('All');
-  const [open,     setOpen]     = useState(false);
-  const [appStore, setAppStore] = useState<'google' | 'apple' | null>(null);
-  const [location, setLocation] = useState('');
-  const [locOpen,  setLocOpen]  = useState(false);
+  const [query,      setQuery]      = useState('');
+  const [cat,        setCat]        = useState('All');
+  const [open,       setOpen]       = useState(false);
+  const [appStore,   setAppStore]   = useState<'google' | 'apple' | null>(null);
+  const [location,   setLocation]   = useState('');
+  const [locOpen,    setLocOpen]    = useState(false);
+  const [acOpen,     setAcOpen]     = useState(false);
+  const [acSugg,     setAcSugg]     = useState<string[]>([]);
+  const acTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchWrapRef = useRef<HTMLDivElement>(null);
 
   // Read homepage section visibility from admin settings
   const [sectionVis, setSectionVis] = useState<Record<string, boolean>>({});
@@ -234,6 +239,32 @@ export default function HomePage() {
     document.addEventListener('mousedown', fn);
     return () => document.removeEventListener('mousedown', fn);
   }, [locOpen]);
+
+  /* close autocomplete on outside click */
+  useEffect(() => {
+    if (!acOpen) return;
+    const fn = (e: MouseEvent) => {
+      if (searchWrapRef.current && !searchWrapRef.current.contains(e.target as Node)) {
+        setAcOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', fn);
+    return () => document.removeEventListener('mousedown', fn);
+  }, [acOpen]);
+
+  /* debounced autocomplete fetch */
+  useEffect(() => {
+    if (acTimer.current) clearTimeout(acTimer.current);
+    const trimmed = query.trim();
+    if (trimmed.length < 2) { setAcSugg([]); return; }
+    acTimer.current = setTimeout(async () => {
+      try {
+        const res = await apiClient.get('/search/autocomplete', { params: { q: trimmed } });
+        setAcSugg((res as any)?.data?.data?.suggestions ?? []);
+      } catch { setAcSugg([]); }
+    }, 280);
+    return () => { if (acTimer.current) clearTimeout(acTimer.current); };
+  }, [query]);
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#F8F9FA] text-slate-900">
@@ -367,71 +398,97 @@ export default function HomePage() {
               </p>
 
               {/* Search bar */}
-              <div className="mb-4 flex items-stretch overflow-hidden rounded-xl border-2 border-slate-200
-                bg-white shadow-[0_4px_20px_rgba(0,0,0,0.07)] transition-colors focus-within:border-indigo-400">
+              <div ref={searchWrapRef} className="mb-4 relative">
+                <div className="flex items-stretch overflow-hidden rounded-xl border-2 border-slate-200
+                  bg-white shadow-[0_4px_20px_rgba(0,0,0,0.07)] transition-colors focus-within:border-indigo-400">
 
-                {/* Location selector */}
-                <div className="relative hidden sm:flex" data-loc-picker>
-                  <button
-                    type="button"
-                    onClick={() => setLocOpen(v => !v)}
-                    className="flex items-center gap-1.5 border-r border-slate-200 px-3.5
-                      text-slate-500 hover:bg-slate-50 transition-colors whitespace-nowrap text-[12px]
-                      min-w-[110px] max-w-[140px] truncate"
-                  >
-                    <MapPin size={13} className="flex-shrink-0 text-indigo-500" />
-                    <span className="truncate">
-                      {location || 'All Africa'}
-                    </span>
-                    <CaretDown size={12} className="flex-shrink-0 text-slate-300 ml-auto" />
-                  </button>
-                  {locOpen && (
-                    <div
-                      className="absolute left-0 top-full z-50 mt-1 w-56 max-h-72 overflow-y-auto
-                        rounded-xl border border-slate-200 bg-white shadow-xl"
-                      style={{ scrollbarWidth: 'thin' }}
+                  {/* Location selector */}
+                  <div className="relative hidden sm:flex" data-loc-picker>
+                    <button
+                      type="button"
+                      onClick={() => setLocOpen(v => !v)}
+                      className="flex items-center gap-1.5 border-r border-slate-200 px-3.5
+                        text-slate-500 hover:bg-slate-50 transition-colors whitespace-nowrap text-[12px]
+                        min-w-[110px] max-w-[140px] truncate"
                     >
-                      {AFRICA_LOCATIONS.map(loc => (
-                        <button
-                          key={loc.value}
-                          type="button"
-                          onClick={() => { setLocation(loc.value); setLocOpen(false); }}
-                          className={`w-full text-left px-4 py-2.5 text-[13px] transition-colors
-                            hover:bg-indigo-50 hover:text-indigo-700
-                            ${location === loc.value ? 'bg-indigo-50 font-semibold text-indigo-700' : 'text-slate-700'}`}
-                        >
-                          {loc.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                      <MapPin size={13} className="flex-shrink-0 text-indigo-500" />
+                      <span className="truncate">{location || 'All Africa'}</span>
+                      <CaretDown size={12} className="flex-shrink-0 text-slate-300 ml-auto" />
+                    </button>
+                    {locOpen && (
+                      <div className="absolute left-0 top-full z-50 mt-1 w-56 max-h-72 overflow-y-auto
+                        rounded-xl border border-slate-200 bg-white shadow-xl"
+                        style={{ scrollbarWidth: 'thin' }}>
+                        {AFRICA_LOCATIONS.map(loc => (
+                          <button key={loc.value} type="button"
+                            onClick={() => { setLocation(loc.value); setLocOpen(false); }}
+                            className={`w-full text-left px-4 py-2.5 text-[13px] transition-colors
+                              hover:bg-indigo-50 hover:text-indigo-700
+                              ${location === loc.value ? 'bg-indigo-50 font-semibold text-indigo-700' : 'text-slate-700'}`}>
+                            {loc.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={e => { setQuery(e.target.value); setAcOpen(true); }}
+                    onFocus={() => { if (query.trim().length >= 2) setAcOpen(true); }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && query.trim()) {
+                        setAcOpen(false);
+                        const loc = location ? `&city=${encodeURIComponent(location)}` : '';
+                        window.location.href = `/search?q=${encodeURIComponent(query.trim())}${loc}`;
+                      }
+                      if (e.key === 'Escape') setAcOpen(false);
+                    }}
+                    placeholder="Search cars, phones, properties, jobs…"
+                    className="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-[14px] text-slate-800
+                      placeholder-slate-400 outline-none"
+                  />
+                  <Link
+                    href={
+                      query.trim()
+                        ? `/search?q=${encodeURIComponent(query.trim())}${location ? `&city=${encodeURIComponent(location)}` : ''}`
+                        : `${ROUTES.search}${location ? `?city=${encodeURIComponent(location)}` : ''}`
+                    }
+                    onClick={() => setAcOpen(false)}
+                    className="m-1.5 flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600
+                      px-4 text-[13px] font-bold text-white no-underline transition-colors hover:bg-indigo-700">
+                    <MagnifyingGlass size={13} />
+                    <span className="hidden sm:inline">Search</span>
+                  </Link>
                 </div>
 
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && query.trim()) {
-                      const loc = location ? `&city=${encodeURIComponent(location)}` : '';
-                      window.location.href = `/search?q=${encodeURIComponent(query.trim())}${loc}`;
-                    }
-                  }}
-                  placeholder="Search cars, phones, properties, jobs…"
-                  className="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-[14px] text-slate-800
-                    placeholder-slate-400 outline-none"
-                />
-                <Link
-                  href={
-                    query.trim()
-                      ? `/search?q=${encodeURIComponent(query.trim())}${location ? `&city=${encodeURIComponent(location)}` : ''}`
-                      : `${ROUTES.search}${location ? `?city=${encodeURIComponent(location)}` : ''}`
-                  }
-                  className="m-1.5 flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600
-                    px-4 text-[13px] font-bold text-white no-underline transition-colors hover:bg-indigo-700">
-                  <MagnifyingGlass size={13} />
-                  <span className="hidden sm:inline">Search</span>
-                </Link>
+                {/* Autocomplete dropdown */}
+                {acOpen && acSugg.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 z-50 overflow-hidden rounded-2xl
+                    border border-slate-200 bg-white shadow-xl">
+                    {acSugg.slice(0, 8).map(s => (
+                      <button key={s}
+                        onMouseDown={e => e.preventDefault()} // prevent input blur before click
+                        onClick={() => {
+                          setQuery(s);
+                          setAcOpen(false);
+                          const loc = location ? `&city=${encodeURIComponent(location)}` : '';
+                          window.location.href = `/search?q=${encodeURIComponent(s)}${loc}`;
+                        }}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left text-[13px]
+                          text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors">
+                        <MagnifyingGlass className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                        <span dangerouslySetInnerHTML={{
+                          __html: s.replace(
+                            new RegExp(`(${query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
+                            '<strong>$1</strong>'
+                          )
+                        }} />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Category pills — navigate to filtered listings */}

@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { MagnifyingGlass, X, CaretLeft, CaretRight, SlidersHorizontal, Clock, TrendUp, MapPin, Tag, Lightning } from '@phosphor-icons/react';
+import { MagnifyingGlass, X, CaretLeft, CaretRight, SlidersHorizontal, Clock, TrendUp, MapPin, Tag, Lightning, Car, House, DeviceMobile, TShirt, Briefcase, Wrench } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import { listingKeys } from '@/lib/api/endpoints/listings';
 import { ListingCard, ListingCardSkeleton } from '@/components/marketplace/listing-card';
@@ -230,42 +230,72 @@ function FilterBar({
 
         {/* Expanded panel */}
         {open && (
-          <div className="pb-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div>
-              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Category</label>
-              <select value={category} onChange={e => onChange('category', e.target.value)}
-                className="w-full h-9 rounded-xl border border-slate-200 bg-white px-3 text-[13px]
-                  text-slate-700 focus:border-indigo-400 focus:outline-none
-                  dark:bg-[#1c1c1c] dark:border-[#333] dark:text-slate-300">
-                <option value="">All categories</option>
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+          <div className="pb-4 space-y-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Category</label>
+                <select value={category} onChange={e => onChange('category', e.target.value)}
+                  className="w-full h-9 rounded-xl border border-slate-200 bg-white px-3 text-[13px]
+                    text-slate-700 focus:border-indigo-400 focus:outline-none
+                    dark:bg-[#1c1c1c] dark:border-[#333] dark:text-slate-300">
+                  <option value="">All categories</option>
+                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Condition</label>
+                <select value={condition} onChange={e => onChange('condition', e.target.value)}
+                  className="w-full h-9 rounded-xl border border-slate-200 bg-white px-3 text-[13px]
+                    text-slate-700 focus:border-indigo-400 focus:outline-none
+                    dark:bg-[#1c1c1c] dark:border-[#333] dark:text-slate-300">
+                  <option value="">Any condition</option>
+                  {CONDITIONS.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Min price (₦)</label>
+                <input type="number" min="0" value={minPrice} onChange={e => onChange('minPrice', e.target.value)}
+                  placeholder="0"
+                  className="w-full h-9 rounded-xl border border-slate-200 bg-white px-3 text-[13px]
+                    text-slate-700 focus:border-indigo-400 focus:outline-none
+                    dark:bg-[#1c1c1c] dark:border-[#333] dark:text-slate-300" />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Max price (₦)</label>
+                <input type="number" min="0" value={maxPrice} onChange={e => onChange('maxPrice', e.target.value)}
+                  placeholder="Any"
+                  className="w-full h-9 rounded-xl border border-slate-200 bg-white px-3 text-[13px]
+                    text-slate-700 focus:border-indigo-400 focus:outline-none
+                    dark:bg-[#1c1c1c] dark:border-[#333] dark:text-slate-300" />
+              </div>
             </div>
+            {/* Price quick-chips */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Condition</label>
-              <select value={condition} onChange={e => onChange('condition', e.target.value)}
-                className="w-full h-9 rounded-xl border border-slate-200 bg-white px-3 text-[13px]
-                  text-slate-700 focus:border-indigo-400 focus:outline-none
-                  dark:bg-[#1c1c1c] dark:border-[#333] dark:text-slate-300">
-                <option value="">Any condition</option>
-                {CONDITIONS.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Min price (₦)</label>
-              <input type="number" min="0" value={minPrice} onChange={e => onChange('minPrice', e.target.value)}
-                placeholder="0"
-                className="w-full h-9 rounded-xl border border-slate-200 bg-white px-3 text-[13px]
-                  text-slate-700 focus:border-indigo-400 focus:outline-none
-                  dark:bg-[#1c1c1c] dark:border-[#333] dark:text-slate-300" />
-            </div>
-            <div>
-              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Max price (₦)</label>
-              <input type="number" min="0" value={maxPrice} onChange={e => onChange('maxPrice', e.target.value)}
-                placeholder="Any"
-                className="w-full h-9 rounded-xl border border-slate-200 bg-white px-3 text-[13px]
-                  text-slate-700 focus:border-indigo-400 focus:outline-none
-                  dark:bg-[#1c1c1c] dark:border-[#333] dark:text-slate-300" />
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">Quick price</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { label: 'Under ₦100k',  min: '',        max: '100000'  },
+                  { label: 'Under ₦300k',  min: '',        max: '300000'  },
+                  { label: 'Under ₦500k',  min: '',        max: '500000'  },
+                  { label: '₦500k – ₦1m',  min: '500000',  max: '1000000' },
+                  { label: '₦1m – ₦5m',    min: '1000000', max: '5000000' },
+                  { label: '₦5m+',         min: '5000000', max: ''        },
+                ].map(({ label, min, max }) => {
+                  const active = minPrice === min && maxPrice === max;
+                  return (
+                    <button key={label}
+                      onClick={() => { onChange('minPrice', active ? '' : min); onChange('maxPrice', active ? '' : max); }}
+                      className={cn(
+                        'rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-all',
+                        active
+                          ? 'bg-indigo-600 text-white border-indigo-600'
+                          : 'border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600 dark:border-[#2a2a2a] dark:text-slate-400',
+                      )}>
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
@@ -396,7 +426,7 @@ function SearchInner() {
     <div className="min-h-screen bg-[#F8F9FA]">
       <Navbar />
 
-      {/* ── MagnifyingGlass header ──────────────────────────────────── */}
+      {/* ── Search header ──────────────────────────────────── */}
       <div className="border-b border-slate-200 bg-white dark:bg-[#1c1c1c] dark:border-[#2a2a2a]">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 py-6">
 
@@ -600,18 +630,19 @@ function SearchInner() {
               </p>
               <div className="flex flex-wrap gap-2 justify-center">
                 {[
-                  { label: 'Vehicles 🚗',     q: 'vehicle' },
-                  { label: 'Property 🏠',     q: 'property' },
-                  { label: 'Electronics 📱',  q: 'phone' },
-                  { label: 'Fashion 👗',      q: 'fashion' },
-                  { label: 'Jobs 💼',         q: 'jobs' },
-                  { label: 'Services 🔧',     q: 'services' },
-                ].map(({ label, q: cq }) => (
+                  { label: 'Vehicles',    q: 'vehicle',   Icon: Car },
+                  { label: 'Property',    q: 'property',  Icon: House },
+                  { label: 'Electronics', q: 'phone',     Icon: DeviceMobile },
+                  { label: 'Fashion',     q: 'fashion',   Icon: TShirt },
+                  { label: 'Jobs',        q: 'jobs',      Icon: Briefcase },
+                  { label: 'Services',    q: 'services',  Icon: Wrench },
+                ].map(({ label, q: cq, Icon }) => (
                   <button key={label} onClick={() => commit(cq)}
-                    className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5
+                    className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5
                       text-[12px] font-medium text-slate-500
                       hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50
                       transition-all dark:bg-[#1c1c1c] dark:border-[#333] dark:text-slate-400">
+                    <Icon className="h-3.5 w-3.5 flex-shrink-0" />
                     {label}
                   </button>
                 ))}
