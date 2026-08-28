@@ -11,33 +11,33 @@ import type { MetadataRoute } from 'next';
  * Our rules come after the Cloudflare block and apply to all agents.
  */
 export default function robots(): MetadataRoute.Robots {
-  return {
-    rules: [
-      {
-        userAgent: '*',
-        allow: [
-          '/',
-          '/listings',
-          '/listings/',
-          '/categories/',
-          '/search',
-          '/plans',
-          '/stores/',
-        ],
-        disallow: [
-          '/dashboard/',
-          '/admin/',
-          '/mod/',
-          '/api/',
-          '/login',
-          '/register',
-          '/forgot-password',
-          '/verify-phone',
-          '/verify-2fa',
-          '/auth/',
-        ],
-      },
-    ],
-    sitemap: 'https://velontri.pxxl.click/sitemap.xml',
-  };
+ return {
+ rules: [
+ {
+ userAgent: '*',
+ allow: [
+ '/',
+ '/listings',
+ '/listings/',
+ '/categories/',
+ '/search',
+ '/plans',
+ '/stores/',
+ ],
+ disallow: [
+ '/dashboard/',
+ '/admin/',
+ '/mod/',
+ '/api/',
+ '/login',
+ '/register',
+ '/forgot-password',
+ '/verify-phone',
+ '/verify-2fa',
+ '/auth/',
+ ],
+ },
+ ],
+ sitemap: 'https://velontri.pxxl.click/sitemap.xml',
+ };
 }

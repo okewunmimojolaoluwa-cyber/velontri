@@ -3,7 +3,7 @@ import { authApi } from '@/lib/api/endpoints';
 import type { RegisterRequest } from '@/types/auth';
 
 export function useRegister() {
-  return useMutation({
-    mutationFn: (data: RegisterRequest) => authApi.register(data),
-  });
+ return useMutation({
+ mutationFn: (data: RegisterRequest) => authApi.register(data),
+ });
 }

@@ -5,10 +5,10 @@
  * it replaces the leading 0 with 234.
  */
 export function normalizePhoneNumber(phone: string | undefined | null): string {
-  if (!phone) return '';
-  let clean = phone.replace(/\D/g, '');
-  if (clean.length === 11 && clean.startsWith('0')) {
-    clean = '234' + clean.slice(1);
-  }
-  return clean;
+ if (!phone) return '';
+ let clean = phone.replace(/\D/g, '');
+ if (clean.length === 11 && clean.startsWith('0')) {
+ clean = '234' + clean.slice(1);
+ }
+ return clean;
 }

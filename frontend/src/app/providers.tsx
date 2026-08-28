@@ -7,24 +7,24 @@ import { AuthProvider } from '@/features/auth/auth-provider';
 import type { AuthSession } from '@/types/auth';
 
 export function Providers({
-  children,
-  initialSession,
+ children,
+ initialSession,
 }: {
-  children: ReactNode;
-  initialSession?: AuthSession | null;
+ children: ReactNode;
+ initialSession?: AuthSession | null;
 }) {
-  const [queryClient] = useState(() => createQueryClient());
+ const [queryClient] = useState(() => createQueryClient());
 
   // Wire cache clearing to auth changes — keeps AuthProvider free of TanStack dep
-  const handleClearCache = useCallback(() => {
-    queryClient.clear();
-  }, [queryClient]);
+ const handleClearCache = useCallback(() => {
+ queryClient.clear();
+ }, [queryClient]);
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider initialSession={initialSession} onClearCache={handleClearCache}>
-        {children}
-      </AuthProvider>
-    </QueryClientProvider>
-  );
+ return (
+ <QueryClientProvider client={queryClient}>
+ <AuthProvider initialSession={initialSession} onClearCache={handleClearCache}>
+ {children}
+ </AuthProvider>
+ </QueryClientProvider>
+ );
 }
