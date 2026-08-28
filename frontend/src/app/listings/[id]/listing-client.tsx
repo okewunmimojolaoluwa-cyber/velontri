@@ -738,6 +738,13 @@ export default function ListingDetailPage() {
                     )}
                   </div>
 
+                  {/* Seller bio — shown when the seller has added one */}
+                  {sellerData?.data?.bio && (
+                    <p className="text-[12px] text-slate-500 leading-relaxed line-clamp-3 border-t border-slate-100 pt-2.5 mt-0.5">
+                      {sellerData.data.bio}
+                    </p>
+                  )}
+
                   {/* NavigationArrow actions */}
                   <div className="flex gap-2 pt-1">
                     <button
