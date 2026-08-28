@@ -173,7 +173,7 @@ export default function ModUsersPage() {
             </button>
           ))}
         </div>
-        {/* MagnifyingGlass */}
+        {/* Search */}
         <form onSubmit={e => { e.preventDefault(); setCommitted(search); }} className="flex gap-2 sm:ml-auto">
           <div className="relative flex-1 sm:flex-none">
             <MagnifyingGlass className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -187,7 +187,7 @@ export default function ModUsersPage() {
           </div>
           <button type="submit"
             className="h-9 rounded-xl bg-amber-500 px-4 text-[12px] font-bold text-white hover:bg-amber-600 transition-colors">
-            MagnifyingGlass
+            Search
           </button>
         </form>
       </div>

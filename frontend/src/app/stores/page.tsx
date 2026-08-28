@@ -48,7 +48,7 @@ export default function StoresPage() {
           <h1 className="text-[2rem] font-black text-slate-900 tracking-tight mb-1">Browse Stores</h1>
           <p className="text-[14px] text-slate-500">Discover trusted sellers and their collections</p>
 
-          {/* MagnifyingGlass */}
+          {/* Search */}
           <div className="relative mt-5 max-w-md">
             <MagnifyingGlass className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input

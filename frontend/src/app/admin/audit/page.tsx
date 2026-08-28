@@ -177,7 +177,7 @@ export default function AdminAuditPage() {
           ))}
         </div>
 
-        {/* MagnifyingGlass */}
+        {/* Search */}
         <form onSubmit={handleSearch} className="flex gap-2 sm:ml-auto w-full sm:w-auto">
           <div className="relative flex-1 sm:flex-none">
             <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -193,7 +193,7 @@ export default function AdminAuditPage() {
           <button type="submit"
             className="h-9 rounded-xl bg-indigo-600 px-4 text-[12px] font-bold text-white
               hover:bg-indigo-700 transition-colors flex-shrink-0">
-            MagnifyingGlass
+            Search
           </button>
         </form>
       </div>

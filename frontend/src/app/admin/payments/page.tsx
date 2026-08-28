@@ -266,7 +266,7 @@ export default function AdminPaymentsPage() {
           </>
         )}
 
-        {/* MagnifyingGlass no results */}
+        {/* Search no results */}
         {!isLoading && search && payments.length === 0 && allPayments.length > 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <MagnifyingGlass className="h-8 w-8 text-slate-200 mb-2" />

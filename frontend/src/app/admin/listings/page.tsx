@@ -110,7 +110,7 @@ export default function AdminListingsPage() {
                 placeholder-slate-400 focus:border-indigo-400 focus:outline-none" />
           </div>
           <button type="submit" className="h-9 rounded-xl bg-slate-100 px-4 text-sm font-medium text-slate-600 hover:bg-slate-200 transition-colors">
-            MagnifyingGlass
+            Search
           </button>
         </form>
       </div>

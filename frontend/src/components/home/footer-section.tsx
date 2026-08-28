@@ -5,7 +5,7 @@ import { siteConfig } from '@/config/site';
 const FOOTER_LINKS = {
   Product: [
     { label: 'Browse listings', href: '/listings' },
-    { label: 'AI MagnifyingGlass', href: '/search' },
+    { label: 'AI Search', href: '/search' },
     { label: 'Pricing', href: '/subscriptions/tiers' },
     { label: 'Mobile app', href: '#download' },
     { label: 'Business solutions', href: '/business' },

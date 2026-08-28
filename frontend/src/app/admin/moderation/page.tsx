@@ -132,7 +132,7 @@ export default function AdminModerationPage() {
           </div>
           <button type="submit"
             className="h-9 rounded-xl bg-indigo-600 px-4 text-[12px] font-bold text-white hover:bg-indigo-700 transition-colors">
-            MagnifyingGlass
+            Search
           </button>
           {(committed || modFilter) && (
             <button type="button"

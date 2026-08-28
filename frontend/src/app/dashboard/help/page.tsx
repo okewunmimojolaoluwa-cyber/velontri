@@ -123,7 +123,7 @@ export default function UserHelpPage() {
         <p className="text-[12px] text-slate-400 mt-0.5">Find answers to common questions</p>
       </div>
 
-      {/* MagnifyingGlass */}
+      {/* Search */}
       <div className="relative">
         <MagnifyingGlass className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <input

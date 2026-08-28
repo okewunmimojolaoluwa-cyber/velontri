@@ -113,7 +113,7 @@ export default function VerifiedUsersPage() {
           <p className="text-[13px] text-slate-500 mt-0.5">Users who have completed seller verification</p>
         </div>
 
-        {/* MagnifyingGlass */}
+        {/* Search */}
         <form
           onSubmit={e => { e.preventDefault(); setCommitted(search); }}
           className="flex gap-2 w-full sm:w-auto"
@@ -134,7 +134,7 @@ export default function VerifiedUsersPage() {
             className="h-10 rounded-xl bg-indigo-600 px-4 text-[13px] font-bold
               text-white hover:bg-indigo-700 transition-colors flex-shrink-0"
           >
-            MagnifyingGlass
+            Search
           </button>
         </form>
       </div>

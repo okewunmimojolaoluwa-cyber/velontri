@@ -290,7 +290,7 @@ export default function ListingsPage() {
               </div>
               <button type="submit"
                 className="flex items-center gap-2 bg-indigo-600 px-6 text-[14px] font-bold text-white transition-colors hover:bg-indigo-700 flex-shrink-0">
-                <MagnifyingGlass className="h-4 w-4" /> MagnifyingGlass
+                <MagnifyingGlass className="h-4 w-4" /> Search
               </button>
             </form>
           </div>

@@ -26,7 +26,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href={ROUTES.search} className="hover:text-foreground transition-colors">
-                  MagnifyingGlass
+                  Search
                 </Link>
               </li>
             </ul>

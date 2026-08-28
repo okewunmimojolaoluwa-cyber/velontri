@@ -56,7 +56,7 @@ export function AdminListingsTable({
           </div>
           <button type="submit"
             className="h-10 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white hover:bg-indigo-700 transition-colors">
-            MagnifyingGlass
+            Search
           </button>
         </form>
       </div>

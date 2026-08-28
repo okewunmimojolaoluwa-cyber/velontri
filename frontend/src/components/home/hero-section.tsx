@@ -129,11 +129,11 @@ export function HeroSection() {
               />
               <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-white/12 bg-white/6 px-2.5 py-1 text-xs text-white/40">
                 <Sparkle className="h-3 w-3 text-amber-400" />
-                AI MagnifyingGlass
+                AI Search
               </div>
             </div>
             <Button size="md" className="flex-shrink-0 rounded-xl" type="submit">
-              MagnifyingGlass
+              Search
             </Button>
           </form>
 

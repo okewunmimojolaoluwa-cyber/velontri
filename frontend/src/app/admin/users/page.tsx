@@ -196,7 +196,7 @@ export default function AdminUsersPage() {
             </div>
             <button type="submit"
               className="h-10 rounded-xl bg-indigo-600 px-4 text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors">
-              MagnifyingGlass
+              Search
             </button>
           </form>
         </div>

@@ -442,7 +442,7 @@ function SearchInner() {
                 className="flex-shrink-0 rounded-xl bg-indigo-600 px-5 py-2.5
                   text-[13px] font-bold text-white hover:bg-indigo-700 active:scale-[0.98]
                   transition-all">
-                MagnifyingGlass
+                Search
               </button>
             </div>
 

@@ -166,7 +166,7 @@ export default function UserMessagesPage() {
             </button>
           </div>
 
-          {/* MagnifyingGlass */}
+          {/* Search */}
           <div className="px-4 py-2.5 border-b border-slate-100 flex-shrink-0">
             <div className="relative">
               <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />

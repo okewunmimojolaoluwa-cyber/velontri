@@ -42,11 +42,11 @@ export function AISection() {
           <div className="space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-2 text-sm text-primary font-semibold">
               <Sparkle className="h-4 w-4 text-amber-500" />
-              AI-Powered MagnifyingGlass
+              AI-Powered Search
             </div>
 
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight leading-tight">
-              MagnifyingGlass like you're
+              Search like you're
               <br />
               <span className="text-gradient-primary">talking to a friend</span>
             </h2>
@@ -77,7 +77,7 @@ export function AISection() {
               className="gap-2"
             >
               <Sparkle className="h-4 w-4" />
-              Try AI MagnifyingGlass
+              Try AI Search
             </Button>
           </div>
 
