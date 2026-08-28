@@ -55,10 +55,13 @@ async def update_profile(
 ) -> Profile:
     profile = await get_profile(session, user_id)
     if profile is None:
-        raise NotFoundError("Profile not found.")
+        # Create a new profile row on first save
+        profile = Profile(user_id=user_id)
+        session.add(profile)
+        await session.flush()
     for key, value in updates.items():
-        if value is not None:
-            setattr(profile, key, value)
+        # Allow setting to empty string (clears a field like bio)
+        setattr(profile, key, value)
     profile.updated_at = datetime.now(tz=timezone.utc)
     await session.flush()
     return profile

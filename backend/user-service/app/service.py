@@ -109,8 +109,11 @@ class UserService:
     async def update_profile(
         self, user_id: uuid.UUID, body: UpdateProfileRequest
     ) -> ProfileResponse:
-        updates = body.model_dump(exclude_none=True)
+        # Use model_dump(exclude_unset=True) so only explicitly provided fields
+        # are updated — empty string bio clears bio, not set = don't touch
+        updates = body.model_dump(exclude_unset=True)
         profile = await repo.update_profile(self.session, user_id, updates)
+        await self.session.commit()
         return _to_profile_response(profile)
 
     # ── KYC ───────────────────────────────────────────────────────────────────
