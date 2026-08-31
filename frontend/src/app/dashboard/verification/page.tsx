@@ -763,7 +763,7 @@ export default function VerificationPage() {
  disabled={saving}
  className="flex-1 h-11 rounded-xl bg-indigo-600 text-[14px] font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
  >
- {saving ? 'Saving…' : 'FloppyDisk & Continue'}
+ {saving ? 'Saving…' : 'Save & Continue'}
  {!saving && <CaretRight className="h-4 w-4" />}
  </button>
  ) : (
