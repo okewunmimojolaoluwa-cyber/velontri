@@ -364,28 +364,54 @@ async def upload_avatar(request: Request, file: UploadFile=File(..., description
     data_url = f'data:{ct};base64,{base64.b64encode(content).decode()}'
     uid_str = str(current_user_id)
     saved = False
-    # Primary path: use app session_factory (PostgreSQL)
+
+    # Try UPDATE first
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _text
-            await db.execute(_text("""
-                INSERT INTO user_profiles (id, user_id, profile_photo_url)
-                VALUES (:new_id, :uid, :url)
-                ON CONFLICT (user_id) DO UPDATE SET profile_photo_url = EXCLUDED.profile_photo_url
-            """), {'new_id': str(uuid.uuid4()), 'uid': uid_str, 'url': data_url})
+            r = await db.execute(
+                _text("UPDATE user_profiles SET profile_photo_url = :url, updated_at = NOW() WHERE CAST(user_id AS TEXT) = :uid"),
+                {'uid': uid_str, 'url': data_url}
+            )
             await db.commit()
-            saved = True
+            saved = (r.rowcount > 0)
     except Exception:
         pass
-    # Fallback: use the service session directly
+
+    # Insert if no row existed
+    if not saved:
+        try:
+            async with request.app.state.session_factory() as db:
+                from sqlalchemy import text as _text
+                await db.execute(
+                    _text("INSERT INTO user_profiles (id, user_id, profile_photo_url) VALUES (:new_id, :uid, :url)"),
+                    {'new_id': str(uuid.uuid4()), 'uid': uid_str, 'url': data_url}
+                )
+                await db.commit()
+                saved = True
+        except Exception:
+            pass
+
+    # Service session fallback
     if not saved:
         try:
             from sqlalchemy import text as _text2
-            await service.session.execute(_text2("""
-                INSERT INTO user_profiles (id, user_id, profile_photo_url)
-                VALUES (:new_id, :uid, :url)
-                ON CONFLICT (user_id) DO UPDATE SET profile_photo_url = EXCLUDED.profile_photo_url
-            """), {'new_id': str(uuid.uuid4()), 'uid': uid_str, 'url': data_url})
+            r2 = await service.session.execute(
+                _text2("UPDATE user_profiles SET profile_photo_url = :url WHERE CAST(user_id AS TEXT) = :uid"),
+                {'uid': uid_str, 'url': data_url}
+            )
+            await service.session.commit()
+            saved = (r2.rowcount > 0)
+        except Exception:
+            pass
+
+    if not saved:
+        try:
+            from sqlalchemy import text as _text3
+            await service.session.execute(
+                _text3("INSERT INTO user_profiles (id, user_id, profile_photo_url) VALUES (:new_id, :uid, :url)"),
+                {'new_id': str(uuid.uuid4()), 'uid': uid_str, 'url': data_url}
+            )
             await service.session.commit()
             saved = True
         except Exception as exc:
