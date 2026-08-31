@@ -559,6 +559,7 @@ class AuthService:
             from shared.errors import InvalidInputError
             raise InvalidInputError(f'Unsupported OAuth provider: {provider}')
         user = await repo.get_user_by_email(self.session, info.email)
+        is_new_user = user is None
         if user is None:
             import secrets as _secrets
             placeholder_phone = f'+00000{_secrets.token_hex(6)}'
@@ -578,6 +579,14 @@ class AuthService:
                 },
                 correlation_id=str(user.id),
             )
+            # Send welcome email to new Google/Apple users (fire-and-forget)
+            try:
+                await self._send_welcome_email(
+                    email=info.email,
+                    full_name=user.full_name or info.email.split('@')[0],
+                )
+            except Exception as _we:
+                logger.warning('oauth_welcome_email_failed', user_id=str(user.id), error=str(_we))
         if not user.is_active:
             await repo.activate_user(self.session, user.id)
         device, is_new = await repo.get_or_create_device(
