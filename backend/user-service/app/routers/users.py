@@ -60,8 +60,8 @@ async def get_my_profile(request: Request, service: UserService=Depends(_build_s
     except Exception:
         pass
 
-    # Direct SQL fallback for bio (and other profile fields) if ORM layer failed
-    if not profile_data.get('bio'):
+    # Direct SQL fallback for bio (and other profile fields) if ORM layer failed or returned no bio
+    if profile_data.get('bio') is None:
         try:
             async with request.app.state.session_factory() as _db:
                 from sqlalchemy import text as _text
@@ -129,18 +129,17 @@ async def update_me(request: Request, service: UserService=Depends(_build_servic
             await service.session.commit()
     profile_body = {k: v for k, v in body.items() if k in ('bio', 'country', 'state', 'city', 'default_currency')}
     if profile_body:
-        # Write profile fields directly via SQL — use ON CONFLICT upsert
-        try:
-            from sqlalchemy import text as _text
-            uid_str = str(current_user_id)
-            import uuid as _uuid_mod
+        from sqlalchemy import text as _text
+        import uuid as _uuid_mod
+        uid_str = str(current_user_id)
 
-            # Ensure user_profiles table and bio column exist (idempotent)
+        # Step 1: ensure the table and columns exist
+        try:
             async with request.app.state.session_factory() as _db:
                 await _db.execute(_text("""
                     CREATE TABLE IF NOT EXISTS user_profiles (
-                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                        user_id UUID NOT NULL UNIQUE,
+                        id TEXT PRIMARY KEY,
+                        user_id TEXT NOT NULL,
                         full_name VARCHAR(200),
                         bio TEXT,
                         profile_photo_url TEXT,
@@ -154,45 +153,58 @@ async def update_me(request: Request, service: UserService=Depends(_build_servic
                         created_at TIMESTAMPTZ DEFAULT NOW()
                     )
                 """))
-                # Ensure bio column exists (in case table was created without it)
-                await _db.execute(_text("""
-                    DO $$ BEGIN
-                        IF NOT EXISTS (
-                            SELECT 1 FROM information_schema.columns
-                            WHERE table_name='user_profiles' AND column_name='bio'
-                        ) THEN
-                            ALTER TABLE user_profiles ADD COLUMN bio TEXT;
-                        END IF;
-                    END $$
-                """))
+                for _col in ('bio', 'city', 'state', 'country', 'default_currency', 'profile_photo_url'):
+                    await _db.execute(_text(f"""
+                        DO $$ BEGIN
+                            IF NOT EXISTS (
+                                SELECT 1 FROM information_schema.columns
+                                WHERE table_name='user_profiles' AND column_name='{_col}'
+                            ) THEN
+                                ALTER TABLE user_profiles ADD COLUMN {_col} TEXT;
+                            END IF;
+                        END $$
+                    """))
                 await _db.commit()
+        except Exception:
+            pass
 
-            # Build upsert using ON CONFLICT DO UPDATE
-            col_names = ['id', 'user_id'] + list(profile_body.keys())
-            col_placeholders = [':new_id', ':uid'] + [f':{k}' for k in profile_body.keys()]
-            update_parts = [f'{k} = EXCLUDED.{k}' for k in profile_body.keys()]
-            update_parts.append('updated_at = NOW()')
+        # Step 2: try UPDATE first, then INSERT if no row existed
+        set_parts = [f'{k} = :{k}' for k in profile_body.keys()]
+        set_parts.append('updated_at = NOW()')
+        set_sql = ', '.join(set_parts)
+        params: dict = {'uid': uid_str}
+        for k, v in profile_body.items():
+            params[k] = v  # allow empty string to clear a field
 
-            params: dict = {'new_id': str(_uuid_mod.uuid4()), 'uid': uid_str}
-            for k, v in profile_body.items():
-                params[k] = v  # allow empty string — clears the field
-
-            upsert_sql = f"""
-                INSERT INTO user_profiles ({', '.join(col_names)})
-                VALUES ({', '.join(col_placeholders)})
-                ON CONFLICT (user_id) DO UPDATE SET {', '.join(update_parts)}
-            """
+        saved = False
+        try:
             async with request.app.state.session_factory() as _db:
-                await _db.execute(_text(upsert_sql), params)
+                result = await _db.execute(
+                    _text(f"UPDATE user_profiles SET {set_sql} WHERE CAST(user_id AS TEXT) = :uid"),
+                    params
+                )
+                if result.rowcount == 0:
+                    # No existing row — insert one
+                    ins_cols = ['id', 'user_id'] + list(profile_body.keys())
+                    ins_vals = [':new_id', ':uid'] + [f':{k}' for k in profile_body.keys()]
+                    params['new_id'] = str(_uuid_mod.uuid4())
+                    await _db.execute(
+                        _text(f"INSERT INTO user_profiles ({', '.join(ins_cols)}) VALUES ({', '.join(ins_vals)})"),
+                        params
+                    )
                 await _db.commit()
-        except Exception as _bio_err:
-            # Last-resort fallback via service layer
+                saved = True
+        except Exception as _e1:
+            pass
+
+        # Step 3: fallback via service ORM (handles any schema differences)
+        if not saved:
             try:
                 from ..schemas import UpdateProfileRequest as _UPR
-                safe = {k: v for k, v in profile_body.items() if v is not None and v != ''}
-                if safe:
-                    update_req = _UPR(**safe)
-                    await service.update_profile(current_user_id, update_req)
+                # Pass all profile_body fields — including bio even if empty string
+                orm_updates = {k: (v if v != '' else None) for k, v in profile_body.items()}
+                update_req = _UPR(**{k: v for k, v in orm_updates.items() if v is not None})
+                await service.update_profile(current_user_id, update_req)
             except Exception:
                 pass
     return SuccessResponse(message='Profile updated.', data={'updated': True})
