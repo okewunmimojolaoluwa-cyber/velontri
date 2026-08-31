@@ -65,7 +65,7 @@ export default function CmsPage() {
  <td className="px-5 py-3">
  <div className="flex gap-2">
  <button className="h-8 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-1 transition-colors">
- <PencilSimple className="h-3 w-3" /> PencilSimple
+ <PencilSimple className="h-3 w-3" /> Edit
  </button>
  </div>
  </td>

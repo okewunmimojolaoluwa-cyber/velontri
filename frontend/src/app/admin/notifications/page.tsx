@@ -77,7 +77,7 @@ export default function AdminNotificationsPage() {
  <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight flex items-center gap-2">
  <Bell className="h-6 w-6 text-indigo-600" /> Announcements
  </h1>
- <p className="text-[13px] text-slate-400 mt-0.5">PaperPlaneRight platform-wide announcements to users</p>
+ <p className="text-[13px] text-slate-400 mt-0.5">Send platform-wide announcements to users</p>
  </div>
  <button
  onClick={() => { setShowForm(v => !v); setFormErr(''); }}
@@ -154,7 +154,7 @@ export default function AdminNotificationsPage() {
  disabled={creating}
  className="h-10 rounded-xl bg-indigo-600 px-5 text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors disabled:opacity-50"
  >
- {creating ? 'Sending…' : 'PaperPlaneRight Announcement'}
+ {creating ? 'Sending…' : 'Send Announcement'}
  </button>
  <button
  type="button"
@@ -184,7 +184,7 @@ export default function AdminNotificationsPage() {
  <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-16 text-center">
  <Bell className="h-12 w-12 text-slate-200 mb-3" />
  <p className="text-[15px] font-semibold text-slate-900 mb-1">No announcements yet</p>
- <p className="text-[13px] text-slate-400">PaperPlaneRight your first announcement to keep users informed.</p>
+ <p className="text-[13px] text-slate-400">Send your first announcement to keep users informed.</p>
  </div>
  ) : (
  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm divide-y divide-slate-100">

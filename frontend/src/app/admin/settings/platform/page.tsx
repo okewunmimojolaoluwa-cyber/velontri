@@ -45,7 +45,7 @@ function GeneralTab() {
  <div className="pt-2">
  <button className="inline-flex items-center gap-2 h-9 rounded-xl bg-indigo-600 px-5
  text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors">
- <FloppyDisk className="h-3.5 w-3.5" /> FloppyDisk changes
+ <FloppyDisk className="h-3.5 w-3.5" /> Save changes
  </button>
  </div>
  </div>
@@ -72,7 +72,7 @@ function SecurityTab() {
  <div className="pt-2">
  <button className="inline-flex items-center gap-2 h-9 rounded-xl bg-indigo-600 px-5
  text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors">
- <FloppyDisk className="h-3.5 w-3.5" /> FloppyDisk changes
+ <FloppyDisk className="h-3.5 w-3.5" /> Save changes
  </button>
  </div>
  </div>
@@ -110,7 +110,7 @@ function IntegrationsTab() {
  className="w-full h-9 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px]
  text-slate-500 focus:outline-none focus:border-indigo-400" />
  <p className="text-[10px] text-slate-400 mt-1">
- PencilSimple these keys in <code className="bg-slate-100 px-1 rounded">backend/.env</code>
+ Update these keys in <code className="bg-slate-100 px-1 rounded">backend/.env</code>
  </p>
  </div>
  </div>
@@ -143,7 +143,7 @@ function IntegrationsTab() {
  className="w-full h-9 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px]
  text-slate-500 focus:outline-none focus:border-indigo-400" />
  <p className="text-[10px] text-slate-400 mt-1">
- PencilSimple in <code className="bg-slate-100 px-1 rounded">backend/.env</code> →
+ Update in <code className="bg-slate-100 px-1 rounded">backend/.env</code> →
  GMAIL_USER / GMAIL_APP_PASSWORD
  </p>
  </div>
@@ -295,7 +295,7 @@ function MaintenanceTab() {
  disabled:opacity-50"
  >
  {isPending ? <CircleNotch className="h-3.5 w-3.5 animate-spin" /> : <FloppyDisk className="h-3.5 w-3.5" />}
- FloppyDisk message
+ Save message
  </button>
  </div>
  </div>

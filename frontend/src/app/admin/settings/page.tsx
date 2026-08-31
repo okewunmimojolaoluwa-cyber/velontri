@@ -154,7 +154,7 @@ export default function AdminSettingsPage() {
  </div>
 
  <Button type="submit" disabled={updateMutation.isPending}>
- {updateMutation.isPending ? 'Saving...' : 'FloppyDisk Changes'}
+ {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
  </Button>
  </form>
  )}

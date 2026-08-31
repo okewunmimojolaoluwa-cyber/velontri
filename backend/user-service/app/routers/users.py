@@ -102,12 +102,47 @@ async def update_me(request: Request, service: UserService=Depends(_build_servic
             await service.session.commit()
     profile_body = {k: v for k, v in body.items() if k in ('bio', 'country', 'state', 'city', 'default_currency')}
     if profile_body:
+        # Write profile fields directly via SQL so empty strings (e.g. clearing bio) work correctly
         try:
-            from ..schemas import UpdateProfileRequest as _UPR
-            update_req = _UPR(**profile_body)
-            await service.update_profile(current_user_id, update_req)
+            from sqlalchemy import text as _text
+            uid_str = str(current_user_id)
+            # Build SET clause for user_profiles — upsert if row doesn't exist
+            set_parts = []
+            params: dict = {'uid': uid_str}
+            for k, v in profile_body.items():
+                set_parts.append(f'{k} = :{k}')
+                params[k] = v if v is not None else None
+            if set_parts:
+                set_sql = ', '.join(set_parts)
+                async with request.app.state.session_factory() as _db:
+                    # Check if profile row exists
+                    exists = (await _db.execute(
+                        _text("SELECT 1 FROM user_profiles WHERE CAST(user_id AS TEXT) = :uid LIMIT 1"),
+                        {'uid': uid_str}
+                    )).fetchone()
+                    if exists:
+                        await _db.execute(
+                            _text(f"UPDATE user_profiles SET {set_sql} WHERE CAST(user_id AS TEXT) = :uid"),
+                            params
+                        )
+                    else:
+                        import uuid as _uuid_mod
+                        params['new_id'] = str(_uuid_mod.uuid4())
+                        cols = 'id, user_id, ' + ', '.join(profile_body.keys())
+                        vals = ':new_id, :uid, ' + ', '.join(f':{k}' for k in profile_body.keys())
+                        await _db.execute(
+                            _text(f"INSERT INTO user_profiles ({cols}) VALUES ({vals})"),
+                            params
+                        )
+                    await _db.commit()
         except Exception:
-            pass
+            # Fallback: use service layer
+            try:
+                from ..schemas import UpdateProfileRequest as _UPR
+                update_req = _UPR(**{k: v for k, v in profile_body.items() if v is not None})
+                await service.update_profile(current_user_id, update_req)
+            except Exception:
+                pass
     return SuccessResponse(message='Profile updated.', data={'updated': True})
 
 @router.post('/users/me/change-password', response_model=SuccessResponse, summary="Change the authenticated user's password")

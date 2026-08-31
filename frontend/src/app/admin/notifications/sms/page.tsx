@@ -30,7 +30,7 @@ export default function SmsCampaignsPage() {
  </Link>
  <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-5">
  <p className="text-sm font-bold text-slate-900 mb-1">SMS Broadcast</p>
- <p className="text-xs text-slate-500">PaperPlaneRight SMS to all users coming soon</p>
+ <p className="text-xs text-slate-500">Send SMS to all users coming soon</p>
  </div>
  </div>
  </div>

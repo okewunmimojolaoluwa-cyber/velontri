@@ -175,7 +175,7 @@ function ForgotPasswordInner() {
  text-white font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed
  hover:from-violet-500 hover:to-indigo-500 transition-all active:scale-[0.98]"
  >
- {isLoading ? 'Sending…' : 'PaperPlaneRight Verification Code'}
+ {isLoading ? 'Sending…' : 'Send Verification Code'}
  </button>
  <p className="text-center text-sm text-slate-500">
  <Link href={ROUTES.login} className="text-violet-400 hover:text-violet-300 font-medium no-underline">

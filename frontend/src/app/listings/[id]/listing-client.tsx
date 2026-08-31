@@ -113,7 +113,7 @@ function MessagePanel({ listingId, sellerId, sellerName, listingTitle, onClose }
  <button onClick={send} disabled={loading || !text.trim()}
  className="flex-1 h-10 rounded-xl bg-indigo-600 text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
  {loading ? <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" /></svg> : <PaperPlaneRight className="h-4 w-4" />}
- PaperPlaneRight
+ Send
  </button>
  </div>
  </div>
@@ -643,7 +643,7 @@ export default function ListingDetailPage() {
  <div>
  <p className="text-[12px] font-bold text-slate-800 leading-tight">Velontri Messages</p>
  <p className="text-[11px] text-slate-500 leading-tight">
- {session.isAuthenticated ? 'PaperPlaneRight an in-app message' : 'Sign in to send an in-app message'}
+ {session.isAuthenticated ? 'Send an in-app message' : 'Sign in to send an in-app message'}
  </p>
  </div>
  </div>

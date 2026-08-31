@@ -195,12 +195,7 @@ export default function AdminBannersPage() {
  )}
  <div className="flex gap-2">
  <Button variant="outline" size="sm">
- PencilSimple
- </Button>
- <Button
- variant="outline"
- size="sm"
- onClick={() => deleteMutation.mutate(banner.id)}
+ Edit
  disabled={deleteMutation.isPending}
  >
  Delete

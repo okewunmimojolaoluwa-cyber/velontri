@@ -156,7 +156,7 @@ export default function AdminProfilePage() {
  )}
 
  <Button type="submit" disabled={isPending || isLoading} className="w-full">
- {isPending ? 'Saving…' : 'FloppyDisk Changes'}
+ {isPending ? 'Saving…' : 'Save Changes'}
  </Button>
  </form>
  </div>

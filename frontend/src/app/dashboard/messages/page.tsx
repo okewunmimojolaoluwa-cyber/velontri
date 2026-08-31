@@ -2,10 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  ChatCircle, PaperPlaneRight, MagnifyingGlass, Tray,
-  ArrowClockwise, ArrowLeft, CircleNotch, WarningCircle,
-} from '@phosphor-icons/react';
+import { ChatCircle, PaperPlaneRight, MagnifyingGlass, Tray, ArrowClockwise, ArrowLeft, CircleNotch, WarningCircle } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import type { ApiResponse } from '@/types/api';
 import { useAuth } from '@/features/auth/auth-provider';

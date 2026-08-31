@@ -77,7 +77,7 @@ function MessageModal({ user, onClose }: { user: AdminUser; onClose: () => void 
  <div className="flex gap-2">
  <button onClick={() => content.trim() && send()} disabled={isPending || !content.trim()}
  className="flex-1 h-10 rounded-xl bg-indigo-600 text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors disabled:opacity-50">
- {isPending ? 'Sending…' : 'PaperPlaneRight'}
+ {isPending ? 'Sending…' : 'Send'}
  </button>
  <button onClick={onClose}
  className="h-10 rounded-xl border border-slate-200 px-4 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors">

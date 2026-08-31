@@ -151,7 +151,7 @@ export default function UserNotificationsPage() {
  className="inline-flex items-center gap-1 h-7 rounded-lg bg-slate-50 border border-slate-200
  px-2.5 text-[11px] font-semibold text-slate-600 no-underline hover:bg-slate-100 transition-colors"
  >
- PencilSimple &amp; Resubmit
+ Edit &amp; Resubmit
  </Link>
  )}
  </div>

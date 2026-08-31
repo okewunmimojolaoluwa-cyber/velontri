@@ -228,7 +228,7 @@ export default function ModSettingsPage() {
  onClick={savePrefs}
  className="h-10 rounded-xl bg-amber-500 px-5 text-[13px] font-bold text-white hover:bg-amber-600 transition-colors"
  >
- FloppyDisk Changes
+ Save Changes
  </button>
  {prefsSaved && (
  <span className="flex items-center gap-1.5 text-[12px] font-semibold text-emerald-600">
@@ -272,7 +272,7 @@ export default function ModSettingsPage() {
  onClick={saveNotifs}
  className="h-10 rounded-xl bg-amber-500 px-5 text-[13px] font-bold text-white hover:bg-amber-600 transition-colors"
  >
- FloppyDisk Changes
+ Save Changes
  </button>
  {notifsSaved && (
  <span className="flex items-center gap-1.5 text-[12px] font-semibold text-emerald-600">

@@ -31,7 +31,7 @@ export default function EmailCampaignsPage() {
  </Link>
  <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-5">
  <p className="text-sm font-bold text-slate-900 mb-1">Broadcast Campaign</p>
- <p className="text-xs text-slate-500">PaperPlaneRight email to all users coming soon</p>
+ <p className="text-xs text-slate-500">Send email to all users coming soon</p>
  </div>
  </div>
  </div>

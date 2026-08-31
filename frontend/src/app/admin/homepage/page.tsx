@@ -105,7 +105,7 @@ export default function HomepageManagerPage() {
  }`}
  >
  {saved ? <CheckCircle className="h-4 w-4" /> : <FloppyDisk className="h-4 w-4" />}
- {saved ? 'Saved!' : 'FloppyDisk changes'}
+ {saved ? 'Saved!' : 'Save changes'}
  </button>
  </div>
 
@@ -115,7 +115,7 @@ export default function HomepageManagerPage() {
  <span className="text-white text-[9px] font-bold">i</span>
  </div>
  <p className="text-[12px] text-blue-700 leading-relaxed">
- Toggle sections on/off and reorder them using the arrows. Click <strong>FloppyDisk changes</strong> to apply.
+ Toggle sections on/off and reorder them using the arrows. Click <strong>Save changes</strong> to apply.
  Hidden sections are removed from the homepage immediately after saving.
  </p>
  </div>

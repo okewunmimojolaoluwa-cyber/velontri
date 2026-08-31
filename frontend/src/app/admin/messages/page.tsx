@@ -76,7 +76,7 @@ function BroadcastModal({ onClose }: { onClose: () => void }) {
  <div className="flex items-center justify-between mb-4">
  <div>
  <p className="text-[15px] font-black text-slate-900">Broadcast Message</p>
- <p className="text-[12px] text-slate-400">PaperPlaneRight to all moderators or all users</p>
+ <p className="text-[12px] text-slate-400">Send to all moderators or all users</p>
  </div>
  <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
  <X className="h-5 w-5" />
@@ -131,7 +131,7 @@ function BroadcastModal({ onClose }: { onClose: () => void }) {
  disabled={isPending || !msg.trim()}
  className="flex-1 h-10 rounded-xl bg-indigo-600 text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors disabled:opacity-50"
  >
- {isPending ? 'Sending…' : 'PaperPlaneRight Broadcast'}
+ {isPending ? 'Sending…' : 'Send Broadcast'}
  </button>
  <button onClick={onClose} className="h-10 rounded-xl border border-slate-200 px-4 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
  Cancel
@@ -194,7 +194,7 @@ export default function AdminMessagesPage() {
  staleTime: 2_000,
  });
 
-  /* ── PaperPlaneRight message ─────────────────────────────────────── */
+  /* ── Send message ─────────────────────────────────────── */
  const { mutate: sendMsg, isPending: sending } = useMutation({
  mutationFn: async () => {
  const thread = threads.find(t => t.id === active);

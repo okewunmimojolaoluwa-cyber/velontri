@@ -71,7 +71,7 @@ export default function UserFollowingPage() {
  <Users className="h-12 w-12 text-slate-200 mb-3" />
  <p className="text-[14px] font-semibold text-slate-900 mb-1">No sellers yet</p>
  <p className="text-[12px] text-slate-400 mb-4">
- FloppyDisk listings to start tracking sellers you&apos;re interested in.
+ Save listings to start tracking sellers you&apos;re interested in.
  </p>
  <Link href="/listings"
  className="inline-flex h-9 items-center gap-2 rounded-xl bg-indigo-600 px-4

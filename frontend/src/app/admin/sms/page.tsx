@@ -55,7 +55,7 @@ export default function AdminSmsPage() {
 
  {isCreating && (
  <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
- <h3 className="font-semibold text-gray-900 dark:text-white mb-4">PencilSimple Template</h3>
+ <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Edit Template</h3>
  <form onSubmit={handleSubmit} className="space-y-4">
  <div>
  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -93,7 +93,7 @@ export default function AdminSmsPage() {
 
  <div className="flex gap-2">
  <Button type="submit" disabled={updateMutation.isPending}>
- {updateMutation.isPending ? 'Saving...' : 'FloppyDisk'}
+ {updateMutation.isPending ? 'Saving...' : 'Save'}
  </Button>
  <Button
  type="button"
@@ -161,7 +161,7 @@ export default function AdminSmsPage() {
  setIsCreating(true);
  }}
  >
- PencilSimple Template
+ Edit Template
  </Button>
  </div>
  ))}

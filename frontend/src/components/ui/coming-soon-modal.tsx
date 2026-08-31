@@ -99,7 +99,7 @@ export function ComingSoonModal({ store, onClose }: ComingSoonModalProps) {
  className="block text-[11px] font-bold uppercase tracking-[0.2em] mb-3"
  style={{ color: isGoogle ? '#818cf8' : '#a5b4fc' }}
  >
- {isGoogle ? 'Google Play Storefront' : 'Apple App Storefront'}
+ {isGoogle ? 'Google Play' : 'Apple App Store'}
  </span>
  <h2
  className="font-black text-white leading-tight"

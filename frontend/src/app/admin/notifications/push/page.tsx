@@ -23,7 +23,7 @@ export default function PushNotificationsPage() {
  <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
  <Bell className="h-6 w-6 text-indigo-600" /> Push Notifications
  </h1>
- <p className="text-sm text-slate-500 mt-0.5">PaperPlaneRight in-app push notifications to users</p>
+ <p className="text-sm text-slate-500 mt-0.5">Send in-app push notifications to users</p>
  </div>
 
  {sent && (
@@ -53,7 +53,7 @@ export default function PushNotificationsPage() {
  <option value="moderators">Moderators</option>
  </select>
  </div>
- <Button type="submit" disabled={isPending}>{isPending ? 'Sending…' : 'PaperPlaneRight Notification'}</Button>
+ <Button type="submit" disabled={isPending}>{isPending ? 'Sending…' : 'Send Notification'}</Button>
  </form>
  </div>
  </div>

@@ -251,12 +251,7 @@ export default function AdminPromotionsPage() {
  <td className="px-6 py-4">
  <div className="flex gap-2">
  <Button variant="outline" size="sm">
- PencilSimple
- </Button>
- <Button
- variant="outline"
- size="sm"
- onClick={() => deleteMutation.mutate(promo.id)}
+ Edit
  disabled={deleteMutation.isPending}
  >
  Delete

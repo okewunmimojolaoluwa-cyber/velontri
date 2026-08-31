@@ -115,7 +115,7 @@ function EditModal({
  <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 flex-shrink-0">
  <div>
  <h2 className="text-[15px] font-black text-slate-900">
- {mode === 'price' ? 'Update Price' : 'PencilSimple Listing'}
+ {mode === 'price' ? 'Update Price' : 'Edit Listing'}
  </h2>
  <p className="text-[12px] text-slate-400 mt-0.5 truncate max-w-[260px]">{listing.title}</p>
  </div>
@@ -234,7 +234,7 @@ function EditModal({
  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
  </svg>
  ) : <Check className="h-4 w-4" />}
- {isPending ? 'Saving…' : listing.status === 'rejected' && resubmit ? 'FloppyDisk & Resubmit' : 'FloppyDisk Changes'}
+ {isPending ? 'Saving…' : listing.status === 'rejected' && resubmit ? 'Save & Resubmit' : 'Save Changes'}
  </button>
  </div>
  </form>
@@ -300,7 +300,7 @@ export default function UserListingsPage() {
  return (
  <div className="space-y-5">
 
-      {/* PencilSimple modal */}
+      {/* Edit modal */}
  {editState && (
  <EditModal
  editState={editState}
@@ -466,7 +466,7 @@ export default function UserListingsPage() {
  {canEdit && (
  <button
  onClick={() => openEdit(listing)}
- title={isActive ? 'Update price' : 'PencilSimple listing'}
+ title={isActive ? 'Update price' : 'Edit listing'}
  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 transition-all"
  >
  <PencilSimple className="h-3.5 w-3.5" />
@@ -501,7 +501,7 @@ export default function UserListingsPage() {
  onClick={() => openEdit(listing)}
  className="flex-shrink-0 flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-red-700 transition-colors"
  >
- <PencilSimple className="h-3 w-3" /> PencilSimple & Resubmit
+ <PencilSimple className="h-3 w-3" /> Edit & Resubmit
  </button>
  </div>
  )}
@@ -519,7 +519,7 @@ export default function UserListingsPage() {
  onClick={() => openEdit(listing)}
  className="flex-shrink-0 flex items-center gap-1 rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 transition-colors"
  >
- <PencilSimple className="h-3 w-3" /> PencilSimple
+ <PencilSimple className="h-3 w-3" /> Edit
  </button>
  </div>
  )}

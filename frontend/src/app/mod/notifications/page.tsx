@@ -63,14 +63,14 @@ export default function ModNotificationsPage() {
  <h1 className="text-[1.5rem] font-black text-slate-900 tracking-tight flex items-center gap-2">
  <Bell className="h-5 w-5 text-amber-500" /> Platform Notifications
  </h1>
- <p className="text-[13px] text-slate-400 mt-0.5">PaperPlaneRight announcements to platform users</p>
+ <p className="text-[13px] text-slate-400 mt-0.5">Send announcements to platform users</p>
  </div>
 
  <div className="grid gap-6 lg:grid-cols-2">
-        {/* PaperPlaneRight form */}
+        {/* Send form */}
  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
  <div className="border-b border-slate-100 bg-slate-50 px-5 py-3.5">
- <h2 className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">PaperPlaneRight New Notification</h2>
+ <h2 className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">Send New Notification</h2>
  </div>
  <form onSubmit={handleSend} className="p-5 space-y-4">
  <div className="space-y-1.5">
@@ -126,7 +126,7 @@ export default function ModNotificationsPage() {
  className="flex items-center gap-2 h-10 rounded-xl bg-amber-500 px-5 text-[13px] font-bold text-white hover:bg-amber-600 transition-colors disabled:opacity-50"
  >
  <PaperPlaneRight className="h-4 w-4" />
- {sendMutation.isPending ? 'Sending…' : 'PaperPlaneRight Notification'}
+ {sendMutation.isPending ? 'Sending…' : 'Send Notification'}
  </button>
  </form>
  </div>

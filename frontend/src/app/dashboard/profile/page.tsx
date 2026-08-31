@@ -2,11 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
- SealCheck, EnvelopeSimple, Phone, Globe, CalendarBlank,
- Camera, CircleNotch, CheckCircle, X, Shield, ArrowRight,
- FloppyDisk, PencilSimple, TextAlignLeft,
-} from '@phosphor-icons/react';
+import { SealCheck, EnvelopeSimple, Phone, Globe, CalendarBlank, Camera, CircleNotch, CheckCircle, X, Shield, ArrowRight, FloppyDisk, PencilSimple, TextAlignLeft } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import { usersApi, userKeys } from '@/lib/api/endpoints/users';
 import type { ApiResponse } from '@/types/api';

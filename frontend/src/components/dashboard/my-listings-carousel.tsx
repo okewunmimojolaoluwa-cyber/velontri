@@ -128,7 +128,7 @@ export function MyListingsCarousel({ listings = DEFAULT_LISTINGS }: MyListingsCa
  <div className="flex gap-2 mt-2">
  <button className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-slate-100 px-2 py-1.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-200 transition-colors">
  <PencilSimple className="h-3 w-3" />
- PencilSimple
+ Edit
  </button>
  <button className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-indigo-50 px-2 py-1.5 text-[10px] font-semibold text-indigo-600 hover:bg-indigo-100 transition-colors">
  <Lightning className="h-3 w-3" />

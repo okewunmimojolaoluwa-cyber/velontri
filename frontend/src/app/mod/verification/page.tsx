@@ -126,7 +126,7 @@ function MoreInfoModal({
  <button onClick={() => { if (!notes.trim()) { setErr('Please provide instructions.'); return; } mutate(); }}
  disabled={isPending}
  className="flex-1 h-10 rounded-xl bg-amber-500 text-[13px] font-bold text-white hover:bg-amber-600 disabled:opacity-50 transition-colors">
- {isPending ? 'Sending…' : 'PaperPlaneRight Request'}
+ {isPending ? 'Sending…' : 'Send Request'}
  </button>
  </div>
  </div>

@@ -264,7 +264,7 @@ export default function UserSecurityPage() {
  text-white font-semibold text-[13px] disabled:opacity-50 disabled:cursor-not-allowed
  hover:from-violet-500 hover:to-indigo-500 transition-all active:scale-[0.98]"
  >
- {isLoadingStep1 ? 'Sending code…' : 'PaperPlaneRight Verification Code'}
+ {isLoadingStep1 ? 'Sending code…' : 'Send Verification Code'}
  </button>
  </form>
  )}

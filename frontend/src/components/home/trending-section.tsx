@@ -113,7 +113,7 @@ export function TrendingSection() {
  <Badge variant={BADGE_MAP[p.badge] ?? 'default'}>{p.badge}</Badge>
  </div>
 
-                {/* FloppyDisk button */}
+                {/* Save button */}
  <button
  className="absolute top-3 right-3 h-8 w-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-white shadow-sm"
  onClick={(e) => e.preventDefault()}

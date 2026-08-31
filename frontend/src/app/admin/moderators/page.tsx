@@ -24,7 +24,7 @@ const ALL_PERMISSIONS = [
  { key: 'can_moderate_users', label: 'Moderate Users' },
  { key: 'can_moderate_stores', label: 'Moderate Stores' },
  { key: 'can_reply_tickets', label: 'Reply to Tickets' },
- { key: 'can_send_notifications', label: 'PaperPlaneRight Notifications' },
+ { key: 'can_send_notifications', label: 'Send Notifications' },
  { key: 'can_handle_disputes', label: 'Handle Disputes' },
 ];
 

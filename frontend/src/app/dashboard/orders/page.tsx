@@ -85,7 +85,7 @@ export default function UserOrdersPage() {
  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
  {[
  { n: '1', t: 'Find what you want', d: 'Browse or search listings' },
- { n: '2', t: 'FloppyDisk or contact', d: 'FloppyDisk listings or tap WhatsApp to chat' },
+ { n: '2', t: 'Save or contact', d: 'Save listings or tap WhatsApp to chat' },
  { n: '3', t: 'Meet & buy', d: 'Meet the seller in a public place, inspect, then pay' },
  ].map(s => (
  <div key={s.n} className="flex items-start gap-3">

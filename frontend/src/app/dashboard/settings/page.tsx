@@ -168,7 +168,7 @@ export default function SettingsPage() {
  disabled={updatingProfile}
  onClick={() => { setProfileErr(''); updateProfile({ full_name: fullNameRef.current?.value, bio: bioRef.current?.value }); }}
  className="h-11 w-full rounded-xl bg-indigo-600 text-[14px] font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
- {updatingProfile ? 'Saving…' : 'FloppyDisk changes'}
+ {updatingProfile ? 'Saving…' : 'Save changes'}
  </button>
  </div>
  )}
@@ -224,7 +224,7 @@ export default function SettingsPage() {
  disabled={requestingPwChange || !curPw || newPw.length < 8}
  onClick={() => { setPwErr(''); requestPwChange(); }}
  className="h-11 w-full rounded-xl bg-indigo-600 text-[14px] font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
- {requestingPwChange ? 'Sending code…' : 'PaperPlaneRight Verification Code'}
+ {requestingPwChange ? 'Sending code…' : 'Send Verification Code'}
  </button>
  </>
  )}
