@@ -54,7 +54,9 @@ export const usersApi = {
  const fd = new FormData();
  fd.append('file', file);
  return apiClient
- .post<ApiResponse<{ avatar_url: string }>>('/users/me/avatar', fd)
+ .post<ApiResponse<{ avatar_url: string }>>('/users/me/avatar', fd, {
+ headers: { 'Content-Type': undefined }, // let axios set multipart/form-data with boundary
+ })
  .then((r) => r.data);
  },
 };

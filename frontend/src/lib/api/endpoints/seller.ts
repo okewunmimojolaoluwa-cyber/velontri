@@ -79,7 +79,8 @@ export const sellerApi = {
 
  return apiClient
  .post<ApiResponse<{ s3_key: string }>>(`/listings/${listingId}/images`, fd, {
- timeout: 60_000, // images can take longer
+ timeout: 60_000,
+ headers: { 'Content-Type': undefined }, // let axios set multipart/form-data with boundary
  })
  .then((r) => r.data);
  },
