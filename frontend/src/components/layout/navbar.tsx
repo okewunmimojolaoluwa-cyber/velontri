@@ -11,6 +11,7 @@ import { getRefreshToken } from '@/lib/auth/token-refresh';
 import { authApi } from '@/lib/api/endpoints/auth';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { VelontriLogo } from '@/components/ui/velontri-logo';
+import { useUnreadCount } from '@/lib/hooks/use-notifications';
 
 /* ── Nav items — visible to all guests ── */
 const NAV_LINKS = [
@@ -68,6 +69,7 @@ export function Navbar() {
  const dashPath = session ? resolveHomePath(session.role) : ROUTES.dashboard;
  const initials = (session?.userId?.slice(0, 2) ?? 'V').toUpperCase();
  const roleName = session?.role ?? 'account';
+ const unreadCount = useUnreadCount();
 
   /* ── Active link check ── */
  function isActive(href: string) {
@@ -166,6 +168,25 @@ export function Navbar() {
  >
  <Plus className="h-3.5 w-3.5" />
  Post listing
+ </Link>
+
+                {/* Bell / notifications */}
+ <Link
+ href={ROUTES.user.notifications}
+ aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+ className={cn(
+ 'relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
+ transparent
+ ? 'text-white/70 hover:bg-white/10 hover:text-white'
+ : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white',
+ )}
+ >
+ <Bell className="h-4.5 w-4.5" />
+ {unreadCount > 0 && (
+ <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white ring-1 ring-white dark:ring-slate-900 tabular-nums">
+ {unreadCount > 9 ? '9+' : unreadCount}
+ </span>
+ )}
  </Link>
 
                 {/* User dropdown */}

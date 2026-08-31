@@ -31,7 +31,27 @@ def _user(token: str = Query(...), settings: NotificationSettings = Depends(_set
     return verify_token(settings.JWT_PUBLIC_KEY_PATH, token)
 
 
-@router.get("/notifications", response_model=SuccessResponse, summary="Get current user's in-app notifications")
+@router.get("/notifications/unread-count", response_model=SuccessResponse, summary="Get unread notification count only")
+async def get_unread_count(request: Request) -> SuccessResponse:
+    from shared.jwt_utils import verify_token as _vt
+    settings = get_settings()
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header.removeprefix("Bearer ").strip()
+    try:
+        payload = _vt(settings.JWT_PUBLIC_KEY_PATH, token)
+        user_id = payload["sub"]
+    except Exception:
+        from shared.errors import ForbiddenError
+        raise ForbiddenError("Invalid or missing token.")
+    async with request.app.state.session_factory() as session:
+        try:
+            count = (await session.execute(
+                _text("SELECT COUNT(*) FROM notifications WHERE (recipient_user_id = :uid OR user_id = :uid) AND is_read = FALSE"),
+                {"uid": user_id}
+            )).scalar() or 0
+        except Exception:
+            count = 0
+    return SuccessResponse(data={"unread_count": int(count)})
 async def get_notifications(
     request: Request,
     page: int = Query(default=1, ge=1),
@@ -173,10 +193,19 @@ async def mark_all_read(
 @router.get("/notifications/history", response_model=SuccessResponse)
 async def notification_history(
     request: Request,
-    payload: dict = Depends(_user),
     page: int = Query(default=1, ge=1),
 ) -> SuccessResponse:
-    user_id = uuid.UUID(payload["sub"])
+    from shared.jwt_utils import verify_token as _vt
+    settings = get_settings()
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header.removeprefix("Bearer ").strip()
+    try:
+        payload = _vt(settings.JWT_PUBLIC_KEY_PATH, token)
+        user_id = uuid.UUID(payload["sub"])
+    except Exception:
+        from shared.errors import ForbiddenError
+        raise ForbiddenError("Invalid or missing token.")
+
     cutoff = datetime.now(tz=timezone.utc) - timedelta(days=90)
     async with request.app.state.session_factory() as session:
         result = await session.execute(

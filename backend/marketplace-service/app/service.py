@@ -33,6 +33,110 @@ from shared.s3 import S3Keys, UploadCategory, upload_file, validate_upload
 from . import repository as repo
 from .calculator import financing_monthly_repayment, monthly_mortgage_repayment
 from .config import MarketplaceSettings
+
+
+async def _send_listing_notification_email(
+    email: str,
+    full_name: str,
+    title: str,
+    message: str,
+    notification_type: str,
+    action_url: str,
+) -> None:
+    """
+    Send an email to the seller when their listing is approved or rejected.
+    Uses Brevo first, Gmail SMTP as fallback — same pattern as auth-service.
+    Fire-and-forget: caller wraps in try/except.
+    """
+    import os, asyncio
+    first_name = full_name.split()[0] if full_name else 'Seller'
+    brevo_key  = os.environ.get('BREVO_API_KEY', '').strip()
+    gmail_user = os.environ.get('GMAIL_USER', '').strip()
+    gmail_pass = os.environ.get('GMAIL_APP_PASSWORD', '').strip()
+    sender_email = os.environ.get('EMAIL_FROM', gmail_user or 'noreply@velontri.pxxl.click').strip()
+    app_url = 'https://velontri.pxxl.click'
+
+    is_approved = notification_type == 'listing_approved'
+    accent = '#16a34a' if is_approved else '#dc2626'
+    emoji  = '🎉' if is_approved else '⚠️'
+    cta_label = 'View Listing' if is_approved else 'Edit & Resubmit'
+
+    html_body = f"""<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{title}</title></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 16px">
+<tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0"
+  style="max-width:520px;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
+  <tr><td style="background:{accent};padding:32px 40px 24px;text-align:center">
+    <p style="margin:0;font-size:36px">{emoji}</p>
+    <h1 style="margin:12px 0 0;color:#fff;font-size:22px;font-weight:900">{title}</h1>
+  </td></tr>
+  <tr><td style="padding:32px 40px 24px">
+    <p style="margin:0 0 16px;color:#334155;font-size:16px">Hi {first_name},</p>
+    <div style="background:#f8fafc;border-radius:12px;padding:16px 20px;margin-bottom:24px;white-space:pre-wrap;
+                color:#334155;font-size:14px;line-height:1.6;border-left:4px solid {accent}">
+{message}
+    </div>
+    <a href="{action_url}" style="display:inline-block;background:{accent};color:#fff;
+       text-decoration:none;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:700">
+      {cta_label} →
+    </a>
+  </td></tr>
+  <tr><td style="padding:20px 40px 32px;border-top:1px solid #e2e8f0">
+    <p style="margin:0;color:#94a3b8;font-size:12px;text-align:center">
+      <a href="{app_url}" style="color:#6366f1;text-decoration:none;font-weight:600">Velontri</a>
+      &nbsp;·&nbsp;
+      <a href="{app_url}/dashboard/notifications" style="color:#94a3b8">View all notifications</a>
+      &nbsp;·&nbsp;
+      <a href="{app_url}/privacy" style="color:#94a3b8">Privacy Policy</a>
+    </p>
+  </td></tr>
+</table>
+</td></tr>
+</table>
+</body></html>"""
+
+    subject = f'{emoji} {title} — Velontri'
+
+    # Brevo
+    if brevo_key:
+        try:
+            import httpx as _httpx
+            async with _httpx.AsyncClient(timeout=10.0) as c:
+                resp = await c.post(
+                    'https://api.brevo.com/v3/smtp/email',
+                    headers={'api-key': brevo_key, 'Content-Type': 'application/json'},
+                    json={
+                        'to': [{'email': email, 'name': full_name}],
+                        'from': {'email': sender_email, 'name': 'Velontri'},
+                        'subject': subject,
+                        'htmlContent': html_body,
+                    },
+                )
+            if resp.status_code in (200, 201, 202):
+                return
+        except Exception:
+            pass
+
+    # Gmail SMTP fallback
+    if gmail_user and gmail_pass:
+        import smtplib
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        def _smtp():
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = subject
+            msg['From']    = f'Velontri <{gmail_user}>'
+            msg['To']      = email
+            msg.attach(MIMEText(html_body, 'html', 'utf-8'))
+            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as s:
+                s.login(gmail_user, gmail_pass)
+                s.sendmail(gmail_user, [email], msg.as_string())
+        loop = asyncio.get_event_loop()
+        await asyncio.wait_for(loop.run_in_executor(None, _smtp), timeout=20.0)
 from .models import Booking, Listing, Review, Store
 from .schemas import (
     BookingResponse,
@@ -586,24 +690,29 @@ class MarketplaceService:
         sender_role: str | None = None,
         action_url: str | None = None,
     ) -> None:
-        """Create an in-app notification record for the seller with full attribution."""
-        import json as _json
+        """
+        Create an in-app notification for the seller AND send an email.
+        notification_type should be 'listing_approved' or 'listing_rejected'.
+        """
         from sqlalchemy import text as _text
+        # ── In-app notification ───────────────────────────────────────────────
         try:
             notif_id = str(uuid.uuid4())
+            # Use the correct type so the frontend can apply the right icon/colour
             await self.session.execute(
                 _text(
                     "INSERT INTO notifications "
                     "(id, user_id, type, title, message, is_read, "
                     " sender_user_id, sender_role, related_resource_type, related_resource_id, action_url, "
                     " created_at) "
-                    "VALUES (:id, :uid, 'system', :title, :message, FALSE, "
+                    "VALUES (:id, :uid, :ntype, :title, :message, FALSE, "
                     "        :sender_id, :sender_role, 'listing', :listing_id, :action_url, "
                     "        NOW())"
                 ),
                 {
                     "id": notif_id,
                     "uid": seller_id,
+                    "ntype": notification_type,   # ← was hardcoded 'system'
                     "title": title,
                     "message": message,
                     "sender_id": sender_id,
@@ -620,6 +729,25 @@ class MarketplaceService:
                 notification_type=notification_type,
                 exc_info=True,
             )
+
+        # ── Email notification ────────────────────────────────────────────────
+        # Fire-and-forget — never block the moderation flow on email failure
+        try:
+            row = (await self.session.execute(
+                _text("SELECT email, full_name FROM users WHERE CAST(id AS TEXT) = :uid LIMIT 1"),
+                {"uid": seller_id}
+            )).fetchone()
+            if row and row[0]:
+                await _send_listing_notification_email(
+                    email=row[0],
+                    full_name=row[1] or "Seller",
+                    title=title,
+                    message=message,
+                    notification_type=notification_type,
+                    action_url=action_url or "https://velontri.pxxl.click/dashboard/listings",
+                )
+        except Exception as _ee:
+            logger.warning("seller_email_notification_failed", seller_id=seller_id, error=str(_ee))
 
     # ── Property listing ──────────────────────────────────────────────────────
 

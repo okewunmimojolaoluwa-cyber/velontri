@@ -11,6 +11,7 @@ import { getRefreshToken } from '@/lib/auth/token-refresh';
 import { authApi } from '@/lib/api/endpoints/auth';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { VelontriLogo } from '@/components/ui/velontri-logo';
+import { useUnreadCount } from '@/lib/hooks/use-notifications';
 
 interface NavGroup {
  label: string;
@@ -180,6 +181,7 @@ const ADMIN_NAV: NavGroup[] = [
 export function AdminShell({ children }: { children: ReactNode }) {
  const { logout: authLogout } = useAuth();
  const pathname = usePathname();
+ const unreadCount = useUnreadCount();
  const [open, setOpen] = useState(false);
  const [collapsed, setCollapsed] = useState(false);
 
@@ -285,10 +287,18 @@ export function AdminShell({ children }: { children: ReactNode }) {
  </div>
  <div className="flex items-center gap-2">
  <ThemeToggle variant="icon" />
- <button className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 transition-colors relative">
+ <Link
+ href="/admin/notifications"
+ className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 transition-colors relative"
+ aria-label="Notifications"
+ >
  <Bell className="h-4 w-4" />
- <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
- </button>
+ {unreadCount > 0 && (
+ <span className="absolute top-1 right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white ring-1 ring-white tabular-nums">
+ {unreadCount > 9 ? '9+' : unreadCount}
+ </span>
+ )}
+ </Link>
  <div className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white ring-2 ring-indigo-200">
  SA
  </div>

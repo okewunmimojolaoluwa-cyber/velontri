@@ -19,18 +19,105 @@ router = APIRouter(prefix='/verification', tags=['Seller Verification'])
 
 # ── Internal helpers ─────────────────────────────────────────────────────────
 
-async def _notify(request: Request, user_id: str, title: str, message: str) -> None:
-    """Insert a notification using the existing notifications table."""
+async def _notify(request: Request, user_id: str, title: str, message: str,
+                  notif_type: str = 'system', action_url: str | None = None) -> None:
+    """Insert a notification and send an email to the user."""
+    import os, asyncio
+    # In-app notification
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _t
             await db.execute(_t("""
-                INSERT INTO notifications (id, user_id, type, title, message, is_read, created_at)
-                VALUES (:id, :uid, 'system', :title, :msg, false, NOW())
-            """), {'id': str(uuid.uuid4()), 'uid': user_id, 'title': title, 'msg': message})
+                INSERT INTO notifications (id, user_id, type, title, message, is_read, action_url, created_at)
+                VALUES (:id, :uid, :ntype, :title, :msg, false, :url, NOW())
+            """), {'id': str(uuid.uuid4()), 'uid': user_id, 'ntype': notif_type,
+                   'title': title, 'msg': message, 'url': action_url})
             await db.commit()
     except Exception as e:
         logger.warning('verification_notify_failed', error=str(e))
+
+    # Email notification (fire-and-forget)
+    try:
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _t
+            row = (await db.execute(
+                _t("SELECT email, full_name FROM users WHERE CAST(id AS TEXT) = :uid LIMIT 1"),
+                {'uid': user_id}
+            )).fetchone()
+            if row and row[0]:
+                email = row[0]
+                full_name = row[1] or 'User'
+                first_name = full_name.split()[0]
+                brevo_key = os.environ.get('BREVO_API_KEY', '').strip()
+                gmail_user = os.environ.get('GMAIL_USER', '').strip()
+                gmail_pass = os.environ.get('GMAIL_APP_PASSWORD', '').strip()
+                sender_email = os.environ.get('EMAIL_FROM', gmail_user or 'noreply@velontri.pxxl.click').strip()
+                app_url = 'https://velontri.pxxl.click'
+                cta_url = action_url or f'{app_url}/dashboard/notifications'
+                is_approved = 'approved' in title.lower() or 'congratulations' in title.lower()
+                accent = '#16a34a' if is_approved else '#dc2626'
+                emoji = '🎉' if is_approved else '⚠️'
+
+                html_body = f"""<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>{title}</title></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 16px">
+<tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
+  <tr><td style="background:{accent};padding:28px 40px;text-align:center">
+    <p style="margin:0;font-size:36px">{emoji}</p>
+    <h1 style="margin:10px 0 0;color:#fff;font-size:20px;font-weight:900">{title}</h1>
+  </td></tr>
+  <tr><td style="padding:28px 40px">
+    <p style="margin:0 0 16px;color:#334155;font-size:15px">Hi {first_name},</p>
+    <div style="background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:24px;color:#334155;font-size:14px;line-height:1.6;border-left:4px solid {accent}">
+{message}
+    </div>
+    <a href="{cta_url}" style="display:inline-block;background:{accent};color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:700">View Details →</a>
+  </td></tr>
+  <tr><td style="padding:16px 40px;border-top:1px solid #e2e8f0;text-align:center">
+    <p style="margin:0;color:#94a3b8;font-size:12px">
+      <a href="{app_url}" style="color:#6366f1">Velontri</a> &nbsp;·&nbsp;
+      <a href="{app_url}/dashboard/notifications" style="color:#94a3b8">All notifications</a>
+    </p>
+  </td></tr>
+</table></td></tr></table></body></html>"""
+
+                subject = f'{emoji} {title} — Velontri'
+
+                sent = False
+                if brevo_key:
+                    try:
+                        import httpx as _hx
+                        async with _hx.AsyncClient(timeout=10.0) as c:
+                            r = await c.post(
+                                'https://api.brevo.com/v3/smtp/email',
+                                headers={'api-key': brevo_key, 'Content-Type': 'application/json'},
+                                json={'to': [{'email': email, 'name': full_name}],
+                                      'from': {'email': sender_email, 'name': 'Velontri'},
+                                      'subject': subject, 'htmlContent': html_body}
+                            )
+                        sent = r.status_code in (200, 201, 202)
+                    except Exception:
+                        pass
+
+                if not sent and gmail_user and gmail_pass:
+                    import smtplib
+                    from email.mime.multipart import MIMEMultipart
+                    from email.mime.text import MIMEText
+                    def _smtp():
+                        m = MIMEMultipart('alternative')
+                        m['Subject'] = subject
+                        m['From'] = f'Velontri <{gmail_user}>'
+                        m['To'] = email
+                        m.attach(MIMEText(html_body, 'html', 'utf-8'))
+                        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as s:
+                            s.login(gmail_user, gmail_pass)
+                            s.sendmail(gmail_user, [email], m.as_string())
+                    loop = asyncio.get_event_loop()
+                    await asyncio.wait_for(loop.run_in_executor(None, _smtp), timeout=20.0)
+    except Exception as e:
+        logger.warning('verification_email_notify_failed', error=str(e))
 
 
 async def _audit(
