@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { MagnifyingGlass, ChevronDown, ChevronUp, Question, ChatCircle, EnvelopeSimple, Shield } from '@phosphor-icons/react';
+import { MagnifyingGlass, CaretDown, CaretUp, Question, ChatCircle, EnvelopeSimple, Shield } from '@phosphor-icons/react';
 
 type Category = 'all' | 'buying' | 'selling' | 'payments' | 'account' | 'safety';
 
@@ -115,8 +115,8 @@ export default function HelpPage() {
               >
                 <span className="text-[14px] font-semibold text-slate-900 leading-snug">{f.q}</span>
                 {open === f.id
-                  ? <ChevronUp className="h-4 w-4 text-slate-400 flex-shrink-0" />
-                  : <ChevronDown className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                  ? <CaretUp className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                  : <CaretDown className="h-4 w-4 text-slate-400 flex-shrink-0" />
                 }
               </button>
               {open === f.id && (
