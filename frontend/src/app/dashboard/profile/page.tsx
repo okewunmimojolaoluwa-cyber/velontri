@@ -138,10 +138,16 @@ export default function UserProfilePage() {
  const res = await apiClient.patch<ApiResponse<UserProfile>>('/users/me', body);
  return res.data;
  },
- onSuccess: () => {
+ onSuccess: (result: any) => {
+ const debug = result?.data?.debug;
+ if (debug && debug.length > 0) {
+ // Show the actual backend errors for debugging
+ setErr(`Save errors: ${debug.join(' | ')}`);
+ } else {
  setMsg('Profile saved successfully.');
  setEdit(false);
  setErr('');
+ }
  qc.invalidateQueries({ queryKey: [uid, 'profile'] });
  qc.invalidateQueries({ queryKey: userKeys.profile() });
  setTimeout(() => setMsg(''), 4000);

@@ -106,7 +106,12 @@ async def update_me(request: Request, service: UserService=Depends(_build_servic
     Falls back gracefully if the profile row doesn't exist yet (creates it).
     """
     from sqlalchemy import text
+    import uuid as _uuid_mod
     body = await request.json()
+    uid_str = str(current_user_id)
+    errors = []
+
+    # ── users table fields ─────────────────────────────────────────────────────
     user_table_fields = {}
     if 'full_name' in body and body['full_name'] is not None:
         user_table_fields['full_name'] = str(body['full_name'])
@@ -118,72 +123,73 @@ async def update_me(request: Request, service: UserService=Depends(_build_servic
         user_table_fields['country_code'] = str(body['country_code']).upper()[:2]
     if user_table_fields:
         set_clause = ', '.join((f'{k} = :{k}' for k in user_table_fields))
-        user_table_fields['uid'] = str(current_user_id)
+        user_table_fields['uid'] = uid_str
         try:
             async with request.app.state.session_factory() as _db:
                 from sqlalchemy import text as _text
-                await _db.execute(_text(f'UPDATE users SET {set_clause} WHERE id = :uid'), user_table_fields)
+                await _db.execute(_text(f'UPDATE users SET {set_clause} WHERE CAST(id AS TEXT) = :uid'), user_table_fields)
                 await _db.commit()
-        except Exception:
-            await service.session.execute(text(f'UPDATE users SET {set_clause} WHERE id = :uid'), user_table_fields)
-            await service.session.commit()
+        except Exception as _ue:
+            errors.append(str(_ue))
+            try:
+                await service.session.execute(text(f'UPDATE users SET {set_clause} WHERE CAST(id AS TEXT) = :uid'), user_table_fields)
+                await service.session.commit()
+            except Exception:
+                pass
+
+    # ── user_profiles table fields ─────────────────────────────────────────────
     profile_body = {k: v for k, v in body.items() if k in ('bio', 'country', 'state', 'city', 'default_currency')}
     if profile_body:
         from sqlalchemy import text as _text
-        import uuid as _uuid_mod
-        uid_str = str(current_user_id)
-
-        # Build params
         params: dict = {'uid': uid_str}
         for k, v in profile_body.items():
-            params[k] = v  # allow empty string to clear the field
+            params[k] = v
 
         set_parts = [f'{k} = :{k}' for k in profile_body.keys()]
         set_parts.append('updated_at = NOW()')
         set_sql = ', '.join(set_parts)
-
         saved = False
 
-        # Attempt 1: UPDATE existing row
+        # Try UPDATE
         try:
             async with request.app.state.session_factory() as _db:
-                result = await _db.execute(
+                r = await _db.execute(
                     _text(f"UPDATE user_profiles SET {set_sql} WHERE CAST(user_id AS TEXT) = :uid"),
                     params
                 )
                 await _db.commit()
-                saved = (result.rowcount > 0)
-        except Exception:
-            pass
+                saved = (r.rowcount > 0)
+        except Exception as _pe:
+            errors.append(f'update:{_pe}')
 
-        # Attempt 2: INSERT new row (if no existing row was updated)
+        # Try INSERT if no row found
         if not saved:
             try:
-                ins_params = dict(params)
-                ins_params['new_id'] = str(_uuid_mod.uuid4())
-                ins_cols = ['id', 'user_id'] + list(profile_body.keys())
-                ins_vals = [':new_id', ':uid'] + [f':{k}' for k in profile_body.keys()]
+                ins_p = dict(params)
+                ins_p['new_id'] = str(_uuid_mod.uuid4())
+                cols = ['id', 'user_id'] + list(profile_body.keys())
+                vals = [':new_id', ':uid'] + [f':{k}' for k in profile_body.keys()]
                 async with request.app.state.session_factory() as _db:
                     await _db.execute(
-                        _text(f"INSERT INTO user_profiles ({', '.join(ins_cols)}) VALUES ({', '.join(ins_vals)}) ON CONFLICT DO NOTHING"),
-                        ins_params
+                        _text(f"INSERT INTO user_profiles ({', '.join(cols)}) VALUES ({', '.join(vals)})"),
+                        ins_p
                     )
                     await _db.commit()
                     saved = True
-            except Exception:
-                pass
+            except Exception as _ie:
+                errors.append(f'insert:{_ie}')
 
-        # Attempt 3: ORM service layer (last resort)
+        # ORM fallback
         if not saved:
             try:
                 from ..schemas import UpdateProfileRequest as _UPR
-                safe = {k: (v or None) for k, v in profile_body.items()}
-                if any(v is not None for v in safe.values()):
-                    update_req = _UPR(**{k: v for k, v in safe.items() if v is not None})
-                    await service.update_profile(current_user_id, update_req)
-            except Exception:
-                pass
-    return SuccessResponse(message='Profile updated.', data={'updated': True})
+                safe = {k: v for k, v in profile_body.items() if v is not None and str(v).strip() != ''}
+                if safe:
+                    await service.update_profile(current_user_id, _UPR(**safe))
+            except Exception as _se:
+                errors.append(f'orm:{_se}')
+
+    return SuccessResponse(message='Profile updated.', data={'updated': True, 'debug': errors})
 
 @router.post('/users/me/change-password', response_model=SuccessResponse, summary="Change the authenticated user's password")
 async def change_password(request: Request, service: UserService=Depends(_build_service), current_user_id: uuid.UUID=Depends(get_current_user_id)) -> SuccessResponse:
