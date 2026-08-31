@@ -105,6 +105,7 @@ def _collect_routers():
         # (service_dir,          router_file,    attr,            tag)
         ("auth-service",         "auth",          "router",        "🔐 Auth"),
         ("user-service",         "users",         "router",        "👤 Users"),
+        ("user-service",         "verification",  "router",        "✅ Verification"),
         ("marketplace-service",  "listings",      "router",        "🏪 Marketplace"),
         ("search-service",       "search",        "router",        "🔍 Search"),
         ("ai-service",           "ai",            "router",        "🤖 AI"),

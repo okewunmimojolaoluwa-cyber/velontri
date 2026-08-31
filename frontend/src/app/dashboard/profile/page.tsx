@@ -19,8 +19,9 @@ interface UserProfile {
 function SellerVerificationBadge() {
  const { data } = useQuery({
  queryKey: ['verification', 'me', 'status'],
- queryFn: () => apiClient.get('/verification/me').then(r => r.data),
+ queryFn: () => apiClient.get('/verification/me').then(r => r.data).catch(() => null),
  staleTime: 60_000,
+ retry: false,
  });
  const status: string = (data as any)?.data?.status ?? 'not_verified';
 
@@ -129,12 +130,14 @@ export default function UserProfilePage() {
 
   /* ── Save profile ──────────────────────────────────────── */
  const { mutate: save, isPending: saving } = useMutation({
- mutationFn: () =>
- apiClient.patch<ApiResponse<UserProfile>>('/users/me', {
- full_name: form.full_name || undefined,
- country_code: form.country_code || undefined,
- bio: form.bio !== undefined ? form.bio : undefined,
- }).then(r => r.data),
+ mutationFn: () => {
+ const body: Record<string, string> = {};
+ if (form.full_name.trim()) body.full_name = form.full_name.trim();
+ if (form.country_code.trim()) body.country_code = form.country_code.trim().toUpperCase().slice(0, 2);
+ // Always send bio — even empty string clears it
+ body.bio = form.bio;
+ return apiClient.patch<ApiResponse<UserProfile>>('/users/me', body).then(r => r.data);
+ },
  onSuccess: () => {
  setMsg('Profile saved successfully.');
  setEdit(false);
