@@ -260,45 +260,79 @@ async def change_password_verify_otp(request: Request, service: UserService=Depe
     return SuccessResponse(message='Password changed successfully.', data={'updated': True})
 
 @router.get('/users/{user_id}/profile', response_model=SuccessResponse, summary="Get a user's public profile")
-async def get_profile(user_id: uuid.UUID, service: UserService=Depends(_build_service)) -> SuccessResponse:
+async def get_profile(user_id: uuid.UUID, request: Request, service: UserService=Depends(_build_service)) -> SuccessResponse:
     from sqlalchemy import text
+    profile_data: dict = {}
+
+    # Primary: direct SQL join via session_factory — most reliable
     try:
-        result = await service.get_profile(user_id)
-        profile_data = result.model_dump()
-    except Exception:
-        profile_data = {}
-    try:
-        row = (await service.session.execute(
-            text("""
-                SELECT u.full_name, u.email, u.phone,
-                       COALESCE(u.seller_verification_status, 'not_verified') AS seller_verification_status,
-                       p.profile_photo_url,
-                       p.city, p.state, p.country, p.bio
-                FROM users u
-                LEFT JOIN user_profiles p ON CAST(p.user_id AS TEXT) = CAST(u.id AS TEXT)
-                WHERE CAST(u.id AS TEXT) = :uid
-            """),
-            {'uid': str(user_id)}
-        )).fetchone()
-        if row:
-            if not profile_data.get('full_name'):
+        async with request.app.state.session_factory() as _db:
+            from sqlalchemy import text as _text
+            row = (await _db.execute(
+                _text("""
+                    SELECT u.full_name, u.email, u.phone,
+                           COALESCE(u.seller_verification_status, 'not_verified') AS seller_verification_status,
+                           p.profile_photo_url,
+                           p.city, p.state, p.country, p.bio,
+                           p.trust_badge, p.subscription_tier
+                    FROM users u
+                    LEFT JOIN user_profiles p ON CAST(p.user_id AS TEXT) = CAST(u.id AS TEXT)
+                    WHERE CAST(u.id AS TEXT) = :uid
+                """),
+                {'uid': str(user_id)}
+            )).fetchone()
+            if row:
                 profile_data['full_name'] = row[0] or 'Seller'
-            if not profile_data.get('display_name'):
                 profile_data['display_name'] = row[0] or None
-            profile_data['phone'] = row[2] or profile_data.get('phone') or ''
-            profile_data['seller_verification_status'] = row[3] or 'not_verified'
-            if not profile_data.get('profile_photo_url'):
+                profile_data['email'] = row[1] or ''
+                profile_data['phone'] = row[2] or ''
+                profile_data['seller_verification_status'] = row[3] or 'not_verified'
                 profile_data['profile_photo_url'] = row[4] or None
-            if not profile_data.get('city'):
                 profile_data['city'] = row[5] or None
-            if not profile_data.get('state'):
                 profile_data['state'] = row[6] or None
-            if not profile_data.get('country'):
                 profile_data['country'] = row[7] or None
-            if not profile_data.get('bio'):
-                profile_data['bio'] = row[8] or None
+                profile_data['bio'] = row[8] if row[8] is not None else None
+                profile_data['trust_badge'] = row[9] or None
+                profile_data['subscription_tier'] = row[10] or 'starter'
     except Exception:
-        pass
+        # Fallback: service session
+        try:
+            row = (await service.session.execute(
+                text("""
+                    SELECT u.full_name, u.email, u.phone,
+                           COALESCE(u.seller_verification_status, 'not_verified') AS seller_verification_status,
+                           p.profile_photo_url,
+                           p.city, p.state, p.country, p.bio,
+                           p.trust_badge, p.subscription_tier
+                    FROM users u
+                    LEFT JOIN user_profiles p ON CAST(p.user_id AS TEXT) = CAST(u.id AS TEXT)
+                    WHERE CAST(u.id AS TEXT) = :uid
+                """),
+                {'uid': str(user_id)}
+            )).fetchone()
+            if row:
+                profile_data['full_name'] = row[0] or 'Seller'
+                profile_data['display_name'] = row[0] or None
+                profile_data['email'] = row[1] or ''
+                profile_data['phone'] = row[2] or ''
+                profile_data['seller_verification_status'] = row[3] or 'not_verified'
+                profile_data['profile_photo_url'] = row[4] or None
+                profile_data['city'] = row[5] or None
+                profile_data['state'] = row[6] or None
+                profile_data['country'] = row[7] or None
+                profile_data['bio'] = row[8] if row[8] is not None else None
+                profile_data['trust_badge'] = row[9] or None
+                profile_data['subscription_tier'] = row[10] or 'starter'
+        except Exception:
+            pass
+
+    # ORM fallback if both SQL paths failed
+    if not profile_data:
+        try:
+            result = await service.get_profile(user_id)
+            profile_data = result.model_dump()
+        except Exception:
+            pass
 
     # Active listing count — useful for seller card on listing detail page
     try:
