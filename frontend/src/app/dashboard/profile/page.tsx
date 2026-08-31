@@ -130,13 +130,13 @@ export default function UserProfilePage() {
 
   /* ── Save profile ──────────────────────────────────────── */
  const { mutate: save, isPending: saving } = useMutation({
- mutationFn: () => {
+ mutationFn: async () => {
  const body: Record<string, string> = {};
  if (form.full_name.trim()) body.full_name = form.full_name.trim();
  if (form.country_code.trim()) body.country_code = form.country_code.trim().toUpperCase().slice(0, 2);
- // Always send bio — even empty string clears it
  body.bio = form.bio;
- return apiClient.patch<ApiResponse<UserProfile>>('/users/me', body).then(r => r.data);
+ const res = await apiClient.patch<ApiResponse<UserProfile>>('/users/me', body);
+ return res.data;
  },
  onSuccess: () => {
  setMsg('Profile saved successfully.');
@@ -147,7 +147,14 @@ export default function UserProfilePage() {
  setTimeout(() => setMsg(''), 4000);
  },
  onError: (e: any) => {
- setErr(e?.response?.data?.error?.message ?? e?.message ?? 'Save failed. Please try again.');
+ // Extract the real error — handle both VelontriApiError and raw axios errors
+ const detail = e?.response?.data?.detail; // FastAPI validation detail
+ const msg422 = Array.isArray(detail)
+ ? detail.map((d: any) => `${d.loc?.join('.')}: ${d.msg}`).join(', ')
+ : typeof detail === 'string' ? detail : null;
+ const apiMsg = e?.response?.data?.error?.message;
+ const fallback = e?.message ?? 'Save failed. Please try again.';
+ setErr(msg422 ?? apiMsg ?? fallback);
  },
  });
 

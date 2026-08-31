@@ -133,78 +133,54 @@ async def update_me(request: Request, service: UserService=Depends(_build_servic
         import uuid as _uuid_mod
         uid_str = str(current_user_id)
 
-        # Step 1: ensure the table and columns exist
-        try:
-            async with request.app.state.session_factory() as _db:
-                await _db.execute(_text("""
-                    CREATE TABLE IF NOT EXISTS user_profiles (
-                        id TEXT PRIMARY KEY,
-                        user_id TEXT NOT NULL,
-                        full_name VARCHAR(200),
-                        bio TEXT,
-                        profile_photo_url TEXT,
-                        country VARCHAR(2),
-                        state VARCHAR(100),
-                        city VARCHAR(100),
-                        default_currency VARCHAR(10) DEFAULT 'NGN',
-                        trust_badge VARCHAR(50) DEFAULT 'none',
-                        subscription_tier VARCHAR(50) DEFAULT 'starter',
-                        updated_at TIMESTAMPTZ DEFAULT NOW(),
-                        created_at TIMESTAMPTZ DEFAULT NOW()
-                    )
-                """))
-                for _col in ('bio', 'city', 'state', 'country', 'default_currency', 'profile_photo_url'):
-                    await _db.execute(_text(f"""
-                        DO $$ BEGIN
-                            IF NOT EXISTS (
-                                SELECT 1 FROM information_schema.columns
-                                WHERE table_name='user_profiles' AND column_name='{_col}'
-                            ) THEN
-                                ALTER TABLE user_profiles ADD COLUMN {_col} TEXT;
-                            END IF;
-                        END $$
-                    """))
-                await _db.commit()
-        except Exception:
-            pass
+        # Build params
+        params: dict = {'uid': uid_str}
+        for k, v in profile_body.items():
+            params[k] = v  # allow empty string to clear the field
 
-        # Step 2: try UPDATE first, then INSERT if no row existed
         set_parts = [f'{k} = :{k}' for k in profile_body.keys()]
         set_parts.append('updated_at = NOW()')
         set_sql = ', '.join(set_parts)
-        params: dict = {'uid': uid_str}
-        for k, v in profile_body.items():
-            params[k] = v  # allow empty string to clear a field
 
         saved = False
+
+        # Attempt 1: UPDATE existing row
         try:
             async with request.app.state.session_factory() as _db:
                 result = await _db.execute(
                     _text(f"UPDATE user_profiles SET {set_sql} WHERE CAST(user_id AS TEXT) = :uid"),
                     params
                 )
-                if result.rowcount == 0:
-                    # No existing row — insert one
-                    ins_cols = ['id', 'user_id'] + list(profile_body.keys())
-                    ins_vals = [':new_id', ':uid'] + [f':{k}' for k in profile_body.keys()]
-                    params['new_id'] = str(_uuid_mod.uuid4())
-                    await _db.execute(
-                        _text(f"INSERT INTO user_profiles ({', '.join(ins_cols)}) VALUES ({', '.join(ins_vals)})"),
-                        params
-                    )
                 await _db.commit()
-                saved = True
-        except Exception as _e1:
+                saved = (result.rowcount > 0)
+        except Exception:
             pass
 
-        # Step 3: fallback via service ORM (handles any schema differences)
+        # Attempt 2: INSERT new row (if no existing row was updated)
+        if not saved:
+            try:
+                ins_params = dict(params)
+                ins_params['new_id'] = str(_uuid_mod.uuid4())
+                ins_cols = ['id', 'user_id'] + list(profile_body.keys())
+                ins_vals = [':new_id', ':uid'] + [f':{k}' for k in profile_body.keys()]
+                async with request.app.state.session_factory() as _db:
+                    await _db.execute(
+                        _text(f"INSERT INTO user_profiles ({', '.join(ins_cols)}) VALUES ({', '.join(ins_vals)}) ON CONFLICT DO NOTHING"),
+                        ins_params
+                    )
+                    await _db.commit()
+                    saved = True
+            except Exception:
+                pass
+
+        # Attempt 3: ORM service layer (last resort)
         if not saved:
             try:
                 from ..schemas import UpdateProfileRequest as _UPR
-                # Pass all profile_body fields — including bio even if empty string
-                orm_updates = {k: (v if v != '' else None) for k, v in profile_body.items()}
-                update_req = _UPR(**{k: v for k, v in orm_updates.items() if v is not None})
-                await service.update_profile(current_user_id, update_req)
+                safe = {k: (v or None) for k, v in profile_body.items()}
+                if any(v is not None for v in safe.values()):
+                    update_req = _UPR(**{k: v for k, v in safe.items() if v is not None})
+                    await service.update_profile(current_user_id, update_req)
             except Exception:
                 pass
     return SuccessResponse(message='Profile updated.', data={'updated': True})
