@@ -296,6 +296,13 @@ function ForgotPasswordInner() {
  </div>
  )}
  </div>
+
+ {/* Legal links */}
+ <p className="mt-6 text-center text-[11px] text-slate-500">
+ <Link href="/privacy" className="hover:underline no-underline text-slate-400">Privacy Policy</Link>
+ {' · '}
+ <Link href="/terms" className="hover:underline no-underline text-slate-400">Terms of Service</Link>
+ </p>
  </div>
  </div>
  </div>

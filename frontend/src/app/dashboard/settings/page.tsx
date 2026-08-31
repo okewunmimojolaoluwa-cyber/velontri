@@ -363,6 +363,15 @@ export default function SettingsPage() {
  )}
  </>
  )}
+
+ {/* Privacy & Terms links at the bottom */}
+ <p className="text-center text-[11px] text-slate-400 pt-2">
+ <a href="/privacy" className="hover:underline hover:text-slate-600 transition-colors">Privacy Policy</a>
+ {' · '}
+ <a href="/terms" className="hover:underline hover:text-slate-600 transition-colors">Terms of Service</a>
+ {' · '}
+ <a href="mailto:support@velontri.com" className="hover:underline hover:text-slate-600 transition-colors">support@velontri.com</a>
+ </p>
  </div>
  );
 }

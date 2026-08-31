@@ -1167,9 +1167,9 @@ export default function HomePage() {
  <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-500">Company</p>
  <ul className="space-y-2">
  {[
- ['About', '#'],
- ['Privacy', '#'],
- ['Terms', '#'],
+ ['About', '/about'],
+ ['Privacy', '/privacy'],
+ ['Terms', '/terms'],
  ].map(([l, h]) => (
  <li key={l}>
  <Link href={h}

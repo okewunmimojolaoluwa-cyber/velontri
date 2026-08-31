@@ -214,6 +214,13 @@ function LoginInner() {
  Create one free
  </Link>
  </p>
+
+ <p className="text-center text-[11px] text-slate-400 mt-2">
+ By signing in you agree to our{' '}
+ <Link href="/terms" className="hover:underline no-underline text-slate-500">Terms</Link>
+ {' '}and{' '}
+ <Link href="/privacy" className="hover:underline no-underline text-slate-500">Privacy Policy</Link>.
+ </p>
  </div>
  );
 }
