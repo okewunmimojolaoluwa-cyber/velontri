@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { User, Lock, Eye, EyeSlash, Warning, EnvelopeSimple } from '@phosphor-icons/react';
 import { usersApi, userKeys } from '@/lib/api/endpoints/users';
@@ -37,8 +37,9 @@ export default function SettingsPage() {
  const [tab, setTab] = useState<Tab>('profile');
  const [profileMsg, setProfileMsg] = useState('');
  const [profileErr, setProfileErr] = useState('');
- const fullNameRef = useRef<HTMLInputElement>(null);
- const bioRef = useRef<HTMLInputElement>(null);
+ const [fullName, setFullName] = useState('');
+ const [bio, setBio] = useState('');
+ const [profileLoaded, setProfileLoaded] = useState(false);
 
   // Change password — OTP-based flow
  const [pwStep, setPwStep] = useState<PwStep>('form');
@@ -62,10 +63,20 @@ export default function SettingsPage() {
  enabled: session.isAuthenticated,
  });
 
+ // Hydrate controlled inputs when profile loads
+ useEffect(() => {
+ if (data?.data && !profileLoaded) {
+ setFullName(data.data.full_name ?? '');
+ setBio(data.data.bio ?? '');
+ setProfileLoaded(true);
+ }
+ }, [data, profileLoaded]);
+
  const { mutate: updateProfile, isPending: updatingProfile } = useMutation({
  mutationFn: (p: { full_name?: string; bio?: string }) => usersApi.updateProfile(p),
  onSuccess: () => {
  setProfileMsg('Saved.');
+ setProfileLoaded(false); // allow re-hydration on next load
  qc.invalidateQueries({ queryKey: userKeys.profile() });
  setTimeout(() => setProfileMsg(''), 3000);
  },
@@ -148,11 +159,23 @@ export default function SettingsPage() {
  </div>
  <div className="space-y-1.5">
  <label className="text-[13px] font-semibold text-slate-700">Full name</label>
- <input ref={fullNameRef} defaultValue={profile?.full_name ?? ''} className={inputCls} />
+ <input
+ value={fullName}
+ onChange={e => setFullName(e.target.value)}
+ placeholder="Your full name"
+ className={inputCls}
+ />
  </div>
  <div className="space-y-1.5">
  <label className="text-[13px] font-semibold text-slate-700">Bio</label>
- <input ref={bioRef} defaultValue={profile?.bio ?? ''} placeholder="Tell buyers about yourself…" className={inputCls} />
+ <textarea
+ value={bio}
+ onChange={e => setBio(e.target.value)}
+ placeholder="Tell buyers about yourself…"
+ rows={3}
+ className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/10 resize-none transition-all"
+ />
+ <p className="text-[11px] text-slate-400">{bio.length}/300 characters</p>
  </div>
  <div className="space-y-1.5">
  <label className="text-[13px] font-semibold text-slate-700">Email</label>
@@ -166,7 +189,7 @@ export default function SettingsPage() {
  {profileMsg && <p className="text-[12px] text-emerald-600 font-semibold">{profileMsg}</p>}
  <button
  disabled={updatingProfile}
- onClick={() => { setProfileErr(''); updateProfile({ full_name: fullNameRef.current?.value, bio: bioRef.current?.value }); }}
+ onClick={() => { setProfileErr(''); updateProfile({ full_name: fullName, bio }); }}
  className="h-11 w-full rounded-xl bg-indigo-600 text-[14px] font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
  {updatingProfile ? 'Saving…' : 'Save changes'}
  </button>
