@@ -79,6 +79,10 @@ export default function ModProfilePage() {
  >
  Edit Profile
  </button>
+ )}
+ </div>
+
+ {message && (
  <div className={`flex items-center gap-2 rounded-xl border px-4 py-3 ${
  isError ? 'border-red-200 bg-red-50' : 'border-emerald-200 bg-emerald-50'
  }`}>
