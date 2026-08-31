@@ -517,26 +517,20 @@ export default function HomePage() {
 
               {/* Stats */}
  <div className="border-t border-slate-100 pt-5 mt-2">
-                {/* Mobile: 2×2 grid with card style */}
+                {/* Mobile: 2×2 stat grid — clean text, no emoji */}
  <div className="grid grid-cols-2 gap-3 sm:hidden">
  {[
- { v: 'Growing', l: 'Community', accent: '#4F46E5', bg: '#eef2ff', emoji: '🏪' },
- { v: '12', l: 'Countries', accent: '#059669', bg: '#ecfdf5', emoji: '🌍' },
- { v: 'Free', l: 'To list', accent: '#0369A1', bg: '#e0f2fe', emoji: '✅' },
- { v: '100%', l: 'No commissions', accent: '#D97706', bg: '#fffbeb', emoji: '💰' },
- ].map(({ v, l, accent, bg, emoji }) => (
- <div key={l}
- className="flex flex-col items-center justify-center gap-1.5 rounded-2xl py-4 px-3 text-center"
- style={{ background: bg }}>
- <span className="text-[1.4rem]">{emoji}</span>
+ { v: 'Growing', l: 'Community', accent: '#4F46E5' },
+ { v: '12', l: 'Countries', accent: '#059669' },
+ { v: 'Free', l: 'To list', accent: '#0369A1' },
+ { v: '0%', l: 'Commissions', accent: '#D97706' },
+ ].map(({ v, l, accent }) => (
+ <div key={l} className="rounded-xl border border-slate-100 bg-slate-50 py-4 px-3">
  <p className="font-black leading-none"
  style={{ fontSize: '1.5rem', letterSpacing: '-0.03em', color: accent }}>
  {v}
  </p>
- <p className="text-[11px] font-semibold uppercase tracking-[0.06em]"
- style={{ color: accent }}>
- {l}
- </p>
+ <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mt-1">{l}</p>
  </div>
  ))}
  </div>
@@ -942,55 +936,41 @@ export default function HomePage() {
  {/* ══════════════════════════════════════════
  TESTIMONIALS static marketing copy
  ══════════════════════════════════════════ */}
- <section className="py-14 sm:py-20 bg-[#0a0f1e] relative overflow-hidden">
- <div className="pointer-events-none absolute inset-0 opacity-[0.03]"
- style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
- <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+ <section className="py-14 sm:py-20 bg-slate-900">
+ <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
  <div className="mb-12 text-center">
- <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.15em]" style={{ color: '#6366f1' }}>
+ <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.15em] text-indigo-400">
  Success stories
  </p>
  <h2 className="font-black text-white"
  style={{ fontSize: 'clamp(1.6rem,2.8vw,2.25rem)', letterSpacing: '-0.03em' }}>
- Trusted by entrepreneurs<br className="hidden sm:block" /> across Africa
+ Trusted by sellers across Africa
  </h2>
  </div>
  <div className="grid gap-5 grid-cols-1 sm:grid-cols-3">
  {REVIEWS.map(({ q, name, role, city, av, grad, metric }, i) => (
  <div key={name} data-reveal data-delay={String(i * 80)}
- className="vr-out group relative flex flex-col gap-5 overflow-hidden rounded-2xl p-6"
- style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.06)' }}>
- <div className="flex h-9 w-9 items-center justify-center rounded-xl"
- style={{ background: 'rgba(99,102,241,0.15)' }}>
- <Quotes size={16} color="#6366f1" />
- </div>
+ className="vr-out flex flex-col gap-4 rounded-2xl p-6"
+ style={{ background: '#1e2433', border: '1px solid rgba(255,255,255,0.07)' }}>
  <div className="flex gap-0.5">
  {[1,2,3,4,5].map(s => (
  <Star key={s} size={13} className="fill-amber-400 text-amber-400" />
  ))}
  </div>
- <p className="flex-1 text-[14px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.65)' }}>
+ <p className="flex-1 text-[14px] leading-relaxed text-slate-300">
  &ldquo;{q}&rdquo;
  </p>
- <div className="inline-flex w-fit items-center rounded-full px-3 py-1.5 text-[11px] font-bold"
- style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8' }}>
- ↑ {metric}
- </div>
- <div className="flex items-center gap-3 border-t pt-4"
- style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
- <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-sm font-black text-white"
+ <p className="text-[11px] font-semibold text-indigo-400">{metric}</p>
+ <div className="flex items-center gap-3 border-t border-white/10 pt-4">
+ <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-sm font-black text-white"
  style={{ background: grad }}>
  {av}
  </div>
  <div>
  <p className="text-[13px] font-bold text-white">{name}</p>
- <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.38)' }}>
- {role} · {city}
- </p>
+ <p className="text-[11px] text-slate-500">{role} · {city}</p>
  </div>
  </div>
- <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
- style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.04) 0%,transparent 60%)' }} />
  </div>
  ))}
  </div>
@@ -1000,80 +980,42 @@ export default function HomePage() {
  {/* ══════════════════════════════════════════
  WHY VELONTRI
  ══════════════════════════════════════════ */}
- <section className="border-b border-slate-200 bg-[#F8F9FA] py-14 sm:py-20">
+ <section className="border-b border-slate-200 bg-white py-14 sm:py-20">
  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
  <div className="mb-12 text-center">
  <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Why Velontri</p>
  <h2 className="font-black text-slate-900"
  style={{ fontSize: 'clamp(1.6rem,2.8vw,2.25rem)', letterSpacing: '-0.03em' }}>
- Built different. Built for Africa.
+ Built for Africa. Built for everyone.
  </h2>
  </div>
- <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+ <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
  {[
  {
- icon: () => (
- <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
- <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.535 5.857L0 24l6.335-1.51A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.848 0-3.572-.504-5.057-1.385l-.362-.215-3.758.895.952-3.663-.235-.376A9.96 9.96 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
- </svg>
- ),
- n: 'Instant', label: 'WhatsApp contact',
- t: 'Chat sellers on WhatsApp',
- d: 'Every listing has a WhatsApp button. One tap connects you directly with the seller no in-app friction.',
- c: '#25D366', bg: 'linear-gradient(135deg,#0a0f1e 0%,#001a0a 100%)',
- tag: 'Connect',
+ stat: 'Instant',
+ label: 'WhatsApp contact',
+ desc: 'Every listing has a WhatsApp button. One tap connects you directly with the seller.',
  },
  {
- icon: () => (
- <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
- <circle cx="12" cy="12" r="10"/>
- <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
- </svg>
- ),
- n: '12', label: 'Countries',
- t: 'Pan-African reach',
- d: 'One account. Reach buyers in Nigeria, Ghana, Kenya, South Africa and 8 more markets.',
- c: '#60A5FA', bg: 'linear-gradient(135deg,#0a0f1e 0%,#0a1628 100%)',
- tag: 'Reach',
+ stat: '12',
+ label: 'African countries',
+ desc: 'One account. Reach buyers in Nigeria, Ghana, Kenya, South Africa and 8 more markets.',
  },
  {
- icon: Lightning, n: 'Free', label: 'To start',
- t: 'Free plan, no commissions',
- d: 'Post up to 3 listings free. Upgrade for more. Velontri earns through subscriptions never from your sales.',
- c: '#FBBF24', bg: 'linear-gradient(135deg,#0a0f1e 0%,#1a1200 100%)',
- tag: 'Pricing',
+ stat: 'Free',
+ label: 'To start selling',
+ desc: 'Post up to 3 listings free. Upgrade for more. No commissions on your sales.',
  },
  {
- icon: SealCheck, n: 'Verified', label: 'Sellers only',
- t: 'Verified sellers only',
- d: 'Every seller is ID-verified. Every listing reviewed. You only see quality, trusted stores.',
- c: '#A78BFA', bg: 'linear-gradient(135deg,#0a0f1e 0%,#130a1a 100%)',
- tag: 'Quality',
+ stat: 'Verified',
+ label: 'Seller badges',
+ desc: 'Sellers can verify their identity. Buyers see who they are dealing with before buying.',
  },
- ].map(({ icon: Icon, n, label, t, d, c, bg, tag }, i) => (
- <div key={t} data-reveal data-delay={String(i * 80)}
- className="vr-out group relative overflow-hidden rounded-2xl p-6 flex flex-col gap-5"
- style={{ background: bg, minHeight: 280 }}>
- <div className="inline-flex w-fit items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em]"
- style={{ background: `${c}22`, color: c }}>
- {tag}
- </div>
- <div className="flex items-end gap-4">
- <div className="flex h-12 w-12 items-center justify-center rounded-2xl flex-shrink-0"
- style={{ background: `${c}20`, color: c }}>
- <Icon size={22} />
- </div>
- <div>
- <p className="font-black leading-none" style={{ fontSize: '2rem', color: c, letterSpacing: '-0.04em' }}>{n}</p>
- <p className="text-[11px] font-medium mt-0.5" style={{ color: `${c}80` }}>{label}</p>
- </div>
- </div>
- <div className="flex-1 space-y-2">
- <p className="text-[15px] font-bold text-white leading-snug">{t}</p>
- <p className="text-[13px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>{d}</p>
- </div>
- <div className="pointer-events-none absolute -top-8 -right-8 h-32 w-32 rounded-full opacity-20 transition-opacity duration-500 group-hover:opacity-40"
- style={{ background: `radial-gradient(circle, ${c} 0%, transparent 70%)` }} />
+ ].map(({ stat, label, desc }) => (
+ <div key={label} className="rounded-2xl border border-slate-100 bg-[#F8F9FA] p-6 space-y-3">
+ <p className="text-[2.25rem] font-black text-slate-900 leading-none tracking-tight">{stat}</p>
+ <p className="text-[13px] font-bold text-slate-700">{label}</p>
+ <p className="text-[13px] text-slate-500 leading-relaxed">{desc}</p>
  </div>
  ))}
  </div>
@@ -1330,7 +1272,7 @@ export default function HomePage() {
  </div>
  </div>
  <span className="text-[10px] tracking-wide" style={{ color: '#7a6030' }}>
- crafted by mojolaoluwa
+ crafted by Mojolaoluwa....
  </span>
  </div>
  </div>
