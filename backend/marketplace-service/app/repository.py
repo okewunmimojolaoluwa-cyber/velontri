@@ -58,6 +58,7 @@ async def create_listing(
     image_url: str | None = None,
     whatsapp_number: str | None = None,
     contact_phone: str | None = None,
+    is_negotiable: bool | None = None,
 ) -> Listing:
     listing = Listing(
         seller_id=seller_id,
@@ -85,7 +86,6 @@ async def create_listing(
     if contact_phone is not None:
         try: setattr(listing, 'contact_phone', contact_phone)
         except Exception: pass
-    is_negotiable = kwargs.get('is_negotiable')
     if is_negotiable is not None:
         try: setattr(listing, 'is_negotiable', bool(is_negotiable))
         except Exception: pass
