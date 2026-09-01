@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import Link from 'next/link';
-import { MapPin, SealCheck, Camera, Clock } from '@phosphor-icons/react';
+import { MapPin, SealCheck, Camera, Timer } from '@phosphor-icons/react';
 import { ListingImage } from '@/components/ui/listing-image';
 import type { ListingSummary } from '@/lib/api/endpoints/listings';
 
@@ -73,7 +73,7 @@ export function ListingCard({ listing }: { listing: ListingSummary }) {
         {/* Active duration badge — top-left of image */}
  {duration && (
  <div className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm pointer-events-none">
- <Clock className="h-2.5 w-2.5 flex-shrink-0" />
+ <Timer className="h-2.5 w-2.5 flex-shrink-0" />
  {duration}
  </div>
  )}
