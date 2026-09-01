@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import Link from 'next/link';
-import { MapPin, SealCheck, Camera } from '@phosphor-icons/react';
+import { MapPin, SealCheck, Camera, Clock } from '@phosphor-icons/react';
 import { ListingImage } from '@/components/ui/listing-image';
 import type { ListingSummary } from '@/lib/api/endpoints/listings';
 
@@ -14,8 +14,39 @@ function fmt(n: number, currency: string) {
  } catch { return `${currency} ${n.toLocaleString()}`; }
 }
 
+/**
+ * Returns a short, human-friendly "active for" string.
+ * Examples: "Today", "2d", "3wk", "5mo", "2yr"
+ */
+function activeDuration(createdAt: string | undefined): string | null {
+ if (!createdAt) return null;
+ try {
+ const ms = Date.now() - new Date(createdAt).getTime();
+ const minutes = Math.floor(ms / 60_000);
+ const hours = Math.floor(ms / 3_600_000);
+ const days = Math.floor(ms / 86_400_000);
+ const weeks = Math.floor(days / 7);
+ const months = Math.floor(days / 30);
+ const years = Math.floor(days / 365);
+
+ if (minutes < 60) return 'Just listed';
+ if (hours < 24) return `${hours}h`;
+ if (days === 1) return '1d';
+ if (days < 7) return `${days}d`;
+ if (weeks === 1) return '1wk';
+ if (weeks < 5) return `${weeks}wk`;
+ if (months === 1) return '1mo';
+ if (months < 12) return `${months}mo`;
+ if (years === 1) return '1yr';
+ return `${years}yr`;
+ } catch {
+ return null;
+ }
+}
+
 export function ListingCard({ listing }: { listing: ListingSummary }) {
  const mediaCount = (listing as any).media_count as number | undefined;
+ const duration = activeDuration(listing.created_at);
 
  return (
  <Link
@@ -32,16 +63,23 @@ export function ListingCard({ listing }: { listing: ListingSummary }) {
  ratio="4/3"
  className="group-hover:scale-[1.03] transition-transform duration-500"
  />
-        {/* Photo count badge — only when listing has 2+ images */}
+        {/* Photo count badge */}
  {mediaCount != null && mediaCount > 1 && (
  <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm pointer-events-none tabular-nums">
  <Camera className="h-2.5 w-2.5 flex-shrink-0" />
  {mediaCount}
  </div>
  )}
+        {/* Active duration badge — top-left of image */}
+ {duration && (
+ <div className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm pointer-events-none">
+ <Clock className="h-2.5 w-2.5 flex-shrink-0" />
+ {duration}
+ </div>
+ )}
  </div>
 
-      {/* ── Content — fixed padding so every card is identical ── */}
+      {/* ── Content ── */}
  <div className="p-4 space-y-1.5">
         {/* Category label + verified badge row */}
  <div className="flex items-center justify-between gap-1">
@@ -56,13 +94,13 @@ export function ListingCard({ listing }: { listing: ListingSummary }) {
  )}
  </div>
 
-        {/* Title — always 2 lines max, never grows the card */}
+        {/* Title */}
  <h3 className="text-sm font-semibold leading-snug line-clamp-2 text-foreground
  group-hover:text-primary transition-colors duration-150 min-h-[2.5rem]">
  {listing.title}
  </h3>
 
-        {/* Price + location — always on bottom */}
+        {/* Price + location */}
  <div className="flex items-center justify-between gap-2 pt-1">
  <span className="text-base font-bold text-primary whitespace-nowrap">
  {fmt(listing.price, listing.currency)}
