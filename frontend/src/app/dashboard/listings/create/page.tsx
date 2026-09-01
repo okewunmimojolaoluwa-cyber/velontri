@@ -124,10 +124,91 @@ function ListingLimitGate({
  );
 }
 
-const CATEGORIES = [
- 'Vehicles', 'Property', 'Electronics', 'Fashion', 'Furniture',
- 'Services', 'Jobs', 'Agriculture', 'Health & Beauty', 'Sports', 'Books', 'Other',
-];
+const CATEGORIES: Record<string, string[]> = {
+ 'Vehicles': [
+ 'Cars', 'Motorcycles & Scooters', 'Trucks & Trailers', 'Buses & Minibuses',
+ 'Boats & Watercraft', 'Heavy Equipment', 'Vehicle Parts & Accessories',
+ 'Tractors & Farm Equipment', 'Other Vehicles',
+ ],
+ 'Property': [
+ 'Houses & Apartments for Rent', 'Houses & Apartments for Sale',
+ 'Land & Plots for Sale', 'Land & Plots for Rent',
+ 'Commercial Property for Rent', 'Commercial Property for Sale',
+ 'Short Let / Vacation', 'Event Centres & Halls', 'Other Property',
+ ],
+ 'Phones & Tablets': [
+ 'Mobile Phones', 'Tablets', 'Phone Cases & Covers', 'Chargers & Cables',
+ 'Screen Protectors', 'Phone Parts & Accessories', 'Other Phones & Tablets',
+ ],
+ 'Electronics': [
+ 'Laptops & Computers', 'TVs & Monitors', 'Audio & Music Equipment',
+ 'Cameras & Photography', 'Computer Accessories', 'Game Consoles & Video Games',
+ 'Printers & Scanners', 'Networking & Wi-Fi', 'Power & Solar', 'Other Electronics',
+ ],
+ 'Home, Furniture & Appliances': [
+ 'Furniture', 'Kitchen Appliances', 'Home Appliances', 'Bedding & Linen',
+ 'Curtains & Blinds', 'Lighting & Fans', 'Home Decor & Accessories',
+ 'Garden & Outdoor', 'Air Conditioners', 'Generators', 'Other Home Items',
+ ],
+ 'Fashion': [
+ "Men's Clothing", "Women's Clothing", "Children's Clothing",
+ 'Shoes & Sandals', 'Bags & Luggage', 'Watches & Jewellery',
+ 'Accessories & Sunglasses', 'Traditional Attire', 'Other Fashion',
+ ],
+ 'Beauty & Personal Care': [
+ 'Skincare', 'Hair Care', 'Fragrances & Perfumes',
+ 'Makeup & Cosmetics', 'Nail Care', 'Dental Care',
+ 'Men\'s Grooming', 'Health & Wellness', 'Other Beauty',
+ ],
+ 'Services': [
+ 'Cleaning & Laundry', 'Tutoring & Education', 'Event Planning & Entertainment',
+ 'Photography & Videography', 'Web & Tech Services', 'Legal & Financial Services',
+ 'Logistics & Delivery', 'Security Services', 'Healthcare & Wellness',
+ 'Beauty & Barbing', 'Catering & Cooking', 'Other Services',
+ ],
+ 'Repair & Construction': [
+ 'Electrical', 'Plumbing', 'Painting & Tiling',
+ 'Carpentry & Furniture', 'AC Repair', 'Phone & Laptop Repair',
+ 'Car Repair & Mechanic', 'Building & Construction', 'Other Repairs',
+ ],
+ 'Commercial Equipment & Tools': [
+ 'Industrial Machinery', 'Restaurant & Catering Equipment',
+ 'Office Equipment', 'Power Tools', 'Agricultural Tools',
+ 'Medical Equipment', 'Other Equipment',
+ ],
+ 'Leisure & Activities': [
+ 'Sports & Exercise', 'Musical Instruments', 'Outdoor Recreation',
+ 'Tickets & Vouchers', 'Toys & Games', 'Books, Movies & Music',
+ 'Art & Collectibles', 'Other Leisure',
+ ],
+ 'Babies & Kids': [
+ 'Baby Clothes', 'Pushchairs & Prams', 'Car Seats', 'Baby Feeding',
+ 'Toys & Educational', 'Kids\' Furniture', 'School Supplies', 'Other Kids',
+ ],
+ 'Food, Agriculture & Farming': [
+ 'Farm Produce', 'Livestock & Poultry', 'Fish & Seafood',
+ 'Processed Food', 'Seeds & Fertilisers', 'Farming Services', 'Other Agriculture',
+ ],
+ 'Animals & Pets': [
+ 'Dogs', 'Cats', 'Birds', 'Fish & Aquarium', 'Livestock',
+ 'Pet Food & Accessories', 'Veterinary Services', 'Other Animals',
+ ],
+ 'Jobs': [
+ 'Accounting & Finance', 'Administration & Office', 'Construction & Artisans',
+ 'Customer Service', 'Education & Training', 'Engineering & Technical',
+ 'Healthcare & Pharma', 'ICT & Telecom', 'Legal', 'Management',
+ 'Marketing & Sales', 'Media & Entertainment', 'Transportation', 'Other Jobs',
+ ],
+ 'Seeking Work / CVs': [
+ 'Accounting & Finance', 'Administration', 'Customer Service',
+ 'Engineering', 'Healthcare', 'ICT & Software', 'Sales & Marketing',
+ 'Teaching & Training', 'Transportation', 'Other CVs',
+ ],
+ 'Business & Industry': [
+ 'Businesses for Sale', 'Franchise Opportunities', 'Investment Opportunities',
+ 'Business Supplies', 'Office Furniture', 'Stocks & Shares', 'Other Business',
+ ],
+};
 
 const LISTING_TYPES = [
  { value: 'physical', label: 'Product', icon: '📦', desc: 'Physical or digital item' },
@@ -205,6 +286,7 @@ export default function CreateListingPage() {
  price: '',
  currency: 'NGN',
  category: '',
+ subcategory: '',
  condition: 'new' as 'new' | 'used' | 'refurbished',
  state: '',
  city: '',
@@ -278,6 +360,7 @@ export default function CreateListingPage() {
  is_negotiable: form.is_negotiable,
  image_url: coverImageUrl,
  extra_image_urls: extraImageUrls.length > 0 ? extraImageUrls : undefined,
+ ...(form.subcategory ? { subcategory: form.subcategory } : {}),
  } as any);
 
  const listingId = (res.data as any)?.id;
@@ -618,15 +701,17 @@ export default function CreateListingPage() {
  <label className="block text-xs font-bold text-slate-600 mb-2">
  Category <span className="text-red-500">*</span>
  </label>
- <div className="grid grid-cols-3 gap-2">
- {CATEGORIES.map(cat => (
+ {/* Category — scrollable list */}
+ <div className="grid grid-cols-2 gap-1.5 max-h-60 overflow-y-auto pr-1 rounded-xl border border-slate-200 p-2 bg-slate-50">
+ {Object.keys(CATEGORIES).map(cat => (
  <button
  key={cat}
- onClick={() => setForm(f => ({ ...f, category: cat }))}
- className={`rounded-xl border py-2 px-3 text-xs font-medium transition-all ${
+ type="button"
+ onClick={() => setForm(f => ({ ...f, category: cat, subcategory: '' }))}
+ className={`rounded-lg border px-3 py-2 text-[12px] font-medium text-left transition-all ${
  form.category === cat
  ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
- : 'border-slate-200 text-slate-600 hover:border-indigo-200'
+ : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:bg-indigo-50/50'
  }`}
  >
  {cat}
@@ -634,6 +719,31 @@ export default function CreateListingPage() {
  ))}
  </div>
  </div>
+
+ {/* Subcategory — only shown after category is selected */}
+ {form.category && CATEGORIES[form.category as keyof typeof CATEGORIES] && (
+ <div>
+ <label className="block text-xs font-bold text-slate-600 mb-2">
+ Subcategory <span className="text-[10px] font-normal text-slate-400">(optional)</span>
+ </label>
+ <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1 rounded-xl border border-slate-200 p-2 bg-slate-50">
+ {CATEGORIES[form.category as keyof typeof CATEGORIES].map(sub => (
+ <button
+ key={sub}
+ type="button"
+ onClick={() => setForm(f => ({ ...f, subcategory: sub }))}
+ className={`rounded-lg border px-3 py-2 text-[12px] font-medium text-left transition-all ${
+ form.subcategory === sub
+ ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+ : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-200 hover:bg-emerald-50/50'
+ }`}
+ >
+ {sub}
+ </button>
+ ))}
+ </div>
+ </div>
+ )}
  </div>
  )}
 
@@ -851,7 +961,7 @@ export default function CreateListingPage() {
  {LISTING_TYPES.find(t => t.value === form.listing_type)?.label ?? form.listing_type}
  </span>
  <span className="text-xs bg-slate-100 rounded-full px-2.5 py-1 text-slate-600">
- {form.category}
+ {form.category}{form.subcategory ? ` › ${form.subcategory}` : ''}
  </span>
  <span className="text-xs bg-slate-100 rounded-full px-2.5 py-1 text-slate-600 capitalize">
  {form.condition}
