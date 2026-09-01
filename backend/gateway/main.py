@@ -530,6 +530,8 @@ async def _apply_pg_migrations(engine) -> None:
         "ALTER TABLE listings ADD COLUMN IF NOT EXISTS is_negotiable BOOLEAN DEFAULT FALSE",
         # Backfill NULL created_at — any listing with no timestamp gets now as a fallback
         "UPDATE listings SET created_at = NOW() WHERE created_at IS NULL",
+        # Subscription table: add retry_count if missing
+        "ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS retry_count INTEGER NOT NULL DEFAULT 0",
         """
         CREATE TABLE IF NOT EXISTS saved_listings (
             id          TEXT PRIMARY KEY,
