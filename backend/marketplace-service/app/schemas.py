@@ -88,6 +88,7 @@ class CreateListingRequest(BaseModel):
     extra_image_urls: list[str] | None = Field(default=None, description="Additional image data URLs (index 1+). Stored atomically in listing_media.")
     whatsapp_number: str | None = Field(default=None, max_length=20, description="Seller WhatsApp number in E.164 format")
     contact_phone: str | None = Field(default=None, max_length=20, description="Optional extra contact phone")
+    is_negotiable: bool | None = Field(default=None, description="Whether the price is negotiable")
 
     @field_validator("listing_type")
     @classmethod
@@ -141,6 +142,7 @@ class ListingResponse(BaseModel):
     media_urls: list[str] = []          # all images in sort order
     whatsapp_number: str | None = None
     contact_phone: str | None = None
+    is_negotiable: bool = False
     # Seller info — embedded at fetch time so no extra API call needed
     seller_name: str | None = None
     seller_verified: bool = False

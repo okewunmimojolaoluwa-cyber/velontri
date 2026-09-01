@@ -269,6 +269,7 @@ async def _apply_pg_migrations(engine) -> None:
             image_url       TEXT,
             whatsapp_number TEXT,
             contact_phone   TEXT,
+            is_negotiable   BOOLEAN NOT NULL DEFAULT FALSE,
             created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
@@ -526,6 +527,7 @@ async def _apply_pg_migrations(engine) -> None:
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ",
         "ALTER TABLE listings ADD COLUMN IF NOT EXISTS whatsapp_number TEXT",
         "ALTER TABLE listings ADD COLUMN IF NOT EXISTS contact_phone TEXT",
+        "ALTER TABLE listings ADD COLUMN IF NOT EXISTS is_negotiable BOOLEAN DEFAULT FALSE",
         """
         CREATE TABLE IF NOT EXISTS saved_listings (
             id          TEXT PRIMARY KEY,

@@ -85,6 +85,10 @@ async def create_listing(
     if contact_phone is not None:
         try: setattr(listing, 'contact_phone', contact_phone)
         except Exception: pass
+    is_negotiable = kwargs.get('is_negotiable')
+    if is_negotiable is not None:
+        try: setattr(listing, 'is_negotiable', bool(is_negotiable))
+        except Exception: pass
     session.add(listing)
     await session.flush()
     return listing

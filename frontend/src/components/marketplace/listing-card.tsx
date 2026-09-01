@@ -102,9 +102,16 @@ export function ListingCard({ listing }: { listing: ListingSummary }) {
 
         {/* Price + location */}
  <div className="flex items-center justify-between gap-2 pt-1">
+ <div className="flex items-center gap-1.5 min-w-0">
  <span className="text-base font-bold text-primary whitespace-nowrap">
  {fmt(listing.price, listing.currency)}
  </span>
+ {listing.is_negotiable && (
+ <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap">
+ Nego
+ </span>
+ )}
+ </div>
  {(listing.city || listing.state) && (
  <div className="flex items-center gap-1 text-xs text-muted-foreground min-w-0">
  <MapPin className="h-3 w-3 flex-shrink-0" />

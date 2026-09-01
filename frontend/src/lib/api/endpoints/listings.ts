@@ -26,6 +26,7 @@ export interface ListingSummary {
  seller_name?: string;
  media_count?: number;
  created_at?: string;
+ is_negotiable?: boolean;
  updated_at?: string;
 }
 

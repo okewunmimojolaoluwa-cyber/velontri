@@ -211,6 +211,7 @@ export default function CreateListingPage() {
  whatsapp_number: '',
  contact_phone: '',
  images: [] as string[],
+ is_negotiable: false,
  });
 
  const { mutate: submit, isPending } = useMutation({
@@ -274,6 +275,7 @@ export default function CreateListingPage() {
  condition: form.condition,
  whatsapp_number: normalizedPhone || undefined,
  contact_phone: normalizedPhone || undefined,
+ is_negotiable: form.is_negotiable,
  image_url: coverImageUrl,
  extra_image_urls: extraImageUrls.length > 0 ? extraImageUrls : undefined,
  } as any);
@@ -585,6 +587,33 @@ export default function CreateListingPage() {
  </div>
  </div>
 
+ {/* Negotiable toggle */}
+ <button
+ type="button"
+ onClick={() => setForm(f => ({ ...f, is_negotiable: !f.is_negotiable }))}
+ className={`flex items-center justify-between w-full rounded-xl border px-4 py-3 text-left transition-all ${
+ form.is_negotiable
+ ? 'border-emerald-300 bg-emerald-50'
+ : 'border-slate-200 bg-slate-50 hover:border-indigo-300 hover:bg-indigo-50/50'
+ }`}
+ >
+ <div>
+ <p className={`text-[13px] font-bold ${form.is_negotiable ? 'text-emerald-800' : 'text-slate-700'}`}>
+ Price is negotiable
+ </p>
+ <p className={`text-[11px] mt-0.5 ${form.is_negotiable ? 'text-emerald-600' : 'text-slate-400'}`}>
+ {form.is_negotiable ? 'Buyers know they can make an offer' : 'Tap to allow buyers to negotiate'}
+ </p>
+ </div>
+ <div className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${
+ form.is_negotiable ? 'bg-emerald-500' : 'bg-slate-200'
+ }`}>
+ <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+ form.is_negotiable ? 'translate-x-6' : 'translate-x-1'
+ }`} />
+ </div>
+ </button>
+
  <div>
  <label className="block text-xs font-bold text-slate-600 mb-2">
  Category <span className="text-red-500">*</span>
@@ -808,9 +837,14 @@ export default function CreateListingPage() {
  <div className="p-4 space-y-2">
  <div className="flex items-start justify-between gap-2">
  <p className="text-base font-bold text-slate-900">{form.title}</p>
+ <div className="text-right flex-shrink-0">
  <span className="text-lg font-black text-indigo-600 whitespace-nowrap">
  {form.currency} {parseFloat(form.price || '0').toLocaleString()}
  </span>
+ {form.is_negotiable && (
+ <p className="text-[10px] font-semibold text-emerald-600 mt-0.5">Negotiable</p>
+ )}
+ </div>
  </div>
  <div className="flex flex-wrap gap-2">
  <span className="text-xs bg-slate-100 rounded-full px-2.5 py-1 text-slate-600 capitalize">

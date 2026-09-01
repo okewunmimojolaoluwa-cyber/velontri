@@ -604,9 +604,16 @@ export default function ListingDetailPage() {
               {/* ── Price card ────────────────────────────── */}
  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
  <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 mb-1">Listed price</p>
- <p className="text-[2.25rem] font-black text-slate-900 tracking-tight leading-none mb-5">
+ <div className="flex items-center gap-3 mb-5">
+ <p className="text-[2.25rem] font-black text-slate-900 tracking-tight leading-none">
  {fmt(listing.price ?? 0, listing.currency ?? 'NGN')}
  </p>
+ {(listing as any).is_negotiable && (
+ <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-[11px] font-bold text-emerald-700">
+ Negotiable
+ </span>
+ )}
+ </div>
 
                 {/* ── WhatsApp — primary CTA ──────────────── */}
  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 mb-3">

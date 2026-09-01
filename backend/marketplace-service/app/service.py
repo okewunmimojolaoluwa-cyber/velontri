@@ -280,6 +280,7 @@ class MarketplaceService:
             image_url=body.image_url,
             whatsapp_number=getattr(body, 'whatsapp_number', None),
             contact_phone=getattr(body, 'contact_phone', None),
+            is_negotiable=getattr(body, 'is_negotiable', None),
         )
 
         # Persist specs if provided

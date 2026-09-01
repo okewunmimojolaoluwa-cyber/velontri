@@ -16,6 +16,7 @@ export interface CreateListingRequest {
  image_url?: string;
  whatsapp_number?: string;
  contact_phone?: string;
+ is_negotiable?: boolean;
 }
 
 export interface SellerStats {

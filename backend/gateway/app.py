@@ -394,6 +394,7 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
                 ("moderated_at",    "TIMESTAMPTZ"),
                 ("whatsapp_number", "TEXT"),
                 ("contact_phone",   "TEXT"),
+                ("is_negotiable",   "BOOLEAN DEFAULT FALSE"),
             ]:
                 await _conn.execute(_text(f"""
                     DO $$ BEGIN
