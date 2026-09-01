@@ -25,9 +25,9 @@ async def create_listing(body: CreateListingRequest, service: MarketplaceService
     return SuccessResponse(message='Listing created.', data=result.model_dump())
 
 @router.get('/listings', response_model=SuccessResponse, summary='Browse active listings with optional filters')
-async def browse_listings(service: MarketplaceService=Depends(_build_service), page: int=Query(default=1, ge=1), page_size: int=Query(default=20, ge=1, le=100), category: str | None=Query(default=None), listing_type: str | None=Query(default=None), seller_id: uuid.UUID | None=Query(default=None), city: str | None=Query(default=None), country: str | None=Query(default=None), min_price: float | None=Query(default=None, ge=0), max_price: float | None=Query(default=None, ge=0), condition: str | None=Query(default=None), q: str | None=Query(default=None, description='Full-text keyword search')) -> SuccessResponse:
+async def browse_listings(service: MarketplaceService=Depends(_build_service), page: int=Query(default=1, ge=1), page_size: int=Query(default=20, ge=1, le=100), category: str | None=Query(default=None), listing_type: str | None=Query(default=None), seller_id: uuid.UUID | None=Query(default=None), city: str | None=Query(default=None), country: str | None=Query(default=None), min_price: float | None=Query(default=None, ge=0), max_price: float | None=Query(default=None, ge=0), condition: str | None=Query(default=None), q: str | None=Query(default=None, description='Full-text keyword search'), sort: str | None=Query(default=None, description='Sort order: price_asc, price_desc, or empty for latest first')) -> SuccessResponse:
     """Browse active listings. No authentication required."""
-    results, total = await service.list_listings(page=page, page_size=page_size, category=category, listing_type=listing_type, seller_id=seller_id, city=city, country=country, min_price=min_price, max_price=max_price, condition=condition, query=q)
+    results, total = await service.list_listings(page=page, page_size=page_size, category=category, listing_type=listing_type, seller_id=seller_id, city=city, country=country, min_price=min_price, max_price=max_price, condition=condition, query=q, sort=sort)
     from shared.errors import paginated_meta
     from sqlalchemy import text as _text
 

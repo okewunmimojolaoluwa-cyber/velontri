@@ -235,6 +235,7 @@ class MarketplaceService:
         max_price: float | None = None,
         condition: str | None = None,
         query: str | None = None,
+        sort: str | None = None,
     ) -> tuple:
         return await repo.list_listings(
             self.session,
@@ -249,6 +250,7 @@ class MarketplaceService:
             max_price=max_price,
             condition=condition,
             query=query,
+            sort=sort,
         )
 
     async def create_listing(

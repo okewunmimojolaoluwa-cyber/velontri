@@ -377,10 +377,10 @@ export default function ListingsPage() {
  <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-slate-400">Sort by</p>
  <div className="flex flex-wrap gap-2">
  {SORT_OPTIONS.map(({ value, label }) => (
- <button key={label} onClick={() => set('sort' as any, value)}
+ <button key={label} onClick={() => set('sort', value)}
  className={cn(
  'rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition-all',
- (filters as any).sort === value || (!(filters as any).sort && !value)
+ filters.sort === value || (!filters.sort && !value)
  ? 'bg-indigo-600 text-white border-indigo-600'
  : 'border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600',
  )}>
