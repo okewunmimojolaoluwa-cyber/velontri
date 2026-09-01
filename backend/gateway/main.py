@@ -528,6 +528,8 @@ async def _apply_pg_migrations(engine) -> None:
         "ALTER TABLE listings ADD COLUMN IF NOT EXISTS whatsapp_number TEXT",
         "ALTER TABLE listings ADD COLUMN IF NOT EXISTS contact_phone TEXT",
         "ALTER TABLE listings ADD COLUMN IF NOT EXISTS is_negotiable BOOLEAN DEFAULT FALSE",
+        # Backfill NULL created_at — any listing with no timestamp gets now as a fallback
+        "UPDATE listings SET created_at = NOW() WHERE created_at IS NULL",
         """
         CREATE TABLE IF NOT EXISTS saved_listings (
             id          TEXT PRIMARY KEY,

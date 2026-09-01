@@ -668,6 +668,28 @@ export default function HomePage() {
  {listing.condition === 'new' ? 'Brand New' : listing.condition}
  </span>
  )}
+ {(listing as any).created_at && (() => {
+ try {
+ const ms = Date.now() - new Date((listing as any).created_at).getTime();
+ if (ms < 0 || isNaN(ms)) return null;
+ const days = Math.floor(ms / 86_400_000);
+ const months = Math.floor(days / 30);
+ const years = Math.floor(days / 365);
+ let label = '';
+ if (ms < 3_600_000) label = 'Just listed';
+ else if (ms < 86_400_000) label = `${Math.floor(ms/3_600_000)}h ago`;
+ else if (days < 7) label = `${days} day${days>1?'s':''}`;
+ else if (months < 1) label = `${Math.floor(days/7)} week${Math.floor(days/7)>1?'s':''}`;
+ else if (months < 12) label = `${months} month${months>1?'s':''}`;
+ else label = `${years} year${years>1?'s':''}`;
+ if (!label) return null;
+ return (
+ <span className="absolute bottom-2 left-2 rounded-full bg-black/55 px-2 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm pointer-events-none">
+ {label}
+ </span>
+ );
+ } catch { return null; }
+ })()}
  </div>
 
                     {/* Body */}

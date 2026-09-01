@@ -407,6 +407,8 @@ async def lifespan(app: FastAPI) -> Any:  # type: ignore[misc]
                     END $$
                 """))
             # ── Moderation log table ──────────────────────────────────────────
+            # Backfill NULL created_at on listings so the duration badge always works
+            await _conn.execute(_text("UPDATE listings SET created_at = NOW() WHERE created_at IS NULL"))
             await _conn.execute(_text("""
                 CREATE TABLE IF NOT EXISTS moderation_log (
                     id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),

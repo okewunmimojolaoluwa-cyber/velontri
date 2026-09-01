@@ -18,10 +18,14 @@ function fmt(n: number, currency: string) {
  * Returns a short, human-friendly "active for" string.
  * Examples: "Today", "2d", "3wk", "5mo", "2yr"
  */
-function activeDuration(createdAt: string | undefined): string | null {
+function activeDuration(createdAt: string | undefined | null): string | null {
  if (!createdAt) return null;
  try {
- const ms = Date.now() - new Date(createdAt).getTime();
+ const date = new Date(createdAt);
+ // Sanity check — reject clearly invalid dates
+ if (isNaN(date.getTime()) || date.getFullYear() < 2020) return null;
+ const ms = Date.now() - date.getTime();
+ if (ms < 0) return null; // future date — skip
  const minutes = Math.floor(ms / 60_000);
  const hours = Math.floor(ms / 3_600_000);
  const days = Math.floor(ms / 86_400_000);
@@ -30,15 +34,15 @@ function activeDuration(createdAt: string | undefined): string | null {
  const years = Math.floor(days / 365);
 
  if (minutes < 60) return 'Just listed';
- if (hours < 24) return `${hours}h`;
- if (days === 1) return '1d';
- if (days < 7) return `${days}d`;
- if (weeks === 1) return '1wk';
- if (weeks < 5) return `${weeks}wk`;
- if (months === 1) return '1mo';
- if (months < 12) return `${months}mo`;
- if (years === 1) return '1yr';
- return `${years}yr`;
+ if (hours < 24) return `${hours}h ago`;
+ if (days === 1) return '1 day';
+ if (days < 7) return `${days} days`;
+ if (weeks === 1) return '1 week';
+ if (weeks < 5) return `${weeks} weeks`;
+ if (months === 1) return '1 month';
+ if (months < 12) return `${months} months`;
+ if (years === 1) return '1 year';
+ return `${years} years`;
  } catch {
  return null;
  }
