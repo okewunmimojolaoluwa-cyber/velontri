@@ -1,97 +1,100 @@
 'use client';
 
-import { useRef, useEffect, useState, type ReactNode } from 'react';
+import { useRef, useCallback, type ReactNode } from 'react';
+import { CaretLeft, CaretRight } from '@phosphor-icons/react';
 
 interface AutoScrollRowProps {
-  /** Card elements to scroll */
   children: ReactNode;
-  /** px/second — lower = slower. Default 45 */
+  /** unused — kept for API compatibility */
   speed?: number;
 }
 
 /**
- * Smart listing row:
- * - Desktop: static grid if items fit in one row, auto-scrolling marquee if they overflow.
- * - Mobile: regular horizontal scroll strip.
+ * Premium horizontal listing carousel — Jiji-style.
+ *
+ * - Single flex row, flex-nowrap — cards NEVER wrap to a second line
+ * - overflow-x: scroll with hidden scrollbar (all browsers)
+ * - Left / right arrow buttons appear on hover (desktop)
+ * - Touch swipe works natively
+ * - Mouse wheel scroll converted to horizontal
+ * - scroll-snap for snappy feel
  */
-export function AutoScrollRow({ children, speed = 45 }: AutoScrollRowProps) {
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const firstRef = useRef<HTMLDivElement>(null);
-  const [duration, setDuration] = useState(30);
-  const [overflows, setOverflows] = useState(false);
+export function AutoScrollRow({ children }: AutoScrollRowProps) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const SCROLL_BY = 290;
 
-  useEffect(() => {
-    const measure = () => {
-      const wrapper = wrapperRef.current;
-      const first = firstRef.current;
-      if (!wrapper || !first) return;
+  const scrollLeft = useCallback(() => {
+    trackRef.current?.scrollBy({ left: -SCROLL_BY, behavior: 'smooth' });
+  }, []);
 
-      const contentW = first.scrollWidth;
-      const containerW = wrapper.offsetWidth;
+  const scrollRight = useCallback(() => {
+    trackRef.current?.scrollBy({ left: SCROLL_BY, behavior: 'smooth' });
+  }, []);
 
-      // Only scroll if content is wider than the container
-      const doesOverflow = contentW > containerW;
-      setOverflows(doesOverflow);
-
-      if (doesOverflow && speed > 0) {
-        setDuration(contentW / speed);
-      }
-    };
-
-    measure();
-    // Small delay for images to load and affect layout
-    const t = setTimeout(measure, 300);
-    window.addEventListener('resize', measure, { passive: true });
-    return () => {
-      clearTimeout(t);
-      window.removeEventListener('resize', measure);
-    };
-  }, [speed, children]);
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    const el = trackRef.current;
+    if (!el) return;
+    // Only hijack if vertical scroll delta dominates (trackpad/mouse wheel)
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    }
+  }, []);
 
   return (
-    <>
-      {/* ── Desktop ── */}
-      <div ref={wrapperRef} className="hidden md:block w-full">
-        {overflows ? (
-          /* Scrolling marquee — only when content overflows */
-          <div
-            className="marquee-wrapper relative overflow-hidden w-full"
-            style={{
-              WebkitMaskImage:
-                'linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%)',
-              maskImage:
-                'linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%)',
-            }}
-          >
-            <div
-              className="marquee-track flex gap-4"
-              style={{ '--marquee-duration': `${duration}s` } as React.CSSProperties}
-            >
-              {/* First copy — measured for width */}
-              <div ref={firstRef} className="flex gap-4 flex-shrink-0">
-                {children}
-              </div>
-              {/* Duplicate — seamless loop */}
-              <div className="flex gap-4 flex-shrink-0" aria-hidden="true">
-                {children}
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* Static grid — items fit in one row, no scrolling needed */
-          <div ref={firstRef} className="flex gap-4 flex-wrap">
-            {children}
-          </div>
-        )}
-      </div>
+    <div className="relative group/car w-full overflow-hidden">
 
-      {/* ── Mobile: regular horizontal scroll ── */}
+      {/* Left arrow */}
+      <button
+        type="button"
+        onClick={scrollLeft}
+        aria-label="Scroll left"
+        className={[
+          'absolute left-1 top-1/2 -translate-y-1/2 z-20',
+          'flex h-9 w-9 items-center justify-center',
+          'rounded-full bg-white shadow-lg border border-slate-200',
+          'text-slate-500 transition-all duration-200',
+          'opacity-0 group-hover/car:opacity-100',
+          'hover:text-indigo-600 hover:border-indigo-300 hover:shadow-indigo-100',
+          'active:scale-90',
+        ].join(' ')}
+      >
+        <CaretLeft className="h-4 w-4" weight="bold" />
+      </button>
+
+      {/* Scrollable track — THE key container */}
       <div
-        className="flex gap-3 overflow-x-auto md:hidden pb-2"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        ref={trackRef}
+        onWheel={handleWheel}
+        className="carousel-track flex gap-4 overflow-x-scroll pb-2"
+        style={{
+          flexWrap: 'nowrap',            /* ← never wrap */
+          scrollSnapType: 'x mandatory',
+          scrollbarWidth: 'none',        /* Firefox */
+          msOverflowStyle: 'none',       /* IE/Edge legacy */
+          WebkitOverflowScrolling: 'touch',
+        } as React.CSSProperties}
       >
         {children}
       </div>
-    </>
+
+      {/* Right arrow */}
+      <button
+        type="button"
+        onClick={scrollRight}
+        aria-label="Scroll right"
+        className={[
+          'absolute right-1 top-1/2 -translate-y-1/2 z-20',
+          'flex h-9 w-9 items-center justify-center',
+          'rounded-full bg-white shadow-lg border border-slate-200',
+          'text-slate-500 transition-all duration-200',
+          'opacity-0 group-hover/car:opacity-100',
+          'hover:text-indigo-600 hover:border-indigo-300 hover:shadow-indigo-100',
+          'active:scale-90',
+        ].join(' ')}
+      >
+        <CaretRight className="h-4 w-4" weight="bold" />
+      </button>
+    </div>
   );
 }

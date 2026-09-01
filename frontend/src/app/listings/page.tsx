@@ -480,21 +480,12 @@ export default function ListingsPage() {
  </Link>
  </div>
 
-            {/* Desktop: single continuous auto-scroll row with all listings */}
- <div className="hidden md:block">
+            {/* All listings — single horizontal scrollable carousel (desktop + mobile) */}
  <AutoScrollRow speed={42}>
  {listings.map(l => (
  <BrowseCard key={l.id} listing={l} />
  ))}
  </AutoScrollRow>
- </div>
-
-            {/* Mobile: responsive grid */}
- <div className="grid grid-cols-2 gap-3 md:hidden">
- {listings.map(l => (
- <BrowseCard key={l.id} listing={l} />
- ))}
- </div>
  </>
  )}
 

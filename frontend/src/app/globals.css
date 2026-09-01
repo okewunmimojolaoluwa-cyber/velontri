@@ -347,3 +347,19 @@
 .marquee-wrapper:hover .marquee-track {
   animation-play-state: paused;
 }
+
+/* ── Carousel track ─────────────────────────────────────────────────────────
+   Used by AutoScrollRow on all sections. Cards stay on ONE row forever.
+───────────────────────────────────────────────────────────────────────────── */
+
+/* Hide WebKit scrollbar (Chrome, Safari, Edge) */
+.carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
+/* Every direct child of the carousel is pinned — never shrinks, never wraps */
+.carousel-track > * {
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  scroll-snap-align: start;
+}
