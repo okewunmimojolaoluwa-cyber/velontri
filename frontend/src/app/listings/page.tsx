@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { SlidersHorizontal, X, MagnifyingGlass, MapPin, Car, House, DeviceMobile, TShirt, Briefcase, ShoppingBag, Lightning, CaretRight, Package, ArrowLeft, Storefront } from '@phosphor-icons/react';
+import { SlidersHorizontal, X, MagnifyingGlass, MapPin, Car, House, DeviceMobile, TShirt, Briefcase, ShoppingBag, Lightning, CaretRight, Package, ArrowLeft, Storefront, Wrench } from '@phosphor-icons/react';
 import { useListings } from '@/features/listings/hooks/use-listings';
 import { Navbar } from '@/components/layout/navbar';
 import { cn } from '@/lib/utils/cn';
@@ -14,13 +14,24 @@ import type { ListingFilters } from '@/lib/api/endpoints/listings';
 /* ── Config ───────────────────────────────────────────────── */
 const CATEGORIES = [
  { label: 'All', value: '', icon: ShoppingBag, color: '#4F46E5', bg: '#eef2ff' },
- { label: 'Vehicles', value: 'vehicle', icon: Car, color: '#0369A1', bg: '#e0f2fe' },
- { label: 'Property', value: 'property', icon: House, color: '#059669', bg: '#ecfdf5' },
+ { label: 'Vehicles', value: 'Vehicles', icon: Car, color: '#0369A1', bg: '#e0f2fe' },
+ { label: 'Property', value: 'Property', icon: House, color: '#059669', bg: '#ecfdf5' },
+ { label: 'Phones & Tablets', value: 'Phones & Tablets', icon: DeviceMobile, color: '#7C3AED', bg: '#f5f3ff' },
  { label: 'Electronics', value: 'Electronics', icon: DeviceMobile, color: '#7C3AED', bg: '#f5f3ff' },
+ { label: 'Home & Furniture', value: 'Home, Furniture & Appliances', icon: Storefront, color: '#B45309', bg: '#fef3c7' },
  { label: 'Fashion', value: 'Fashion', icon: TShirt, color: '#DB2777', bg: '#fce7f3' },
- { label: 'Jobs', value: 'job', icon: Briefcase, color: '#D97706', bg: '#fffbeb' },
- { label: 'Services', value: 'service', icon: Lightning, color: '#DC2626', bg: '#fef2f2' },
-] as const;
+ { label: 'Beauty', value: 'Beauty & Personal Care', icon: Package, color: '#EC4899', bg: '#fdf2f8' },
+ { label: 'Services', value: 'Services', icon: Lightning, color: '#DC2626', bg: '#fef2f2' },
+ { label: 'Repair', value: 'Repair & Construction', icon: Wrench, color: '#92400E', bg: '#fef3c7' },
+ { label: 'Equipment', value: 'Commercial Equipment & Tools', icon: Package, color: '#374151', bg: '#f3f4f6' },
+ { label: 'Leisure', value: 'Leisure & Activities', icon: Package, color: '#7C3AED', bg: '#f5f3ff' },
+ { label: 'Babies & Kids', value: 'Babies & Kids', icon: Package, color: '#F59E0B', bg: '#fffbeb' },
+ { label: 'Food & Farm', value: 'Food, Agriculture & Farming', icon: Package, color: '#16A34A', bg: '#f0fdf4' },
+ { label: 'Animals', value: 'Animals & Pets', icon: Package, color: '#D97706', bg: '#fffbeb' },
+ { label: 'Jobs', value: 'Jobs', icon: Briefcase, color: '#D97706', bg: '#fffbeb' },
+ { label: 'CVs', value: 'Seeking Work / CVs', icon: Package, color: '#0369A1', bg: '#e0f2fe' },
+ { label: 'Business', value: 'Business & Industry', icon: Storefront, color: '#374151', bg: '#f3f4f6' },
+];
 
 const COUNTRIES = [
  { value: '', label: '🌍 All countries' },
@@ -209,13 +220,12 @@ export default function ListingsPage() {
  setSearch('');
  }
 
- function handleCategoryClick(cat: typeof CATEGORIES[number]) {
+ function handleCategoryClick(cat: (typeof CATEGORIES)[number]) {
  setActiveCat(cat.value);
  if (cat.value === '') {
  setFilters(p => ({ ...p, category: undefined, listing_type: undefined, page: 1 }));
- } else if (['vehicle', 'property', 'service', 'job'].includes(cat.value)) {
- setFilters(p => ({ ...p, listing_type: cat.value as any, category: undefined, page: 1 }));
  } else {
+ // All new categories filter by category field
  setFilters(p => ({ ...p, category: cat.value, listing_type: undefined, page: 1 }));
  }
  }
