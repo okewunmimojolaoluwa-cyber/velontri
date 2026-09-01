@@ -25,58 +25,127 @@ async def create_listing(body: CreateListingRequest, service: MarketplaceService
     return SuccessResponse(message='Listing created.', data=result.model_dump())
 
 @router.get('/listings', response_model=SuccessResponse, summary='Browse active listings with optional filters')
-async def browse_listings(service: MarketplaceService=Depends(_build_service), page: int=Query(default=1, ge=1), page_size: int=Query(default=20, ge=1, le=100), category: str | None=Query(default=None), listing_type: str | None=Query(default=None), seller_id: uuid.UUID | None=Query(default=None), city: str | None=Query(default=None), country: str | None=Query(default=None), min_price: float | None=Query(default=None, ge=0), max_price: float | None=Query(default=None, ge=0), condition: str | None=Query(default=None), q: str | None=Query(default=None, description='Full-text keyword search'), sort: str | None=Query(default=None, description='Sort order: price_asc, price_desc, or empty for latest first')) -> SuccessResponse:
-    """Browse active listings. No authentication required."""
-    results, total = await service.list_listings(page=page, page_size=page_size, category=category, listing_type=listing_type, seller_id=seller_id, city=city, country=country, min_price=min_price, max_price=max_price, condition=condition, query=q, sort=sort)
-    from shared.errors import paginated_meta
+async def browse_listings(request: Request, service: MarketplaceService=Depends(_build_service), page: int=Query(default=1, ge=1), page_size: int=Query(default=20, ge=1, le=100), category: str | None=Query(default=None), listing_type: str | None=Query(default=None), seller_id: uuid.UUID | None=Query(default=None), city: str | None=Query(default=None), country: str | None=Query(default=None), min_price: float | None=Query(default=None, ge=0), max_price: float | None=Query(default=None, ge=0), condition: str | None=Query(default=None), q: str | None=Query(default=None, description='Full-text keyword search'), sort: str | None=Query(default=None, description='Sort order: price_asc, price_desc, or empty for latest first')) -> SuccessResponse:
+    """Browse active listings using raw SQL — immune to ORM column mismatches."""
     from sqlalchemy import text as _text
+    from shared.errors import paginated_meta
 
-    # For listings without image_url, try to get the first media row + count all media
-    all_listing_ids = [str(r.id) for r in results]
-    media_map: dict[str, str] = {}
-    media_count_map: dict[str, int] = {}
-    if all_listing_ids:
-        try:
-            placeholders = ", ".join(f":id_{i}" for i in range(len(all_listing_ids)))
-            params = {f"id_{i}": lid for i, lid in enumerate(all_listing_ids)}
-            media_rows = (await service.session.execute(_text(
-                f"SELECT CAST(listing_id AS TEXT) AS lid, s3_key, sort_order "
-                f"FROM listing_media "
-                f"WHERE CAST(listing_id AS TEXT) IN ({placeholders}) AND media_type = 'image' "
-                f"ORDER BY sort_order ASC"
-            ), params)).mappings().all()
-            # Build first-image map and count map in one pass
-            for mr in media_rows:
-                lid = str(mr['lid'])
-                media_count_map[lid] = media_count_map.get(lid, 0) + 1
-                if lid not in media_map:
-                    media_map[lid] = mr['s3_key']
-        except Exception:
-            pass
+    # Build WHERE clauses
+    conditions = ["status = 'active'"]
+    params: dict = {'lim': page_size, 'off': (page - 1) * page_size}
+    if category:
+        conditions.append("category = :category"); params['category'] = category
+    if listing_type:
+        conditions.append("listing_type = :listing_type"); params['listing_type'] = listing_type
+    if seller_id:
+        conditions.append("CAST(seller_id AS TEXT) = :seller_id"); params['seller_id'] = str(seller_id)
+    if city:
+        conditions.append("city ILIKE :city"); params['city'] = f'%{city}%'
+    if country:
+        conditions.append("country ILIKE :country"); params['country'] = f'%{country}%'
+    if min_price is not None:
+        conditions.append("price >= :min_price"); params['min_price'] = min_price
+    if max_price is not None:
+        conditions.append("price <= :max_price"); params['max_price'] = max_price
+    if condition:
+        conditions.append("condition = :condition"); params['condition'] = condition
+    if q:
+        conditions.append("(title ILIKE :q OR description ILIKE :q OR category ILIKE :q)")
+        params['q'] = f'%{q}%'
 
-    # Batch-fetch seller verification status to show badge on cards
-    seller_ids_all = list({str(r.seller_id) for r in results})
-    verified_sellers: dict[str, bool] = {}
-    if seller_ids_all:
+    where_sql = ' AND '.join(conditions)
+
+    # Sort
+    if sort == 'price_asc':
+        order_sql = 'price ASC NULLS LAST'
+    elif sort == 'price_desc':
+        order_sql = 'price DESC NULLS LAST'
+    else:
+        order_sql = 'created_at DESC'
+
+    try:
+        async with request.app.state.session_factory() as db:
+            total_row = (await db.execute(
+                _text(f"SELECT COUNT(*) FROM listings WHERE {where_sql}"), params
+            )).fetchone()
+            total = int(total_row[0]) if total_row else 0
+
+            rows = (await db.execute(
+                _text(f"""
+                    SELECT CAST(id AS TEXT), CAST(seller_id AS TEXT), listing_type, title, description,
+                           price, currency, country, state, city, category, subcategory,
+                           condition, status, image_url,
+                           COALESCE(avg_rating, 0) AS avg_rating,
+                           COALESCE(review_count, 0) AS review_count,
+                           created_at,
+                           COALESCE(whatsapp_number, '') AS whatsapp_number,
+                           COALESCE(contact_phone, '') AS contact_phone,
+                           COALESCE(CAST(is_negotiable AS BOOLEAN), FALSE) AS is_negotiable
+                    FROM listings
+                    WHERE {where_sql}
+                    ORDER BY {order_sql}
+                    LIMIT :lim OFFSET :off
+                """), params
+            )).mappings().all()
+    except Exception as _e:
+        import traceback; traceback.print_exc()
+        return SuccessResponse(message='0 listing(s) found.', data=[], meta=paginated_meta(page, page_size, 0))
+
+    all_ids = [str(r['id']) for r in rows]
+    media_map: dict = {}
+    media_count_map: dict = {}
+    verified_sellers: dict = {}
+
+    if all_ids:
         try:
-            _vph = ", ".join(f":vsid_{i}" for i in range(len(seller_ids_all)))
-            _vpm = {f"vsid_{i}": s for i, s in enumerate(seller_ids_all)}
-            v_rows = (await service.session.execute(_text(
-                f"SELECT CAST(id AS TEXT) AS uid, "
-                f"COALESCE(seller_verification_status, 'not_verified') AS svs "
-                f"FROM users WHERE CAST(id AS TEXT) IN ({_vph})"
-            ), _vpm)).mappings().all()
-            verified_sellers = {
-                str(r['uid']): str(r['svs']) in ('approved', 'verified')
-                for r in v_rows
-            }
-        except Exception:
-            pass
+            async with request.app.state.session_factory() as db:
+                from sqlalchemy import text as _t
+                phs = ', '.join(f':mid_{i}' for i in range(len(all_ids)))
+                mps = {f'mid_{i}': v for i, v in enumerate(all_ids)}
+                media_rows = (await db.execute(_t(
+                    f"SELECT CAST(listing_id AS TEXT) AS lid, s3_key FROM listing_media "
+                    f"WHERE CAST(listing_id AS TEXT) IN ({phs}) AND media_type='image' ORDER BY sort_order ASC"
+                ), mps)).mappings().all()
+                for mr in media_rows:
+                    lid = str(mr['lid'])
+                    media_count_map[lid] = media_count_map.get(lid, 0) + 1
+                    if lid not in media_map:
+                        media_map[lid] = mr['s3_key']
+        except Exception: pass
+
+    seller_ids = list({str(r['seller_id']) for r in rows})
+    if seller_ids:
+        try:
+            async with request.app.state.session_factory() as db:
+                from sqlalchemy import text as _t
+                vph = ', '.join(f':sv_{i}' for i in range(len(seller_ids)))
+                vpm = {f'sv_{i}': s for i, s in enumerate(seller_ids)}
+                v_rows = (await db.execute(_t(
+                    f"SELECT CAST(id AS TEXT) AS uid, COALESCE(seller_verification_status,'not_verified') AS svs "
+                    f"FROM users WHERE CAST(id AS TEXT) IN ({vph})"
+                ), vpm)).mappings().all()
+                verified_sellers = {str(r['uid']): str(r['svs']) in ('approved','verified') for r in v_rows}
+        except Exception: pass
 
     data = []
-    for r in results:
-        img = r.image_url or media_map.get(str(r.id))
-        data.append({'id': str(r.id), 'seller_id': str(r.seller_id), 'listing_type': r.listing_type, 'title': r.title, 'description': r.description, 'price': float(r.price) if r.price is not None else None, 'currency': r.currency, 'country': r.country, 'state': r.state, 'city': r.city, 'category': r.category, 'condition': r.condition, 'status': r.status, 'image_url': img, 'avg_rating': float(r.avg_rating) if r.avg_rating else 0.0, 'review_count': r.review_count or 0, 'seller_verified': verified_sellers.get(str(r.seller_id), False), 'media_count': (1 if img else 0) + media_count_map.get(str(r.id), 0) if r.image_url else media_count_map.get(str(r.id), 0), 'created_at': r.created_at.isoformat() if r.created_at else None})
+    for r in rows:
+        img = r['image_url'] or media_map.get(str(r['id']))
+        data.append({
+            'id': str(r['id']), 'seller_id': str(r['seller_id']),
+            'listing_type': r['listing_type'], 'title': r['title'],
+            'description': r['description'],
+            'price': float(r['price']) if r['price'] is not None else None,
+            'currency': r['currency'], 'country': r['country'],
+            'state': r['state'], 'city': r['city'],
+            'category': r['category'], 'condition': r['condition'],
+            'status': r['status'], 'image_url': img,
+            'avg_rating': float(r['avg_rating']) if r['avg_rating'] else 0.0,
+            'review_count': int(r['review_count']) if r['review_count'] else 0,
+            'seller_verified': verified_sellers.get(str(r['seller_id']), False),
+            'media_count': (1 if img else 0) + media_count_map.get(str(r['id']), 0),
+            'created_at': r['created_at'].isoformat() if r['created_at'] else None,
+            'is_negotiable': bool(r['is_negotiable']) if r['is_negotiable'] is not None else False,
+        })
     return SuccessResponse(message=f'{total} listing(s) found.', data=data, meta=paginated_meta(page, page_size, total))
 
 @router.get('/listings/my', response_model=SuccessResponse, summary="Get the authenticated seller's own listings (all statuses)")

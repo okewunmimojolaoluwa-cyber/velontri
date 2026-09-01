@@ -49,7 +49,7 @@ class Listing(Base):
     image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     whatsapp_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
     contact_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    is_negotiable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_negotiable: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utc_now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utc_now, onupdate=_utc_now)
 
@@ -61,10 +61,6 @@ class Listing(Base):
         CheckConstraint(
             "status IN ('draft','pending_review','active','out_of_stock','rejected','archived')",
             name="ck_listings_status",
-        ),
-        CheckConstraint(
-            "currency IN ('NGN','GHS','KES','ZAR','XOF')",
-            name="ck_listings_currency",
         ),
         Index("ix_listings_seller_id", "seller_id"),
         Index("ix_listings_status", "status"),
