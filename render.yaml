@@ -95,3 +95,32 @@ services:
       # ── Supabase PostgreSQL — persistent database (survives all redeploys) ──
       - key: DATABASE_URL
         value: "postgresql+asyncpg://postgres.nppxqvgetyetnsiphehm:Okewunmi123@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
+
+  # ── Email Notification Worker ──────────────────────────────────────────────
+  - type: worker
+    name: velontri-email-worker
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python scripts/email_notification_worker.py
+    pythonVersion: "3.11.9"
+    
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: PYTHONPATH
+        value: "/opt/render/project/src/backend:/opt/render/project/src/backend/scripts"
+      - key: DATABASE_URL
+        value: "postgresql+asyncpg://postgres.nppxqvgetyetnsiphehm:Okewunmi123@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
+      - key: BREVO_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        value: "okewunmimojolaoluwa@gmail.com"
+      - key: GMAIL_USER
+        value: "okewunmimojolaoluwa@gmail.com"
+      - key: GMAIL_APP_PASSWORD
+        value: "scivvkgnkqmgqedt"
