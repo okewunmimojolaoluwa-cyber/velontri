@@ -1,8 +1,9 @@
 ﻿'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, ChatCircle, Heart, ShoppingBag, Storefront, Package, ArrowRight, Star, Sparkle, CaretRight, ChartBar, Gear, CreditCard } from '@phosphor-icons/react';
+import { Plus, ChatCircle, Heart, ShoppingBag, Storefront, Package, ArrowRight, Star, Sparkle, CaretRight, ChartBar, Gear, CreditCard, ShareNetwork, Copy, Check, WhatsappLogo, TwitterLogo, TelegramLogo, FacebookLogo, LinkedinLogo } from '@phosphor-icons/react';
 import {
  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
@@ -28,6 +29,7 @@ function getGreeting() {
 export default function DashboardPage() {
  const { session } = useAuth();
  const uid = session.userId;
+ const [copied, setCopied] = useState(false);
 
  const { data: listingsData } = useQuery({
  queryKey: [uid, 'seller', 'listings', { page: 1, page_size: 1 }],
@@ -205,6 +207,121 @@ export default function DashboardPage() {
  <span className="leading-tight">{label}</span>
  </Link>
  ))}
+ </div>
+ </div>
+
+      {/* ── Invite Friends Section ──────────────────────── */}
+ <div className="rounded-2xl border-2 border-indigo-100 bg-gradient-to-br from-indigo-50 to-violet-50 p-5 shadow-sm">
+ <div className="flex items-start gap-4">
+ <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-indigo-600 shadow-md">
+ <ShareNetwork className="h-6 w-6 text-white" />
+ </div>
+ <div className="flex-1 min-w-0">
+ <h2 className="text-[16px] font-black text-slate-900 mb-1">
+ Invite friends to Velontri
+ </h2>
+ <p className="text-[13px] text-slate-600 mb-4 leading-relaxed">
+ Share Velontri with your friends and help them discover Africa&apos;s marketplace.
+ </p>
+
+            {/* Copy Link Input */}
+ <div className="flex gap-2 mb-4">
+ <div className="flex-1 flex items-center gap-2 h-11 rounded-xl border-2 border-slate-200 bg-white px-3">
+ <input
+ type="text"
+ readOnly
+ value={typeof window !== 'undefined' ? `${window.location.origin}?ref=${uid}` : ''}
+ className="flex-1 bg-transparent text-[13px] text-slate-600 outline-none select-all"
+ onClick={(e) => e.currentTarget.select()}
+ />
+ </div>
+ <button
+ onClick={() => {
+ const link = typeof window !== 'undefined' ? `${window.location.origin}?ref=${uid}` : '';
+ navigator.clipboard.writeText(link);
+ setCopied(true);
+ setTimeout(() => setCopied(false), 2000);
+ }}
+ className="flex h-11 items-center gap-2 rounded-xl bg-indigo-600 px-4
+ text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors"
+ >
+ {copied ? (
+ <>
+ <Check className="h-4 w-4" />
+ Copied!
+ </>
+ ) : (
+ <>
+ <Copy className="h-4 w-4" />
+ Copy
+ </>
+ )}
+ </button>
+ </div>
+
+            {/* Social Share Buttons */}
+ <div>
+ <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2.5">
+ Share via
+ </p>
+ <div className="flex flex-wrap gap-2">
+ {[
+ {
+ name: 'WhatsApp',
+ icon: WhatsappLogo,
+ color: '#25D366',
+ url: `https://wa.me/?text=${encodeURIComponent(`Check out Velontri - Africa's marketplace for buying and selling! ${typeof window !== 'undefined' ? window.location.origin : ''}?ref=${uid}`)}`,
+ },
+ {
+ name: 'Twitter',
+ icon: TwitterLogo,
+ color: '#1DA1F2',
+ url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out Velontri - Africa's marketplace for buying and selling!`)}&url=${encodeURIComponent(typeof window !== 'undefined' ? `${window.location.origin}?ref=${uid}` : '')}`,
+ },
+ {
+ name: 'Facebook',
+ icon: FacebookLogo,
+ color: '#1877F2',
+ url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== 'undefined' ? `${window.location.origin}?ref=${uid}` : '')}`,
+ },
+ {
+ name: 'Telegram',
+ icon: TelegramLogo,
+ color: '#0088cc',
+ url: `https://t.me/share/url?url=${encodeURIComponent(typeof window !== 'undefined' ? `${window.location.origin}?ref=${uid}` : '')}&text=${encodeURIComponent('Check out Velontri - Africa\'s marketplace!')}`,
+ },
+ {
+ name: 'LinkedIn',
+ icon: LinkedinLogo,
+ color: '#0A66C2',
+ url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(typeof window !== 'undefined' ? `${window.location.origin}?ref=${uid}` : '')}`,
+ },
+ ].map(({ name, icon: Icon, color, url }) => (
+ <a
+ key={name}
+ href={url}
+ target="_blank"
+ rel="noopener noreferrer"
+ className="flex items-center gap-2 h-10 rounded-xl border-2 border-slate-200
+ bg-white px-4 text-[12px] font-semibold text-slate-700 no-underline
+ hover:border-slate-300 hover:shadow-sm transition-all active:scale-95"
+ style={{ ['--share-color' as any]: color }}
+ onMouseEnter={(e) => {
+ e.currentTarget.style.borderColor = color;
+ e.currentTarget.style.color = color;
+ }}
+ onMouseLeave={(e) => {
+ e.currentTarget.style.borderColor = '#e2e8f0';
+ e.currentTarget.style.color = '#334155';
+ }}
+ >
+ <Icon className="h-4 w-4" style={{ color }} />
+ {name}
+ </a>
+ ))}
+ </div>
+ </div>
+ </div>
  </div>
  </div>
 
