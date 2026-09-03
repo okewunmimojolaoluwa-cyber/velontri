@@ -434,14 +434,17 @@ export default function ListingDetailPage() {
  </>
  )}
 
-                      {/* FloppyDisk + Share — top right */}
+                      {/* Save + Share — top right */}
  <div className="absolute top-3 right-3 flex gap-2" onClick={e => e.stopPropagation()}>
+ {/* Hide save button if viewing your own listing */}
+ {session.userId !== listing.seller_id && (
  <button
  onClick={() => { if (!session.isAuthenticated) { router.push(`${ROUTES.login}?redirect=/listings/${id}`); return; } toggleSave(); }}
  disabled={savePending}
  className={`h-9 w-9 rounded-xl backdrop-blur-sm border flex items-center justify-center shadow-sm transition-all hover:scale-105 disabled:opacity-60 ${isSaved ? 'bg-red-500 border-red-400 text-white' : 'bg-white/90 border-white/50 text-slate-600 hover:bg-white'}`}>
  <Heart className={`h-4 w-4 ${isSaved ? 'fill-white' : ''}`} />
  </button>
+ )}
  <button onClick={handleShare} className="h-9 w-9 rounded-xl bg-white/90 backdrop-blur-sm border border-white/50 flex items-center justify-center text-slate-600 shadow-sm hover:bg-white">
  <ShareNetwork className="h-4 w-4" />
  </button>
