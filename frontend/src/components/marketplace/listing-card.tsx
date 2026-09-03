@@ -104,18 +104,19 @@ export function ListingCard({ listing }: { listing: ListingSummary }) {
  {listing.title}
  </h3>
 
-        {/* Price + location */}
- <div className="flex items-center justify-between gap-2 pt-1">
- <div className="flex items-center gap-1.5 min-w-0">
+        {/* Price + negotiable badge */}
+ <div className="flex items-baseline gap-1.5 pt-1">
  <span className="text-base font-bold text-primary whitespace-nowrap">
  {fmt(listing.price, listing.currency)}
  </span>
  {listing.is_negotiable && (
- <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap">
- Nego
+ <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap">
+ Negotiable
  </span>
  )}
  </div>
+
+        {/* Location */}
  {(listing.city || listing.state) && (
  <div className="flex items-center gap-1 text-xs text-muted-foreground min-w-0">
  <MapPin className="h-3 w-3 flex-shrink-0" />
@@ -124,7 +125,6 @@ export function ListingCard({ listing }: { listing: ListingSummary }) {
  </span>
  </div>
  )}
- </div>
  </div>
  </Link>
  );
