@@ -42,7 +42,43 @@ export default function DashboardPage() {
  staleTime: 5 * 60 * 1000,
  });
 
+  // Fetch reviews count (received reviews)
+ const { data: reviewsData } = useQuery({
+ queryKey: [uid, 'reviews', 'received'],
+ queryFn: async () => {
+ const { apiClient } = await import('@/lib/api/client');
+ return apiClient.get<any>('/reviews?type=received&page=1&page_size=1').then(r => r.data);
+ },
+ enabled: !!session.isAuthenticated,
+ staleTime: 5 * 60 * 1000,
+ });
+
+  // Fetch messages count (conversations)
+ const { data: messagesData } = useQuery({
+ queryKey: [uid, 'conversations'],
+ queryFn: async () => {
+ const { apiClient } = await import('@/lib/api/client');
+ return apiClient.get<any>('/chat/conversations').then(r => r.data);
+ },
+ enabled: !!session.isAuthenticated,
+ staleTime: 5 * 60 * 1000,
+ });
+
+  // Fetch saved listings count
+ const { data: savedData } = useQuery({
+ queryKey: [uid, 'saved'],
+ queryFn: async () => {
+ const { apiClient } = await import('@/lib/api/client');
+ return apiClient.get<any>('/saved').then(r => r.data);
+ },
+ enabled: !!session.isAuthenticated,
+ staleTime: 5 * 60 * 1000,
+ });
+
  const totalListings = listingsData?.meta?.total ?? 0;
+ const totalReviews = reviewsData?.meta?.total ?? (Array.isArray(reviewsData?.data) ? reviewsData.data.length : 0);
+ const totalMessages = Array.isArray(messagesData?.data) ? messagesData.data.length : 0;
+ const totalSaved = Array.isArray(savedData?.data) ? savedData.data.length : 0;
  const fullName = profileData?.data?.full_name ?? '';
  const firstName = fullName.split(' ')[0] || 'there';
 
@@ -55,17 +91,17 @@ export default function DashboardPage() {
  },
  {
  icon: Star, label: 'Reviews', href: ROUTES.user.reviews,
- value: ' ',
+ value: totalReviews.toLocaleString(),
  color: '#7C3AED', bg: '#f5f3ff',
  },
  {
  icon: ChatCircle, label: 'Messages', href: ROUTES.user.messages,
- value: ' ',
+ value: totalMessages.toLocaleString(),
  color: '#0891B2', bg: '#ecfeff',
  },
  {
  icon: Heart, label: 'Saved', href: ROUTES.user.saved,
- value: ' ',
+ value: totalSaved.toLocaleString(),
  color: '#DB2777', bg: '#fce7f3',
  },
  ];
