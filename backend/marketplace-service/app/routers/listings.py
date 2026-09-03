@@ -55,11 +55,25 @@ async def browse_listings(request: Request, service: MarketplaceService=Depends(
 
     where_sql = ' AND '.join(conditions)
 
-    # Sort
+    # Sort — normalise to NGN equivalent so cross-currency ordering is meaningful
+    # Approximate rates (updated periodically; good enough for sort order)
+    NGN_RATE_EXPR = """
+        price * CASE COALESCE(UPPER(currency), 'NGN')
+            WHEN 'USD' THEN 1650
+            WHEN 'GHS' THEN 110
+            WHEN 'KES' THEN 13
+            WHEN 'ZAR' THEN 88
+            WHEN 'TZS' THEN 0.63
+            WHEN 'UGX' THEN 0.44
+            WHEN 'EUR' THEN 1800
+            WHEN 'GBP' THEN 2100
+            ELSE 1
+        END
+    """
     if sort == 'price_asc':
-        order_sql = 'price ASC NULLS LAST'
+        order_sql = f'({NGN_RATE_EXPR}) ASC NULLS LAST'
     elif sort == 'price_desc':
-        order_sql = 'price DESC NULLS LAST'
+        order_sql = f'({NGN_RATE_EXPR}) DESC NULLS LAST'
     else:
         order_sql = 'created_at DESC'
 
