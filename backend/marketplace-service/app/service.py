@@ -198,6 +198,7 @@ def _to_listing_response(
         media_urls=urls,
         whatsapp_number=getattr(listing, 'whatsapp_number', None),
         contact_phone=getattr(listing, 'contact_phone', None),
+        is_negotiable=getattr(listing, 'is_negotiable', False),
         seller_name=seller_name,
         seller_verified=seller_verified,
         created_at=listing.created_at,
