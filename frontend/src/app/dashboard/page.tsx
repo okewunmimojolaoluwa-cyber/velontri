@@ -211,27 +211,27 @@ export default function DashboardPage() {
  </div>
 
       {/* ── Invite Friends Section ──────────────────────── */}
- <div className="rounded-2xl border-2 border-indigo-100 bg-gradient-to-br from-indigo-50 to-violet-50 p-5 shadow-sm">
- <div className="flex items-start gap-4">
- <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-indigo-600 shadow-md">
- <ShareNetwork className="h-6 w-6 text-white" />
+ <div className="rounded-2xl border-2 border-indigo-100 bg-gradient-to-br from-indigo-50 to-violet-50 p-4 sm:p-5 shadow-sm">
+ <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+ <div className="flex h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-indigo-600 shadow-md">
+ <ShareNetwork className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
  </div>
- <div className="flex-1 min-w-0">
- <h2 className="text-[16px] font-black text-slate-900 mb-1">
+ <div className="flex-1 min-w-0 w-full">
+ <h2 className="text-[15px] sm:text-[16px] font-black text-slate-900 mb-1">
  Invite friends to Velontri
  </h2>
- <p className="text-[13px] text-slate-600 mb-4 leading-relaxed">
+ <p className="text-[12px] sm:text-[13px] text-slate-600 mb-3 sm:mb-4 leading-relaxed">
  Share Velontri with your friends and help them discover Africa&apos;s marketplace.
  </p>
 
             {/* Copy Link Input */}
- <div className="flex gap-2 mb-4">
- <div className="flex-1 flex items-center gap-2 h-11 rounded-xl border-2 border-slate-200 bg-white px-3">
+ <div className="flex flex-col sm:flex-row gap-2 mb-3 sm:mb-4">
+ <div className="flex-1 flex items-center gap-2 h-10 sm:h-11 rounded-xl border-2 border-slate-200 bg-white px-2.5 sm:px-3">
  <input
  type="text"
  readOnly
  value={typeof window !== 'undefined' ? `${window.location.origin}?ref=${uid}` : ''}
- className="flex-1 bg-transparent text-[13px] text-slate-600 outline-none select-all"
+ className="flex-1 bg-transparent text-[11px] sm:text-[13px] text-slate-600 outline-none select-all"
  onClick={(e) => e.currentTarget.select()}
  />
  </div>
@@ -242,18 +242,18 @@ export default function DashboardPage() {
  setCopied(true);
  setTimeout(() => setCopied(false), 2000);
  }}
- className="flex h-11 items-center gap-2 rounded-xl bg-indigo-600 px-4
- text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors"
+ className="flex h-10 sm:h-11 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 sm:px-5
+ text-[12px] sm:text-[13px] font-bold text-white hover:bg-indigo-700 transition-colors w-full sm:w-auto"
  >
  {copied ? (
  <>
- <Check className="h-4 w-4" />
+ <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
  Copied!
  </>
  ) : (
  <>
- <Copy className="h-4 w-4" />
- Copy
+ <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+ Copy Link
  </>
  )}
  </button>
@@ -261,10 +261,10 @@ export default function DashboardPage() {
 
             {/* Social Share Buttons */}
  <div>
- <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2.5">
+ <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2 sm:mb-2.5">
  Share via
  </p>
- <div className="flex flex-wrap gap-2">
+ <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
  {[
  {
  name: 'WhatsApp',
@@ -302,8 +302,8 @@ export default function DashboardPage() {
  href={url}
  target="_blank"
  rel="noopener noreferrer"
- className="flex items-center gap-2 h-10 rounded-xl border-2 border-slate-200
- bg-white px-4 text-[12px] font-semibold text-slate-700 no-underline
+ className="flex items-center justify-center sm:justify-start gap-2 h-9 sm:h-10 rounded-xl border-2 border-slate-200
+ bg-white px-3 sm:px-4 text-[11px] sm:text-[12px] font-semibold text-slate-700 no-underline
  hover:border-slate-300 hover:shadow-sm transition-all active:scale-95"
  style={{ ['--share-color' as any]: color }}
  onMouseEnter={(e) => {
@@ -315,8 +315,8 @@ export default function DashboardPage() {
  e.currentTarget.style.color = '#334155';
  }}
  >
- <Icon className="h-4 w-4" style={{ color }} />
- {name}
+ <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" style={{ color }} />
+ <span className="truncate">{name}</span>
  </a>
  ))}
  </div>
