@@ -41,7 +41,6 @@ export interface ListingFilters {
  max_price?: number;
  condition?: string;
  q?: string;
- search?: string;
  seller_id?: string;
  sort?: string;
 }

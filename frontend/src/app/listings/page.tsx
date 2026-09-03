@@ -215,7 +215,7 @@ export default function ListingsPage() {
  }
 
  function clear() {
- setFilters({ page: 1, page_size: 24, seller_id: sellerIdParam || undefined });
+ setFilters({ page: 1, page_size: 24, seller_id: sellerIdParam || undefined, q: undefined });
  setActiveCat('');
  setSearch('');
  }
@@ -232,7 +232,7 @@ export default function ListingsPage() {
 
  function handleSearch(e: React.FormEvent) {
  e.preventDefault();
- setFilters(p => ({ ...p, search: search || undefined, page: 1 }));
+ setFilters(p => ({ ...p, q: search || undefined, page: 1 }));
  }
 
  return (
