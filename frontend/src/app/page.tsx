@@ -403,11 +403,11 @@ export default function HomePage() {
  bg-white shadow-[0_4px_20px_rgba(0,0,0,0.07)] transition-colors focus-within:border-indigo-400">
 
                   {/* Location selector */}
- <div className="relative hidden sm:flex" data-loc-picker>
+ <div className="relative hidden sm:block" data-loc-picker>
  <button
  type="button"
  onClick={() => setLocOpen(v => !v)}
- className="flex items-center gap-1.5 border-r border-slate-200 px-3.5
+ className="flex h-full items-center gap-1.5 border-r border-slate-200 px-3.5
  text-slate-500 hover:bg-slate-50 transition-colors whitespace-nowrap text-[12px]
  min-w-[110px] max-w-[140px] truncate"
  >
@@ -415,21 +415,6 @@ export default function HomePage() {
  <span className="truncate">{location || 'All Africa'}</span>
  <CaretDown size={12} className="flex-shrink-0 text-slate-300 ml-auto" />
  </button>
- {locOpen && (
- <div className="absolute left-0 top-full z-50 mt-1 w-56 max-h-72 overflow-y-auto
- rounded-xl border border-slate-200 bg-white shadow-xl"
- style={{ scrollbarWidth: 'thin' }}>
- {AFRICA_LOCATIONS.map(loc => (
- <button key={loc.value} type="button"
- onClick={() => { setLocation(loc.value); setLocOpen(false); }}
- className={`w-full text-left px-4 py-2.5 text-[13px] transition-colors
- hover:bg-indigo-50 hover:text-indigo-700
- ${location === loc.value ? 'bg-indigo-50 font-semibold text-indigo-700' : 'text-slate-700'}`}>
- {loc.label}
- </button>
- ))}
- </div>
- )}
  </div>
 
  <input
@@ -462,6 +447,27 @@ export default function HomePage() {
  <span className="hidden sm:inline">Search</span>
  </Link>
  </div>
+
+                {/* Location dropdown — rendered outside overflow-hidden bar */}
+ {locOpen && (
+ <div
+ data-loc-picker
+ className="absolute left-0 top-full z-50 mt-1 w-56 max-h-72 overflow-y-auto
+ rounded-xl border border-slate-200 bg-white shadow-xl hidden sm:block"
+ style={{ scrollbarWidth: 'thin' }}
+ >
+ {AFRICA_LOCATIONS.map(loc => (
+ <button key={loc.value} type="button"
+ onMouseDown={e => e.preventDefault()}
+ onClick={() => { setLocation(loc.value); setLocOpen(false); }}
+ className={`w-full text-left px-4 py-2.5 text-[13px] transition-colors
+ hover:bg-indigo-50 hover:text-indigo-700
+ ${location === loc.value ? 'bg-indigo-50 font-semibold text-indigo-700' : 'text-slate-700'}`}>
+ {loc.label}
+ </button>
+ ))}
+ </div>
+ )}
 
                 {/* Autocomplete dropdown */}
  {acOpen && acSugg.length > 0 && (
