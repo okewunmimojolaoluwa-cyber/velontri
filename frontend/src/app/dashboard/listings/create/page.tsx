@@ -309,6 +309,7 @@ export default function CreateListingPage() {
  category: '',
  subcategory: '',
  condition: 'new' as 'new' | 'used' | 'refurbished',
+ country: '',
  state: '',
  city: '',
  whatsapp_number: '',
