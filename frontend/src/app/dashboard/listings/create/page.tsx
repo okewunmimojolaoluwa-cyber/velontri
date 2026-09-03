@@ -226,6 +226,27 @@ const NG_STATES = [
  'Plateau','Rivers','Sokoto','Taraba','Yobe','Zamfara',
 ];
 
+const STATES_BY_COUNTRY: Record<string, string[]> = {
+ NG: NG_STATES,
+ GH: ['Greater Accra', 'Ashanti', 'Western', 'Eastern', 'Central', 'Northern', 'Upper East', 'Upper West', 'Volta', 'Brong-Ahafo', 'Bono', 'Bono East', 'Ahafo', 'Oti', 'Savannah', 'North East'],
+ KE: ['Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Thika', 'Malindi', 'Kitale', 'Garissa', 'Kakamega', 'Machakos', 'Meru', 'Nyeri', 'Kericho', 'Kiambu'],
+ ZA: ['Gauteng', 'Western Cape', 'KwaZulu-Natal', 'Eastern Cape', 'Limpopo', 'Mpumalanga', 'North West', 'Free State', 'Northern Cape'],
+ TZ: ['Dar es Salaam', 'Dodoma', 'Mwanza', 'Arusha', 'Mbeya', 'Morogoro', 'Tanga', 'Zanzibar', 'Pwani', 'Kilimanjaro', 'Tabora', 'Kigoma', 'Mara', 'Kagera', 'Iringa', 'Shinyanga', 'Ruvuma', 'Rukwa', 'Lindi', 'Mtwara', 'Singida', 'Geita', 'Katavi', 'Njombe', 'Simiyu'],
+ UG: ['Kampala', 'Wakiso', 'Mukono', 'Entebbe', 'Gulu', 'Lira', 'Mbarara', 'Jinja', 'Mbale', 'Masaka', 'Kabale', 'Hoima', 'Soroti', 'Arua', 'Fort Portal', 'Tororo', 'Kasese', 'Iganga'],
+ EG: ['Cairo', 'Alexandria', 'Giza', 'Shubra El Kheima', 'Port Said', 'Suez', 'Luxor', 'Aswan', 'Mansoura', 'Tanta', 'Asyut', 'Ismailia', 'Faiyum', 'Zagazig', 'Damietta', 'Assiut', 'Minya', 'Damanhur', 'Beni Suef', 'Hurghada', 'Qena', 'Sohag', 'Shibin El Kom'],
+ MA: ['Casablanca', 'Rabat', 'Fes', 'Marrakesh', 'Tangier', 'Agadir', 'Meknes', 'Oujda', 'Kenitra', 'Tetouan', 'Safi', 'Temara', 'Mohammedia', 'Khouribga', 'El Jadida', 'Beni Mellal', 'Nador', 'Taza', 'Settat', 'Larache'],
+ ET: ['Addis Ababa', 'Dire Dawa', 'Mekelle', 'Gondar', 'Hawassa', 'Bahir Dar', 'Jimma', 'Jijiga', 'Shashamane', 'Bishoftu', 'Arba Minch', 'Hosaena', 'Harar', 'Dilla', 'Nekemte', 'Dessie', 'Debre Birhan', 'Asella', 'Adama'],
+ DZ: ['Algiers', 'Oran', 'Constantine', 'Batna', 'Djelfa', 'Sétif', 'Annaba', 'Sidi Bel Abbès', 'Biskra', 'Tébessa', 'El Oued', 'Skikda', 'Tiaret', 'Béjaïa', 'Tlemcen', 'Béchar', 'Mostaganem', 'Bordj Bou Arréridj', 'Chlef', 'Blida'],
+ AO: ['Luanda', 'Huambo', 'Lobito', 'Benguela', 'Kuito', 'Lubango', 'Malanje', 'Namibe', 'Soyo', 'Cabinda', 'Uíge', 'Saurimo', 'Sumbe', 'Menongue', 'Lucapa', 'Caxito', 'N\'dalatando', 'Caála', 'Ondjiva', 'Luena'],
+ CI: ['Abidjan', 'Bouaké', 'Daloa', 'Yamoussoukro', 'San-Pédro', 'Korhogo', 'Man', 'Divo', 'Gagnoa', 'Abengourou', 'Agboville', 'Anyama', 'Dabou', 'Grand-Bassam', 'Odienné', 'Soubré', 'Séguéla', 'Boundiali', 'Ferkessédougou', 'Bingerville'],
+ SN: ['Dakar', 'Pikine', 'Touba', 'Thiès', 'Kaolack', 'Saint-Louis', 'Mbour', 'Rufisque', 'Ziguinchor', 'Diourbel', 'Louga', 'Tambacounda', 'Kolda', 'Richard Toll', 'Sédhiou', 'Kédougou', 'Matam', 'Fatick', 'Bignona', 'Guédiawaye'],
+ CM: ['Douala', 'Yaoundé', 'Garoua', 'Bamenda', 'Maroua', 'Bafoussam', 'Ngaoundéré', 'Kumba', 'Nkongsamba', 'Buéa', 'Limbe', 'Bertoua', 'Edéa', 'Loum', 'Kumbo', 'Foumban', 'Dschang', 'Ebolowa', 'Kribi', 'Tiko'],
+ ZW: ['Harare', 'Bulawayo', 'Chitungwiza', 'Mutare', 'Gweru', 'Kwekwe', 'Kadoma', 'Masvingo', 'Chinhoyi', 'Norton', 'Marondera', 'Ruwa', 'Chegutu', 'Zvishavane', 'Bindura', 'Beitbridge', 'Redcliff', 'Victoria Falls', 'Hwange', 'Gokwe'],
+ ZM: ['Lusaka', 'Kitwe', 'Ndola', 'Kabwe', 'Chingola', 'Mufulira', 'Livingstone', 'Luanshya', 'Kasama', 'Chipata', 'Kalulushi', 'Mazabuka', 'Choma', 'Mongu', 'Solwezi', 'Mansa', 'Nchelenge', 'Kapiri Mposhi', 'Mumbwa', 'Kafue'],
+ RW: ['Kigali', 'Butare', 'Gitarama', 'Ruhengeri', 'Gisenyi', 'Byumba', 'Cyangugu', 'Kibungo', 'Kibuye', 'Rwamagana', 'Nyanza', 'Muhanga', 'Musanze', 'Rubavu', 'Nyagatare', 'Kayonza', 'Rusizi', 'Bugesera', 'Gakenke', 'Ngoma'],
+ MZ: ['Maputo', 'Matola', 'Beira', 'Nampula', 'Chimoio', 'Nacala', 'Quelimane', 'Tete', 'Lichinga', 'Pemba', 'Xai-Xai', 'Maxixe', 'Inhambane', 'Cuamba', 'Angoche', 'Montepuez', 'Dondo', 'Mocuba', 'Manjacaze', 'Chókwè'],
+};
+
 const STEPS = ['Type', 'Details', 'Location', 'Photos', 'Review'];
 
 export default function CreateListingPage() {
@@ -752,7 +773,40 @@ export default function CreateListingPage() {
  <div className="space-y-4">
  <div>
  <label className="block text-xs font-bold text-slate-600 mb-1.5">
- State <span className="text-red-500">*</span>
+ Country <span className="text-red-500">*</span>
+ </label>
+ <select
+ value={form.country}
+ onChange={e => setForm(f => ({ ...f, country: e.target.value, state: '' }))}
+ className="w-full h-10 rounded-xl border border-slate-200 px-3 text-sm
+ text-slate-700 focus:border-indigo-400 focus:outline-none"
+ >
+ <option value="">Select country</option>
+ <option value="NG">🇳🇬 Nigeria</option>
+ <option value="GH">🇬🇭 Ghana</option>
+ <option value="KE">🇰🇪 Kenya</option>
+ <option value="ZA">🇿🇦 South Africa</option>
+ <option value="TZ">🇹🇿 Tanzania</option>
+ <option value="UG">🇺🇬 Uganda</option>
+ <option value="EG">🇪🇬 Egypt</option>
+ <option value="MA">🇲🇦 Morocco</option>
+ <option value="ET">🇪🇹 Ethiopia</option>
+ <option value="DZ">🇩🇿 Algeria</option>
+ <option value="AO">🇦🇴 Angola</option>
+ <option value="CI">🇨🇮 Côte d'Ivoire</option>
+ <option value="SN">🇸🇳 Senegal</option>
+ <option value="CM">🇨🇲 Cameroon</option>
+ <option value="ZW">🇿🇼 Zimbabwe</option>
+ <option value="ZM">🇿🇲 Zambia</option>
+ <option value="RW">🇷🇼 Rwanda</option>
+ <option value="MZ">🇲🇿 Mozambique</option>
+ </select>
+ </div>
+
+ {form.country && STATES_BY_COUNTRY[form.country] && (
+ <div>
+ <label className="block text-xs font-bold text-slate-600 mb-1.5">
+ State / Region <span className="text-red-500">*</span>
  </label>
  <select
  value={form.state}
@@ -760,10 +814,12 @@ export default function CreateListingPage() {
  className="w-full h-10 rounded-xl border border-slate-200 px-3 text-sm
  text-slate-700 focus:border-indigo-400 focus:outline-none"
  >
- <option value="">Select state</option>
- {NG_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+ <option value="">Select state / region</option>
+ {STATES_BY_COUNTRY[form.country].map(s => <option key={s} value={s}>{s}</option>)}
  </select>
  </div>
+ )}
+
  <div>
  <label className="block text-xs font-bold text-slate-600 mb-1.5">City</label>
  <Input
