@@ -3,12 +3,14 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { SquaresFour, PlusCircle, Package, Pulse, BookmarkSimple, Storefront, ChartBar, ChatCircle, Bell, User, Gear, Lock, Question, SignOut, List, X, CreditCard, Warning, SealCheck } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 import { useAuth } from '@/features/auth/auth-provider';
 import { getRefreshToken } from '@/lib/auth/token-refresh';
 import { authApi } from '@/lib/api/endpoints/auth';
+import { usersApi, userKeys } from '@/lib/api/endpoints/users';
 import { UserBottomNav } from './user-bottom-nav';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { VelontriLogo } from '@/components/ui/velontri-logo';
@@ -101,10 +103,21 @@ export function UserShell({ children }: { children: ReactNode }) {
  const [mounted, setMounted] = useState(false);
  const unreadCount = useUnreadCount();
 
+  // Fetch user profile for avatar and name
+ const { data: profileData } = useQuery({
+ queryKey: userKeys.profile(),
+ queryFn: () => usersApi.getProfile(),
+ enabled: !!session.isAuthenticated,
+ staleTime: 5 * 60 * 1000,
+ });
+
  useEffect(() => { setMounted(true); }, []);
  if (!mounted) return null;
 
- const initials = session.userId?.slice(0, 2).toUpperCase() ?? 'VL';
+ const fullName = profileData?.data?.full_name ?? '';
+ const firstName = fullName.split(' ')[0] || 'User';
+ const avatarUrl = profileData?.data?.avatar_url;
+ const initials = firstName.charAt(0).toUpperCase();
 
  async function logout() {
  try {
@@ -164,8 +177,12 @@ export function UserShell({ children }: { children: ReactNode }) {
  text-[13px] font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all"
  >
  <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full
- bg-indigo-100 text-[11px] font-bold text-indigo-700">
- {initials}
+ bg-indigo-100 text-[11px] font-bold text-indigo-700 overflow-hidden">
+ {avatarUrl ? (
+ <img src={avatarUrl} alt={firstName} className="h-full w-full object-cover" />
+ ) : (
+ initials
+ )}
  </div>
  <span className="flex-1 text-left truncate">My Account</span>
  <SignOut className="h-3.5 w-3.5 text-slate-300 group-hover:text-red-400 transition-colors" />
@@ -253,8 +270,12 @@ export function UserShell({ children }: { children: ReactNode }) {
  <Link href={ROUTES.user.profile} className="hidden md:flex">
  <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center
  text-[11px] font-bold text-indigo-700 ring-2 ring-white hover:ring-indigo-200
- transition-all cursor-pointer">
- {initials}
+ transition-all cursor-pointer overflow-hidden">
+ {avatarUrl ? (
+ <img src={avatarUrl} alt={firstName} className="h-full w-full object-cover" />
+ ) : (
+ initials
+ )}
  </div>
  </Link>
                 {/* Mobile: avatar + logout button */}
@@ -262,8 +283,12 @@ export function UserShell({ children }: { children: ReactNode }) {
  <Link href={ROUTES.user.profile}>
  <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center
  text-[11px] font-bold text-indigo-700 ring-2 ring-white hover:ring-indigo-200
- transition-all cursor-pointer">
- {initials}
+ transition-all cursor-pointer overflow-hidden">
+ {avatarUrl ? (
+ <img src={avatarUrl} alt={firstName} className="h-full w-full object-cover" />
+ ) : (
+ initials
+ )}
  </div>
  </Link>
  <button
