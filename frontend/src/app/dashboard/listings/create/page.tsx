@@ -218,6 +218,18 @@ const LISTING_TYPES = [
  { value: 'vehicle', label: 'Vehicle', icon: '🚗', desc: 'Cars, bikes, trucks' },
 ];
 
+/**
+ * Auto-determine listing type based on category.
+ * This eliminates the redundant Type selection step.
+ */
+function getListingTypeFromCategory(category: string): string {
+ if (category === 'Vehicles') return 'vehicle';
+ if (category === 'Property') return 'property';
+ if (category === 'Services' || category === 'Repair & Construction') return 'service';
+ if (category === 'Jobs' || category === 'Seeking Work / CVs') return 'job';
+ return 'physical'; // default for all other categories
+}
+
 const NG_STATES = [
  'Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno',
  'Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','FCT Abuja','Gombe',
@@ -247,7 +259,7 @@ const STATES_BY_COUNTRY: Record<string, string[]> = {
  MZ: ['Maputo', 'Matola', 'Beira', 'Nampula', 'Chimoio', 'Nacala', 'Quelimane', 'Tete', 'Lichinga', 'Pemba', 'Xai-Xai', 'Maxixe', 'Inhambane', 'Cuamba', 'Angoche', 'Montepuez', 'Dondo', 'Mocuba', 'Manjacaze', 'Chókwè'],
 };
 
-const STEPS = ['Type', 'Details', 'Location', 'Photos', 'Review'];
+const STEPS = ['Details', 'Location', 'Photos', 'Review'];
 
 export default function CreateListingPage() {
  const router = useRouter();
@@ -417,14 +429,19 @@ export default function CreateListingPage() {
 
  function next() {
  setError('');
- if (step === 0 && !form.listing_type) { setError('Please select a type.'); return; }
- if (step === 1) {
+ // Step 0 (Details): validate title, description, price, category
+ if (step === 0) {
  if (!form.title.trim()) { setError('Title is required.'); return; }
  if (!form.description.trim()) { setError('Description is required.'); return; }
  if (!form.price || isNaN(parseFloat(form.price))) { setError('Enter a valid price.'); return; }
  if (!form.category) { setError('Select a category.'); return; }
+ // Auto-set listing_type based on category
+ const autoType = getListingTypeFromCategory(form.category);
+ setForm(f => ({ ...f, listing_type: autoType }));
  }
- if (step === 2) {
+ // Step 1 (Location): validate country, state, whatsapp
+ if (step === 1) {
+ if (!form.country) { setError('Select your country.'); return; }
  if (!form.state) { setError('Select your state.'); return; }
  if (!form.whatsapp_number.trim()) { setError('WhatsApp number is required.'); return; }
  const normalized = normalizePhoneNumber(form.whatsapp_number);
@@ -574,38 +591,8 @@ export default function CreateListingPage() {
  </div>
  )}
 
-        {/* STEP 0 — Type */}
+        {/* STEP 0 — Details (formerly step 1) */}
  {step === 0 && (
- <div className="space-y-3">
- <p className="text-sm font-bold text-slate-700 mb-4">What are you listing?</p>
- {LISTING_TYPES.map(({ value, label, icon, desc }) => (
- <button
- key={value}
- onClick={() => setForm(f => ({ ...f, listing_type: value }))}
- className={`w-full flex items-center gap-4 rounded-xl border-2 p-4 text-left
- transition-all ${
- form.listing_type === value
- ? 'border-indigo-500 bg-indigo-50'
- : 'border-slate-200 hover:border-indigo-200 hover:bg-slate-50'
- }`}
- >
- <span className="text-3xl">{icon}</span>
- <div>
- <p className="text-sm font-bold text-slate-900">{label}</p>
- <p className="text-xs text-slate-500">{desc}</p>
- </div>
- {form.listing_type === value && (
- <div className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 flex-shrink-0">
- <span className="text-white text-xs">✓</span>
- </div>
- )}
- </button>
- ))}
- </div>
- )}
-
-        {/* STEP 1 — Details */}
- {step === 1 && (
  <div className="space-y-4">
  <div>
  <label className="block text-xs font-bold text-slate-600 mb-1.5">
@@ -769,8 +756,8 @@ export default function CreateListingPage() {
  </div>
  )}
 
-        {/* STEP 2 — Location */}
- {step === 2 && (
+        {/* STEP 1 — Location (formerly step 2) */}
+ {step === 1 && (
  <div className="space-y-4">
  <div>
  <label className="block text-xs font-bold text-slate-600 mb-1.5">
@@ -875,8 +862,8 @@ export default function CreateListingPage() {
  </div>
  )}
 
-        {/* STEP 3 — Photos */}
- {step === 3 && (
+        {/* STEP 2 — Photos (formerly step 3) */}
+ {step === 2 && (
  <div className="space-y-4">
  <p className="text-sm font-bold text-slate-700">Add photos (up to 6)</p>
 
@@ -993,8 +980,8 @@ export default function CreateListingPage() {
  </div>
  )}
 
-        {/* STEP 4 — Review */}
- {step === 4 && (
+        {/* STEP 3 — Review (formerly step 4) */}
+ {step === 3 && (
  <div className="space-y-4">
  <p className="text-sm font-bold text-slate-700">Review your listing before posting</p>
  <div className="rounded-xl border border-slate-200 overflow-hidden">
@@ -1015,7 +1002,7 @@ export default function CreateListingPage() {
  </div>
  <div className="flex flex-wrap gap-2">
  <span className="text-xs bg-slate-100 rounded-full px-2.5 py-1 text-slate-600 capitalize">
- {LISTING_TYPES.find(t => t.value === form.listing_type)?.label ?? form.listing_type}
+ {LISTING_TYPES.find(t => t.value === (form.listing_type || getListingTypeFromCategory(form.category)))?.label ?? 'Product'}
  </span>
  <span className="text-xs bg-slate-100 rounded-full px-2.5 py-1 text-slate-600">
  {form.category}{form.subcategory ? ` › ${form.subcategory}` : ''}
