@@ -124,3 +124,23 @@ services:
         value: "okewunmimojolaoluwa@gmail.com"
       - key: GMAIL_APP_PASSWORD
         value: "scivvkgnkqmgqedt"
+
+  - type: worker
+    name: velontri-verification-reminder
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python scripts/verification_reminder_worker.py
+    pythonVersion: "3.11.9"
+    
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: PYTHONPATH
+        value: "/opt/render/project/src/backend:/opt/render/project/src/backend/scripts"
+      - key: DATABASE_URL
+        value: "postgresql+asyncpg://postgres.nppxqvgetyetnsiphehm:Okewunmi123@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
