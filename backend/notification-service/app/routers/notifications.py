@@ -52,6 +52,9 @@ async def get_unread_count(request: Request) -> SuccessResponse:
         except Exception:
             count = 0
     return SuccessResponse(data={"unread_count": int(count)})
+
+
+@router.get("/notifications", response_model=SuccessResponse, summary="Get user notifications with pagination")
 async def get_notifications(
     request: Request,
     page: int = Query(default=1, ge=1),
