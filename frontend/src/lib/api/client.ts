@@ -11,7 +11,7 @@ export function createApiClient(): AxiosInstance {
    'Content-Type': 'application/json',
    'Accept-Encoding': 'gzip, deflate, br', // Enable compression
  },
- withCredentials: true,
+ withCredentials: false, // Changed to false - we use Bearer tokens, not cookies
  // Enable HTTP/2 and connection reuse
  maxRedirects: 3,
  validateStatus: (status) => status < 500, // Don't retry on 4xx errors
