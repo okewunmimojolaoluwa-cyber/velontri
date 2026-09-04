@@ -703,10 +703,17 @@ export default function HomePage() {
  <p className="text-[13px] font-bold leading-snug text-slate-900 line-clamp-2 mb-2 min-h-[2.4rem]">
  {listing.title}
  </p>
- <div className="flex items-center justify-between">
+ <div className="flex items-baseline gap-1.5 mb-1">
  <p className="text-[15px] font-black tracking-tight text-indigo-600">
  {fmtPrice(listing.price, listing.currency)}
  </p>
+ {listing.is_negotiable && (
+ <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap">
+ Negotiable
+ </span>
+ )}
+ </div>
+ <div className="flex items-center justify-between">
  {listing.city && (
  <span className="flex items-center gap-1 text-[10px] text-slate-400">
  <MapPin size={9} />{listing.city}
