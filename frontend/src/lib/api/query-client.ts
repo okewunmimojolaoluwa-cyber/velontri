@@ -9,21 +9,17 @@ export function createQueryClient(): QueryClient {
  staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh longer
  gcTime: 30 * 60 * 1000, // 30 minutes - keep in memory longer
  
- // Smart retry logic
- retry: (count, error) => {
- if (error instanceof VelontriApiError) {
-   return count < 1 && error.isRetryable; // Only retry once
- }
- return count < 1; // Fail fast on network errors
- },
+ // Fast retry logic - fail fast for immediate user feedback
+ retry: 1, // Only retry once
+ retryDelay: 500, // 500ms between retries
  
  // Background refetching for seamless updates
  refetchOnWindowFocus: true,
  refetchOnReconnect: true,
  refetchOnMount: false, // Don't refetch if data is fresh
  
- // Network waterfall optimization
- networkMode: 'offlineFirst', // Use cache-first strategy
+ // CRITICAL: Always use network for initial load, then cache
+ networkMode: 'online', // Changed from offlineFirst to ensure fresh data loads
  },
  mutations: {
  retry: 0, // Never retry mutations

@@ -187,24 +187,28 @@ export default function HomePage() {
   // Helper: is section visible (default true if not configured)
  const isVisible = (id: string) => sectionVis[id] !== false;
 
-  /* Fetch ALL active listings — shown first on every visit, with aggressive caching */
+  /* Fetch ALL active listings — with IMMEDIATE loading priority */
  const { data: allData, isLoading: allLoading } = useQuery({
  queryKey: listingKeys.list({ page: 1, page_size: 12 }),
  queryFn: () => listingsApi.browse({ page: 1, page_size: 12 }),
- staleTime: 3 * 60 * 1000, // 3 minutes - homepage listings stay fresh
- gcTime: 15 * 60 * 1000, // 15 minutes cache
- refetchOnWindowFocus: false, // Don't refetch on tab switch
- refetchOnMount: false, // Use cache if available
+ staleTime: 3 * 60 * 1000, // 3 minutes
+ gcTime: 15 * 60 * 1000, // 15 minutes
+ refetchOnWindowFocus: false,
+ refetchOnMount: false,
+ // CRITICAL: Start fetching immediately - highest priority
+ networkMode: 'online',
+ retry: 1,
  });
 
-  /* Fetch real listings for each section — with smart caching */
+  /* Fetch category sections with conditional loading */
  const { data: vehiclesData, isLoading: vehiclesLoading } = useQuery({
  queryKey: listingKeys.list({ listing_type: 'vehicle', page: 1, page_size: 8 }),
  queryFn: () => listingsApi.browse({ listing_type: 'vehicle', page: 1, page_size: 8 }),
- staleTime: 5 * 60 * 1000, // 5 minutes
- gcTime: 20 * 60 * 1000, // 20 minutes
+ staleTime: 5 * 60 * 1000,
+ gcTime: 20 * 60 * 1000,
  refetchOnWindowFocus: false,
- enabled: isVisible('vehicles'), // Only fetch if section is visible
+ enabled: isVisible('vehicles'),
+ retry: 1,
  });
 
  const { data: electronicsData, isLoading: electronicsLoading } = useQuery({
@@ -214,6 +218,7 @@ export default function HomePage() {
  gcTime: 20 * 60 * 1000,
  refetchOnWindowFocus: false,
  enabled: isVisible('electronics'),
+ retry: 1,
  });
 
  const { data: propertyData, isLoading: propertyLoading } = useQuery({
@@ -223,6 +228,7 @@ export default function HomePage() {
  gcTime: 20 * 60 * 1000,
  refetchOnWindowFocus: false,
  enabled: isVisible('property'),
+ retry: 1,
  });
 
  const vehicles = Array.isArray(vehiclesData?.data) ? vehiclesData.data : [];
