@@ -187,34 +187,42 @@ export default function HomePage() {
   // Helper: is section visible (default true if not configured)
  const isVisible = (id: string) => sectionVis[id] !== false;
 
-  /* Fetch ALL active listings — shown first on every visit, no auth needed */
+  /* Fetch ALL active listings — shown first on every visit, with aggressive caching */
  const { data: allData, isLoading: allLoading } = useQuery({
  queryKey: listingKeys.list({ page: 1, page_size: 12 }),
  queryFn: () => listingsApi.browse({ page: 1, page_size: 12 }),
- staleTime: 0,
- refetchOnWindowFocus: false,
+ staleTime: 3 * 60 * 1000, // 3 minutes - homepage listings stay fresh
+ gcTime: 15 * 60 * 1000, // 15 minutes cache
+ refetchOnWindowFocus: false, // Don't refetch on tab switch
+ refetchOnMount: false, // Use cache if available
  });
 
-  /* Fetch real listings for each section — no stale time so they load fresh */
+  /* Fetch real listings for each section — with smart caching */
  const { data: vehiclesData, isLoading: vehiclesLoading } = useQuery({
  queryKey: listingKeys.list({ listing_type: 'vehicle', page: 1, page_size: 8 }),
  queryFn: () => listingsApi.browse({ listing_type: 'vehicle', page: 1, page_size: 8 }),
- staleTime: 0,
+ staleTime: 5 * 60 * 1000, // 5 minutes
+ gcTime: 20 * 60 * 1000, // 20 minutes
  refetchOnWindowFocus: false,
+ enabled: isVisible('vehicles'), // Only fetch if section is visible
  });
 
  const { data: electronicsData, isLoading: electronicsLoading } = useQuery({
  queryKey: listingKeys.list({ category: 'Electronics', page: 1, page_size: 8 }),
  queryFn: () => listingsApi.browse({ category: 'Electronics', page: 1, page_size: 8 }),
- staleTime: 0,
+ staleTime: 5 * 60 * 1000,
+ gcTime: 20 * 60 * 1000,
  refetchOnWindowFocus: false,
+ enabled: isVisible('electronics'),
  });
 
  const { data: propertyData, isLoading: propertyLoading } = useQuery({
  queryKey: listingKeys.list({ listing_type: 'property', page: 1, page_size: 8 }),
  queryFn: () => listingsApi.browse({ listing_type: 'property', page: 1, page_size: 8 }),
- staleTime: 0,
+ staleTime: 5 * 60 * 1000,
+ gcTime: 20 * 60 * 1000,
  refetchOnWindowFocus: false,
+ enabled: isVisible('property'),
  });
 
  const vehicles = Array.isArray(vehiclesData?.data) ? vehiclesData.data : [];

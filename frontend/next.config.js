@@ -5,6 +5,14 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  
+  // Production optimizations
+  swcMinify: true, // Faster minification with SWC
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
 
   // Public env vars — safe to commit, these are public-facing keys only.
   env: {
@@ -18,7 +26,7 @@ const nextConfig = {
       'pk_test_51d83fe69d0b2dc3483cb85f3599be0a1ac22a5d',
   },
 
-  // HTTP headers for SEO and security
+  // HTTP headers for SEO, security, and performance
   async headers() {
     return [
       // Sitemap — text/xml is required by Google Search Console (not application/xml)
@@ -38,9 +46,16 @@ const nextConfig = {
           { key: 'Cache-Control', value: 'public, max-age=86400, s-maxage=86400' },
         ],
       },
-      // Cache static assets
+      // Aggressive caching for static assets
       {
         source: '/(.*\\.(?:ico|png|jpg|jpeg|gif|svg|woff2?))',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      // Cache JavaScript and CSS bundles
+      {
+        source: '/_next/static/:path*',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
@@ -75,15 +90,56 @@ const nextConfig = {
     ],
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60 * 60 * 24 * 7, // 7 days
     unoptimized: true,
   },
 
-  webpack(config) {
+  webpack(config, { dev, isServer }) {
     config.resolve.fallback = { ...config.resolve.fallback, punycode: false };
+    
+    // Optimize bundle size
+    if (!dev && !isServer) {
+      config.optimization = {
+        ...config.optimization,
+        moduleIds: 'deterministic',
+        runtimeChunk: 'single',
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            default: false,
+            vendors: false,
+            // Vendor chunk for node_modules
+            vendor: {
+              name: 'vendor',
+              chunks: 'all',
+              test: /node_modules/,
+              priority: 20,
+            },
+            // Common chunk for shared code
+            common: {
+              name: 'common',
+              minChunks: 2,
+              chunks: 'all',
+              priority: 10,
+              reuseExistingChunk: true,
+              enforce: true,
+            },
+          },
+        },
+      };
+    }
+    
     return config;
   },
 
   poweredByHeader: false,
+  
+  // Experimental features for better performance
+  experimental: {
+    optimizeCss: true, // Enable CSS optimization
+    optimizePackageImports: ['@phosphor-icons/react', 'lucide-react'],
+  },
 };
 
 module.exports = nextConfig;

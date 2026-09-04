@@ -4,7 +4,7 @@ Marketplace Service — listings, reviews, stores, bookings router.
 from __future__ import annotations
 import uuid
 from typing import Annotated
-from fastapi import APIRouter, Depends, File, Query, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, Query, Request, Response, UploadFile, status
 from shared.errors import SuccessResponse
 from shared.logging import get_logger
 from ..config import MarketplaceSettings
@@ -25,10 +25,14 @@ async def create_listing(body: CreateListingRequest, service: MarketplaceService
     return SuccessResponse(message='Listing created.', data=result.model_dump())
 
 @router.get('/listings', response_model=SuccessResponse, summary='Browse active listings with optional filters')
-async def browse_listings(request: Request, service: MarketplaceService=Depends(_build_service), page: int=Query(default=1, ge=1), page_size: int=Query(default=20, ge=1, le=100), category: str | None=Query(default=None), listing_type: str | None=Query(default=None), seller_id: uuid.UUID | None=Query(default=None), city: str | None=Query(default=None), country: str | None=Query(default=None), min_price: float | None=Query(default=None, ge=0), max_price: float | None=Query(default=None, ge=0), condition: str | None=Query(default=None), q: str | None=Query(default=None, description='Full-text keyword search'), sort: str | None=Query(default=None, description='Sort order: price_asc, price_desc, or empty for latest first')) -> SuccessResponse:
+async def browse_listings(request: Request, response: Response, service: MarketplaceService=Depends(_build_service), page: int=Query(default=1, ge=1), page_size: int=Query(default=20, ge=1, le=100), category: str | None=Query(default=None), listing_type: str | None=Query(default=None), seller_id: uuid.UUID | None=Query(default=None), city: str | None=Query(default=None), country: str | None=Query(default=None), min_price: float | None=Query(default=None, ge=0), max_price: float | None=Query(default=None, ge=0), condition: str | None=Query(default=None), q: str | None=Query(default=None, description='Full-text keyword search'), sort: str | None=Query(default=None, description='Sort order: price_asc, price_desc, or empty for latest first')) -> SuccessResponse:
     """Browse active listings using raw SQL — immune to ORM column mismatches."""
     from sqlalchemy import text as _text
     from shared.errors import paginated_meta
+    
+    # Add aggressive HTTP caching for public browse endpoint
+    response.headers["Cache-Control"] = "public, max-age=180, s-maxage=300, stale-while-revalidate=600"
+    response.headers["Vary"] = "Accept-Encoding"
 
     # Build WHERE clauses
     conditions = ["status = 'active'"]
