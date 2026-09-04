@@ -690,6 +690,21 @@ def create_app() -> FastAPI:
     app.add_middleware(PrometheusMiddleware)
     register_error_handlers(app)
 
+    # Add explicit OPTIONS handler for CORS preflight
+    @app.options("/{full_path:path}")
+    async def options_handler(full_path: str):
+        """Handle CORS preflight OPTIONS requests."""
+        return JSONResponse(
+            content={},
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Request-ID, Accept, Origin",
+                "Access-Control-Max-Age": "600",
+            }
+        )
+
     for router, tag in _collect_routers():
         app.include_router(router, prefix="/api/v1")
         app.include_router(router)  # also mount without prefix for flexibility
