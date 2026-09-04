@@ -190,3 +190,18 @@ async def get_raw_db(engine):
     async with engine.begin() as conn:
         yield DbShim(conn)
 
+
+def get_supabase_session_factory() -> async_sessionmaker[AsyncSession]:
+    """
+    Create a session factory for Supabase PostgreSQL connection.
+    Uses DATABASE_URL from environment variables.
+    Convenience function for scripts and workers.
+    """
+    import os
+    database_url = os.getenv('DATABASE_URL')
+    if not database_url:
+        raise ValueError('DATABASE_URL environment variable is required')
+    
+    engine = create_engine(database_url)
+    return create_session_factory(engine)
+

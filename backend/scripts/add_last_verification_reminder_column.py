@@ -1,55 +1,55 @@
 """Add last_verification_reminder column to users table."""
-import asyncio
+import os
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from sqlalchemy import text as _text
-from shared.database import get_supabase_session_factory
-from shared.logging import get_logger
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv(ROOT / '.env')
 
-logger = get_logger(__name__)
+import psycopg2
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
+# Get database URL and convert asyncpg URL to psycopg2 format
+database_url = os.getenv('DATABASE_URL', '')
+if database_url.startswith('postgresql+asyncpg://'):
+    database_url = database_url.replace('postgresql+asyncpg://', 'postgresql://')
 
-async def add_column():
-    """Add last_verification_reminder column if it doesn't exist."""
-    session_factory = get_supabase_session_factory()
+print("Adding last_verification_reminder column...")
+
+try:
+    # Connect to the database
+    conn = psycopg2.connect(database_url)
+    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    cursor = conn.cursor()
     
-    try:
-        async with session_factory() as session:
-            # Check if column exists
-            check_result = (await session.execute(_text("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name = 'users' 
-                AND column_name = 'last_verification_reminder'
-            """))).fetchone()
-            
-            if check_result:
-                logger.info("Column 'last_verification_reminder' already exists")
-                return
-            
-            # Add the column
-            await session.execute(_text("""
-                ALTER TABLE users 
-                ADD COLUMN IF NOT EXISTS last_verification_reminder TIMESTAMP WITH TIME ZONE
-            """))
-            
-            await session.commit()
-            logger.info("✓ Added 'last_verification_reminder' column to users table")
-            
-    except Exception as e:
-        logger.error(f"Error adding column: {e}")
-        raise
+    # Check if column exists
+    cursor.execute("""
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'users' 
+        AND column_name = 'last_verification_reminder'
+    """)
+    
+    result = cursor.fetchone()
+    
+    if result:
+        print("✓ Column 'last_verification_reminder' already exists")
+    else:
+        # Add the column
+        cursor.execute("""
+            ALTER TABLE users 
+            ADD COLUMN last_verification_reminder TIMESTAMP WITH TIME ZONE
+        """)
+        print("✓ Added 'last_verification_reminder' column to users table")
+    
+    cursor.close()
+    conn.close()
+    print("Done!")
 
-
-async def main():
-    logger.info("Adding last_verification_reminder column...")
-    await add_column()
-    logger.info("Done!")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+except Exception as e:
+    print(f"Error: {e}")
+    sys.exit(1)

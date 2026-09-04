@@ -12,6 +12,10 @@ from datetime import datetime, timezone, timedelta
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv(ROOT / '.env')
+
 from sqlalchemy import text as _text
 from shared.database import get_supabase_session_factory
 from shared.logging import get_logger
