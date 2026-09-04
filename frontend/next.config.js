@@ -8,11 +8,18 @@ const nextConfig = {
   
   // Production optimizations
   swcMinify: true, // Faster minification with SWC
+  compress: true, // Enable gzip compression
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {
       exclude: ['error', 'warn'],
     } : false,
   },
+  
+  // Performance monitoring
+  productionBrowserSourceMaps: false, // Disable source maps in production for smaller bundle
+  
+  // Output optimization
+  output: 'standalone', // Optimized production output
 
   // Public env vars — safe to commit, these are public-facing keys only.
   env: {
@@ -137,8 +144,7 @@ const nextConfig = {
   
   // Experimental features for better performance
   experimental: {
-    // optimizeCss: true, // Disabled - requires critters package
-    optimizePackageImports: ['@phosphor-icons/react', 'lucide-react'],
+    optimizePackageImports: ['@phosphor-icons/react', 'lucide-react', '@radix-ui/react-avatar', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
   },
 };
 
