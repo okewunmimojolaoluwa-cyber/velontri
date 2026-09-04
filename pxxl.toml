@@ -3,7 +3,7 @@ name = "velontri"
 
 [build]
 install = "cd frontend && npm install"
-build   = "cd frontend && npm run build"
+build   = "cd frontend && NEXT_PUBLIC_API_URL=https://velontri.onrender.com/api/v1 NEXT_PUBLIC_SITE_URL=https://velontri.pxxl.click npm run build"
 start   = "node server.js"
 
 [env]
