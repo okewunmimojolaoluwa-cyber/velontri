@@ -5,3 +5,10 @@ name = "velontri"
 install = "cd frontend && npm install"
 build   = "cd frontend && npm run build"
 start   = "node server.js"
+
+[env]
+# These environment variables are baked into the Next.js build
+NEXT_PUBLIC_API_URL = "https://velontri.onrender.com/api/v1"
+NEXT_PUBLIC_SITE_URL = "https://velontri.pxxl.click"
+NEXT_PUBLIC_GOOGLE_CLIENT_ID = "99339393476-c77uoti2pa2thldagm4fkrmslhg1ggnr.apps.googleusercontent.com"
+NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY = "pk_test_51d83fe69d0b2dc3483cb85f3599be0a1ac22a5d"
