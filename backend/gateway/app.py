@@ -770,3 +770,5 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
+
+# Force redeploy: 2026-09-07 12:43:14
