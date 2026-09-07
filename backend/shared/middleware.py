@@ -105,8 +105,8 @@ def configure_middleware(
                 "https://velontri.onrender.com",
             ]
 
-    # Use allow_credentials=False since frontend doesn't send cookies
-    # This fixes the 400 preflight error when combined with allow_origin_regex
+    # CORS configuration for production
+    # Use allow_credentials=False since we use Bearer tokens, not cookies
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(RequestIDMiddleware)
     app.add_middleware(
@@ -114,8 +114,8 @@ def configure_middleware(
         allow_origins=origins,
         allow_origin_regex=r"https?://.*\.(velontri\.com|pxxl\.click|pxxl\.run|onrender\.com)",
         allow_credentials=False,
-        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-Request-ID", "Accept", "Origin"],
-        expose_headers=["X-Request-ID", "X-Total-Count"],
-        max_age=600,
+        allow_methods=["*"],  # Allow all methods explicitly
+        allow_headers=["*"],  # Allow all headers explicitly
+        expose_headers=["X-Request-ID", "X-Total-Count", "Content-Type"],
+        max_age=86400,  # Cache preflight for 24 hours
     )
