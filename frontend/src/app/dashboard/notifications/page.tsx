@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { Bell, Package, ChatCircle, CurrencyDollar, ShieldCheck, Checks, CheckCircle, XCircle, ArrowSquareOut, User } from '@phosphor-icons/react';
+import { Bell, Package, ChatCircle, CurrencyDollar, ShieldCheck, Checks, CheckCircle, XCircle, ArrowSquareOut, User, UserPlus, Users, Heart } from '@phosphor-icons/react';
 import { useNotifications } from '@/lib/hooks/use-notifications';
 import type { Notification } from '@/lib/hooks/use-notifications';
 import Link from 'next/link';
@@ -14,6 +14,9 @@ const TYPE_ICON: Record<string, typeof Bell> = {
  listing_rejected: XCircle,
  system: ShieldCheck,
  dispute: ShieldCheck,
+ NEW_FOLLOWER: UserPlus,
+ NEW_FOLLOWED_USER_LISTING: Heart,
+ verification: CheckCircle,
 };
 
 const TYPE_COLOR: Record<string, string> = {
@@ -22,6 +25,9 @@ const TYPE_COLOR: Record<string, string> = {
  message: 'bg-indigo-100 text-indigo-600',
  payment: 'bg-amber-100 text-amber-600',
  dispute: 'bg-orange-100 text-orange-600',
+ NEW_FOLLOWER: 'bg-purple-100 text-purple-600',
+ NEW_FOLLOWED_USER_LISTING: 'bg-pink-100 text-pink-600',
+ verification: 'bg-blue-100 text-blue-600',
 };
 
 function fmtTime(ts: string) {
