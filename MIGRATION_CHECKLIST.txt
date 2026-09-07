@@ -1,0 +1,169 @@
+═══════════════════════════════════════════════════════════════
+  DATABASE MIGRATION CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+Follow these steps IN ORDER. Check off each one as you complete it.
+
+═══════════════════════════════════════════════════════════════
+  PREPARATION (Do this first!)
+═══════════════════════════════════════════════════════════════
+
+☐ 1. The file "user_follows_migration.sql" is open in Notepad
+     Location: C:\Users\USER PC\Desktop\velontri\user_follows_migration.sql
+     
+     ✓ If it's open, keep it open
+     ✗ If not, right-click the file → Open with Notepad
+
+☐ 2. You have your Render login credentials ready
+     Website: https://dashboard.render.com
+
+═══════════════════════════════════════════════════════════════
+  STEP-BY-STEP MIGRATION
+═══════════════════════════════════════════════════════════════
+
+☐ 3. Open browser and go to: https://dashboard.render.com
+
+☐ 4. Log in if needed
+
+☐ 5. Look for your POSTGRESQL database service
+     ✓ Look for: elephant icon 🐘 or "PostgreSQL" type
+     ✗ Don't click: Web Service or Frontend
+
+☐ 6. Click on the PostgreSQL database name
+
+☐ 7. Click the "Shell" tab at the top
+     (It's usually: Info | Metrics | Logs | Shell | Settings)
+
+☐ 8. You should see a terminal prompt like:
+     postgres=#
+     
+     ✓ If you see this, continue
+     ✗ If you don't, go back to step 5
+
+☐ 9. Go to the Notepad window with the SQL file
+
+☐ 10. Select ALL the text (Ctrl+A)
+
+☐ 11. Copy it (Ctrl+C)
+
+☐ 12. Go back to the browser with the Shell
+
+☐ 13. Click inside the terminal area
+
+☐ 14. Paste the SQL code (Ctrl+V)
+
+☐ 15. Press ENTER
+
+☐ 16. Wait 5-10 seconds for it to finish
+
+═══════════════════════════════════════════════════════════════
+  VERIFY SUCCESS
+═══════════════════════════════════════════════════════════════
+
+You should see output like:
+
+  CREATE TABLE
+  CREATE INDEX
+  CREATE INDEX
+  CREATE INDEX
+  DO
+  DO
+  CREATE FUNCTION
+  DROP TRIGGER
+  CREATE TRIGGER
+
+☐ 17. Check: Do you see "CREATE TABLE"? _______ (Yes/No)
+
+☐ 18. Check: Do you see multiple "CREATE INDEX"? _______ (Yes/No)
+
+☐ 19. Check: Do you see "CREATE TRIGGER"? _______ (Yes/No)
+
+☐ 20. Check: Are there any ERROR messages? _______ (Yes/No)
+
+═══════════════════════════════════════════════════════════════
+  RESULTS
+═══════════════════════════════════════════════════════════════
+
+If you answered:
+  ✅ Yes, Yes, Yes, No → SUCCESS! Migration complete!
+  ❌ Any other combination → See troubleshooting below
+
+═══════════════════════════════════════════════════════════════
+  TEST THE TABLE (Optional but recommended)
+═══════════════════════════════════════════════════════════════
+
+☐ 21. In the same Shell, type this and press Enter:
+
+      SELECT * FROM user_follows LIMIT 1;
+
+☐ 22. You should see:
+      
+      id | follower_id | following_id | created_at
+      ---+-------------+--------------+------------
+      (0 rows)
+
+      ✓ If you see this → Perfect! Table exists and is empty
+      ✗ If you see an error → Migration failed, see troubleshooting
+
+═══════════════════════════════════════════════════════════════
+  COMMON ISSUES & SOLUTIONS
+═══════════════════════════════════════════════════════════════
+
+Issue: "relation user_follows already exists"
+Solution: ✅ This is FINE! It means it's already created. Continue!
+
+Issue: "permission denied"
+Solution: ❌ Contact your database admin for permissions
+
+Issue: Can't find Shell tab
+Solution: ❌ Make sure you clicked the DATABASE, not Web Service
+
+Issue: Nothing happens after pasting
+Solution: ⚠️ Press Enter key to execute the SQL
+
+Issue: Some commands say "already exists"
+Solution: ✅ This is FINE! Safe to ignore and continue
+
+═══════════════════════════════════════════════════════════════
+  AFTER SUCCESSFUL MIGRATION
+═══════════════════════════════════════════════════════════════
+
+☐ 23. Close the browser tab (Shell)
+
+☐ 24. Open PowerShell in your project folder
+
+☐ 25. Run these commands:
+
+      git add .
+      git commit -m "feat: implement followers/following system"
+      git push origin main
+
+☐ 26. Wait for Render to redeploy (5-10 minutes)
+
+☐ 27. Test the feature:
+      - Go to: https://velontri.pxxl.click/users/search
+      - Search for a user
+      - Click "Follow"
+      - Check: https://velontri.pxxl.click/dashboard/following
+      - Check: https://velontri.pxxl.click/dashboard/followers
+
+═══════════════════════════════════════════════════════════════
+  🎉 CONGRATULATIONS!
+═══════════════════════════════════════════════════════════════
+
+If you completed all steps, the followers/following feature is now
+live on your Velontri platform!
+
+Users can now:
+  ✓ Follow other users and sellers
+  ✓ View their followers
+  ✓ View who they're following
+  ✓ Search for users to follow
+  ✓ Get notifications when someone follows them
+
+═══════════════════════════════════════════════════════════════
+
+For more help, see:
+  → MIGRATION_STEP_BY_STEP.md (detailed guide with explanations)
+  → HOW_TO_RUN_MIGRATION.md (alternative methods)
+  → QUICK_START.txt (quick reference)

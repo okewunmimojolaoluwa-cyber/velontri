@@ -1,147 +1,200 @@
 ﻿'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { Users, MapPin, ArrowSquareOut, Storefront } from '@phosphor-icons/react';
-import { apiClient } from '@/lib/api/client';
+import { 
+  Users, 
+  UserCircle, 
+  MagnifyingGlass,
+  CheckCircle,
+  Clock,
+  XCircle,
+} from '@phosphor-icons/react';
+import { socialApi, socialKeys } from '@/lib/api/endpoints/social';
 import { useAuth } from '@/features/auth/auth-provider';
-import type { ApiResponse } from '@/types/api';
-
-interface SavedListing {
- id: string; listing_id: string; title: string;
- price: number; currency: string; category: string;
- listing_type: string; condition: string | null;
- city: string | null; country: string | null;
- image_url: string | null; status: string;
- seller_id?: string; saved_at: string;
-}
+import { FollowButton } from '@/components/social/follow-button';
 
 /**
- * "Following" — shows sellers whose listings the user has saved.
- * Since there's no explicit follow endpoint, we derive this from saved listings.
+ * Following Page - Shows real users that the authenticated user follows.
  */
 export default function UserFollowingPage() {
- const { session } = useAuth();
- const uid = session.userId;
+  const { session } = useAuth();
+  const [page, setPage] = useState(1);
 
- const { data, isLoading } = useQuery({
- queryKey: [uid, 'saved'],
- queryFn: () => apiClient.get<ApiResponse<SavedListing[]>>('/saved').then(r => r.data),
- enabled: !!session.isAuthenticated,
- staleTime: 30_000,
- });
+  const { data, isLoading, error } = useQuery({
+    queryKey: socialKeys.myFollowing(page),
+    queryFn: () => socialApi.getMyFollowing(page),
+    enabled: session.isAuthenticated,
+    staleTime: 30_000,
+  });
 
- const saved: SavedListing[] = Array.isArray(data?.data) ? data.data : [];
+  const following = data?.data?.following ?? [];
+  const meta = data?.data?.meta;
 
-  // Group saved listings by seller_id to create "following" list
- const sellerMap = new MapTrifold<string, { sellerId: string; listings: SavedListing[] }>();
- for (const item of saved) {
- const sid = item.seller_id ?? 'unknown';
- if (!sellerMap.has(sid)) {
- sellerMap.set(sid, { sellerId: sid, listings: [] });
- }
- sellerMap.get(sid)!.listings.push(item);
- }
- const sellers = Array.from(sellerMap.values()).filter(s => s.sellerId !== 'unknown');
+  // Verification status badge
+  const getVerificationBadge = (status?: string) => {
+    switch (status) {
+      case 'verified':
+        return (
+          <span className="inline-flex items-center gap-1 text-[10px] text-green-600">
+            <CheckCircle weight="fill" className="h-3 w-3" />
+            Verified
+          </span>
+        );
+      case 'pending':
+        return (
+          <span className="inline-flex items-center gap-1 text-[10px] text-amber-600">
+            <Clock weight="fill" className="h-3 w-3" />
+            Pending
+          </span>
+        );
+      case 'rejected':
+        return (
+          <span className="inline-flex items-center gap-1 text-[10px] text-red-600">
+            <XCircle weight="fill" className="h-3 w-3" />
+            Rejected
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
 
- return (
- <div className="space-y-5 max-w-3xl">
- <div>
- <h1 className="text-[1.4rem] font-black text-slate-900 tracking-tight">Sellers I Like</h1>
- <p className="text-[12px] text-slate-400 mt-0.5">
- Sellers whose listings you've saved
- </p>
- </div>
+  return (
+    <div className="space-y-5 max-w-3xl">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-[1.4rem] font-black text-slate-900 tracking-tight">
+            Following
+          </h1>
+          <p className="text-[12px] text-slate-400 mt-0.5">
+            {meta?.total ?? 0} {meta?.total === 1 ? 'user' : 'users'} you follow
+          </p>
+        </div>
 
- <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
- {isLoading ? (
- <div className="p-5 space-y-3">
- {Array.from({ length: 4 }).map((_, i) => (
- <div key={i} className="flex items-center gap-3 animate-pulse">
- <div className="h-12 w-12 rounded-full bg-slate-100 flex-shrink-0" />
- <div className="flex-1 space-y-1.5">
- <div className="h-4 w-1/3 rounded bg-slate-100" />
- <div className="h-3 w-1/4 rounded bg-slate-100" />
- </div>
- </div>
- ))}
- </div>
- ) : sellers.length === 0 ? (
- <div className="flex flex-col items-center justify-center py-16 text-center">
- <Users className="h-12 w-12 text-slate-200 mb-3" />
- <p className="text-[14px] font-semibold text-slate-900 mb-1">No sellers yet</p>
- <p className="text-[12px] text-slate-400 mb-4">
- Save listings to start tracking sellers you&apos;re interested in.
- </p>
- <Link href="/listings"
- className="inline-flex h-9 items-center gap-2 rounded-xl bg-indigo-600 px-4
- text-[13px] font-bold text-white no-underline hover:bg-indigo-700 transition-colors">
- Browse listings
- </Link>
- </div>
- ) : (
- <ul className="divide-y divide-slate-100">
- {sellers.map(s => {
- const sample = s.listings[0];
- const loc = [sample.city, sample.country].filter(Boolean).join(', ');
- return (
- <li key={s.sellerId}
- className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition-colors">
-                  {/* Avatar */}
- <div className="h-12 w-12 flex-shrink-0 rounded-full bg-indigo-100
- flex items-center justify-center text-[14px] font-bold text-indigo-700">
- <Storefront className="h-5 w-5" />
- </div>
+        {/* Search users link */}
+        <Link
+          href="/users/search"
+          className="inline-flex h-9 items-center gap-2 rounded-xl bg-slate-100 px-4
+            text-[13px] font-semibold text-slate-700 hover:bg-slate-200 transition-colors no-underline"
+        >
+          <MagnifyingGlass className="h-4 w-4" weight="bold" />
+          Find users
+        </Link>
+      </div>
 
-                  {/* Info */}
- <div className="flex-1 min-w-0">
- <p className="text-[14px] font-semibold text-slate-900">
- Seller
- </p>
- <p className="text-[11px] text-slate-400 mt-0.5">
- {s.listings.length} saved listing{s.listings.length !== 1 ? 's' : ''}
- {loc && <> · <MapPin className="inline h-2.5 w-2.5" /> {loc}</>}
- </p>
- </div>
+      {/* Following list */}
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        {isLoading ? (
+          <div className="p-5 space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 animate-pulse">
+                <div className="h-14 w-14 rounded-full bg-slate-100 flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-1/3 rounded bg-slate-100" />
+                  <div className="h-3 w-1/4 rounded bg-slate-100" />
+                </div>
+                <div className="h-9 w-24 rounded-lg bg-slate-100" />
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <XCircle className="h-12 w-12 text-red-300 mb-3" weight="fill" />
+            <p className="text-[14px] font-semibold text-slate-900 mb-1">
+              Failed to load following
+            </p>
+            <p className="text-[12px] text-slate-400">
+              {error instanceof Error ? error.message : 'An error occurred'}
+            </p>
+          </div>
+        ) : following.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Users className="h-12 w-12 text-slate-200 mb-3" weight="duotone" />
+            <p className="text-[14px] font-semibold text-slate-900 mb-1">
+              Not following anyone yet
+            </p>
+            <p className="text-[12px] text-slate-400 mb-4">
+              Follow sellers to see their new listings in your feed
+            </p>
+            <Link
+              href="/users/search"
+              className="inline-flex h-9 items-center gap-2 rounded-xl bg-indigo-600 px-4
+                text-[13px] font-bold text-white no-underline hover:bg-indigo-700 transition-colors"
+            >
+              <MagnifyingGlass className="h-4 w-4" weight="bold" />
+              Find users to follow
+            </Link>
+          </div>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {following.map((user) => (
+              <li
+                key={user.id}
+                className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition-colors"
+              >
+                {/* Avatar */}
+                <div className="h-14 w-14 flex-shrink-0 rounded-full bg-indigo-100
+                  flex items-center justify-center text-[16px] font-bold text-indigo-700">
+                  <UserCircle className="h-10 w-10" weight="fill" />
+                </div>
 
-                  {/* Thumbnails */}
- <div className="hidden sm:flex -space-x-2 mr-2">
- {s.listings.slice(0, 3).map(item => (
- <div key={item.id}
- className="h-9 w-9 rounded-lg border-2 border-white overflow-hidden bg-slate-100 flex-shrink-0">
- {item.image_url
- ? <img src={item.image_url} alt={item.title} className="h-full w-full object-cover" />
- : <div className="h-full w-full flex items-center justify-center text-[10px] text-slate-400">📦</div>
- }
- </div>
- ))}
- </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-semibold text-slate-900 truncate">
+                    {user.full_name}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-[11px] text-slate-400">
+                      {user.followers_count} {user.followers_count === 1 ? 'follower' : 'followers'}
+                    </p>
+                    {getVerificationBadge(user.seller_verification_status)}
+                  </div>
+                  {user.followed_at && (
+                    <p className="text-[10px] text-slate-300 mt-0.5">
+                      Following since {new Date(user.followed_at).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
 
-                  {/* View latest listing */}
- <Link
- href={`/listings/${sample.listing_id}`}
- className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl
- bg-slate-50 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition-colors no-underline"
- title="View listing"
- >
- <ArrowSquareOut className="h-4 w-4" />
- </Link>
- </li>
- );
- })}
- </ul>
- )}
- </div>
+                {/* Unfollow button */}
+                <FollowButton userId={user.id} size="sm" variant="outline" />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
-      {/* Also show saved items as context */}
- {saved.length > 0 && (
- <p className="text-center text-[12px] text-slate-400">
- Based on your {saved.length} saved listing{saved.length !== 1 ? 's' : ''}.{' '}
- <Link href="/dashboard/saved" className="text-indigo-600 font-semibold hover:underline no-underline">
- View saved listings →
- </Link>
- </p>
- )}
- </div>
- );
+      {/* Pagination */}
+      {meta && meta.total_pages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={!meta.has_prev}
+            className="h-9 px-4 rounded-lg bg-white border border-slate-200 text-[13px]
+              font-semibold text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed
+              hover:bg-slate-50 transition-colors"
+          >
+            Previous
+          </button>
+
+          <span className="text-[13px] text-slate-500">
+            Page {meta.page} of {meta.total_pages}
+          </span>
+
+          <button
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!meta.has_next}
+            className="h-9 px-4 rounded-lg bg-white border border-slate-200 text-[13px]
+              font-semibold text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed
+              hover:bg-slate-50 transition-colors"
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }

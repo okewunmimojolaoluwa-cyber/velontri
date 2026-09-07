@@ -106,6 +106,7 @@ def _collect_routers():
         ("auth-service",         "auth",          "router",        "🔐 Auth"),
         ("user-service",         "users",         "router",        "👤 Users"),
         ("user-service",         "verification",  "router",        "✅ Verification"),
+        ("user-service",         "social",        "router",        "👥 Social"),
         ("marketplace-service",  "listings",      "router",        "🏪 Marketplace"),
         ("search-service",       "search",        "router",        "🔍 Search"),
         ("ai-service",           "ai",            "router",        "🤖 AI"),

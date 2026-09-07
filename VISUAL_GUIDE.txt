@@ -1,0 +1,207 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║          HOW TO RUN THE DATABASE MIGRATION - VISUAL GUIDE            ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+
+STEP 1: Open the SQL File
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Your Computer:
+┌────────────────────────────────────────────────────────┐
+│  📁 C:\Users\USER PC\Desktop\velontri\                 │
+│                                                        │
+│     📄 user_follows_migration.sql  ← OPEN THIS FILE   │
+│                                                        │
+└────────────────────────────────────────────────────────┘
+                        ↓
+            Right-click → Open with Notepad
+
+
+
+STEP 2: Go to Render
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Browser:
+┌────────────────────────────────────────────────────────┐
+│  🌐 https://dashboard.render.com                       │
+└────────────────────────────────────────────────────────┘
+                        ↓
+                   Log in if needed
+
+
+
+STEP 3: Find Your Database
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Render Dashboard - Look for this:
+┌────────────────────────────────────────────────────────┐
+│  Services:                                             │
+│                                                        │
+│  ✅ velontri-postgres                                  │
+│     Type: PostgreSQL        Status: Available          │
+│     🐘 (elephant icon)                                 │
+│                                   ← CLICK THIS ONE!    │
+│  ─────────────────────────────────────────────────     │
+│                                                        │
+│  ❌ velontri-backend                                   │
+│     Type: Web Service       Status: Available          │
+│                                   ← DON'T CLICK THIS   │
+│  ─────────────────────────────────────────────────     │
+│                                                        │
+│  ❌ velontri-frontend                                  │
+│     Type: Static Site       Status: Available          │
+│                                   ← DON'T CLICK THIS   │
+└────────────────────────────────────────────────────────┘
+
+
+
+STEP 4: Click the Shell Tab
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Database Page - Click here:
+┌────────────────────────────────────────────────────────┐
+│  velontri-postgres                                     │
+│  ┌──────┬─────────┬──────┬───────┬──────────┐         │
+│  │ Info │ Metrics │ Logs │ Shell │ Settings │         │
+│  └──────┴─────────┴──────┴───────┴──────────┘         │
+│                              ↑                         │
+│                       CLICK HERE!                      │
+└────────────────────────────────────────────────────────┘
+                        ↓
+                You'll see a terminal
+
+
+
+STEP 5: The Terminal/Shell
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+What you should see:
+┌────────────────────────────────────────────────────────┐
+│  ┌──────────────────────────────────────────────────┐ │
+│  │                                                  │ │
+│  │  postgres=#                                      │ │
+│  │  █                         ← Blinking cursor     │ │
+│  │                                                  │ │
+│  │                                                  │ │
+│  └──────────────────────────────────────────────────┘ │
+│                                                        │
+│  This is where you'll paste the SQL                   │
+└────────────────────────────────────────────────────────┘
+
+
+
+STEP 6: Copy from Notepad
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Notepad window:
+┌────────────────────────────────────────────────────────┐
+│  📄 user_follows_migration.sql - Notepad              │
+│  ┌──────────────────────────────────────────────────┐ │
+│  │ -- Create the main user_follows table           │ │
+│  │ CREATE TABLE IF NOT EXISTS user_follows (       │ │
+│  │     id UUID PRIMARY KEY...                      │ │
+│  │     ...                                         │ │
+│  │     (many lines of SQL)                         │ │
+│  │     ...                                         │ │
+│  └──────────────────────────────────────────────────┘ │
+│                                                        │
+│  1. Press Ctrl+A (select all)                         │
+│  2. Press Ctrl+C (copy)                               │
+└────────────────────────────────────────────────────────┘
+
+
+
+STEP 7: Paste into Shell
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Back to browser:
+┌────────────────────────────────────────────────────────┐
+│  ┌──────────────────────────────────────────────────┐ │
+│  │ postgres=#                                       │ │
+│  │ CREATE TABLE IF NOT EXISTS user_follows (       │ │
+│  │     id UUID PRIMARY KEY...                      │ │
+│  │     ...                                         │ │
+│  │     (all the SQL you copied)                    │ │
+│  │                                                 │ │
+│  └──────────────────────────────────────────────────┘ │
+│                                                        │
+│  1. Click inside the terminal                         │
+│  2. Press Ctrl+V (paste)                              │
+│  3. Press ENTER                                       │
+└────────────────────────────────────────────────────────┘
+
+
+
+STEP 8: See the Results
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ SUCCESS - You should see:
+┌────────────────────────────────────────────────────────┐
+│  CREATE TABLE                                          │
+│  COMMENT                                               │
+│  CREATE INDEX                                          │
+│  CREATE INDEX                                          │
+│  CREATE INDEX                                          │
+│  DO                                                    │
+│  DO                                                    │
+│  CREATE FUNCTION                                       │
+│  DROP TRIGGER                                          │
+│  CREATE TRIGGER                                        │
+│  COMMENT                                               │
+│  postgres=#                                            │
+│                                                        │
+│  ✅ No errors! Migration complete!                     │
+└────────────────────────────────────────────────────────┘
+
+
+❌ ERROR - If you see:
+┌────────────────────────────────────────────────────────┐
+│  ERROR: relation "user_follows" does not exist         │
+│                                                        │
+│  → Go back and try again                               │
+│  → Make sure you copied ALL the SQL                    │
+│  → Check you're in the right database                  │
+└────────────────────────────────────────────────────────┘
+
+
+
+FINAL STEP: Deploy Your Code
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open PowerShell:
+┌────────────────────────────────────────────────────────┐
+│  PS C:\Users\USER PC\Desktop\velontri>                │
+│                                                        │
+│  $ git add .                                           │
+│  $ git commit -m "feat: followers/following system"    │
+│  $ git push origin main                                │
+│                                                        │
+│  → Wait 5-10 minutes for deployment                    │
+│  → Then test at: velontri.pxxl.click/users/search     │
+└────────────────────────────────────────────────────────┘
+
+
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                            SUMMARY                                   ║
+╠══════════════════════════════════════════════════════════════════════╣
+║                                                                      ║
+║  1. Open user_follows_migration.sql in Notepad                       ║
+║  2. Go to dashboard.render.com                                       ║
+║  3. Click your PostgreSQL database (🐘)                              ║
+║  4. Click "Shell" tab                                                ║
+║  5. Copy all SQL from Notepad (Ctrl+A, Ctrl+C)                       ║
+║  6. Paste into Shell (Ctrl+V)                                        ║
+║  7. Press Enter                                                      ║
+║  8. See "CREATE TABLE" = Success!                                    ║
+║  9. Push your code to deploy                                         ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+
+Total time: 5-10 minutes
+Difficulty: Easy (just copy & paste!)
+
+Questions? See: MIGRATION_STEP_BY_STEP.md for detailed help

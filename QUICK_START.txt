@@ -1,0 +1,98 @@
+═══════════════════════════════════════════════════════════════════════
+  VELONTRI FOLLOWERS/FOLLOWING - QUICK START GUIDE
+═══════════════════════════════════════════════════════════════════════
+
+✅ FRONTEND CODE: COMPLETE AND READY
+✅ BACKEND CODE: COMPLETE AND READY
+⏳ DATABASE: NEEDS MIGRATION (5 minutes)
+
+═══════════════════════════════════════════════════════════════════════
+  STEP 1: RUN DATABASE MIGRATION (EASIEST METHOD)
+═══════════════════════════════════════════════════════════════════════
+
+1. Open your browser
+2. Go to: https://dashboard.render.com
+3. Click on your PostgreSQL database (the one with the elephant icon 🐘)
+4. Click the "Shell" tab at the top
+5. Open the file: user_follows_migration.sql
+6. Copy EVERYTHING from that file (Ctrl+A, Ctrl+C)
+7. Paste into the Render Shell (Ctrl+V)
+8. Press Enter
+
+You should see:
+  ✓ Table created
+  ✓ Index on follower_id created
+  ✓ Index on following_id created
+  ✓ Index on created_at created
+  ✓ User count columns added
+  ✓ Count update function created
+  ✓ Trigger created
+
+═══════════════════════════════════════════════════════════════════════
+  STEP 2: DEPLOY THE CODE
+═══════════════════════════════════════════════════════════════════════
+
+From PowerShell in the project root:
+
+  git add .
+  git commit -m "feat: implement followers/following system"
+  git push origin main
+
+This will trigger automatic redeployment on Render.
+
+═══════════════════════════════════════════════════════════════════════
+  STEP 3: TEST THE FEATURE
+═══════════════════════════════════════════════════════════════════════
+
+1. Go to: https://velontri.pxxl.click/users/search
+2. Search for a user (try searching for "test" or any name)
+3. Click the "Follow" button
+4. Visit: https://velontri.pxxl.click/dashboard/following
+   → You should see the user you just followed
+5. Visit: https://velontri.pxxl.click/dashboard/followers
+   → If someone followed you, they'll appear here
+
+═══════════════════════════════════════════════════════════════════════
+  THAT'S IT! 🎉
+═══════════════════════════════════════════════════════════════════════
+
+The followers/following system is now live!
+
+NEW FEATURES AVAILABLE:
+  ✓ Follow/unfollow users
+  ✓ View your followers
+  ✓ View who you're following
+  ✓ Search for users to follow
+  ✓ Follower counts update automatically
+  ✓ Notifications when someone follows you
+
+═══════════════════════════════════════════════════════════════════════
+  FILES TO REVIEW
+═══════════════════════════════════════════════════════════════════════
+
+MIGRATION:
+  → user_follows_migration.sql (the SQL to run)
+  → HOW_TO_RUN_MIGRATION.md (detailed guide)
+  → MIGRATION_READY.md (overview)
+
+DOCUMENTATION:
+  → FOLLOWERS_FRONTEND_COMPLETE.md (full feature list)
+  → FOLLOWERS_IMPLEMENTATION_PLAN.md (technical details)
+
+═══════════════════════════════════════════════════════════════════════
+  TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════════════
+
+If migration fails:
+  → Check you selected the DATABASE (not the backend service)
+  → Make sure you copied ALL the SQL
+  → Try copying in smaller chunks if needed
+  → See HOW_TO_RUN_MIGRATION.md for alternatives
+
+If feature doesn't work:
+  → Check browser console for errors
+  → Make sure backend redeployed after migration
+  → Try refreshing the page (Ctrl+F5)
+  → Check Network tab - API calls should return data
+
+═══════════════════════════════════════════════════════════════════════
