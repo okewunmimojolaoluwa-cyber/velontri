@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { ArrowLeft, MapPin, SealCheck, ChatCircle, CaretRight, Heart, ShareNetwork, Star, CaretLeft, X, PaperPlaneRight, CheckCircle, WarningCircle, Warning } from '@phosphor-icons/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useListing } from '@/features/listings/hooks/use-listings';
@@ -9,6 +10,7 @@ import { listingKeys } from '@/lib/api/endpoints/listings';
 import { useAuth } from '@/features/auth/auth-provider';
 import { apiClient } from '@/lib/api/client';
 import { Navbar } from '@/components/layout/navbar';
+import { FollowButton } from '@/components/social/follow-button';
 import { ROUTES } from '@/config/routes';
 import { normalizePhoneNumber } from '@/lib/utils/formatters';
 import type { ApiResponse } from '@/types/api';
@@ -757,12 +759,12 @@ export default function ListingDetailPage() {
 
                   {/* NavigationArrow actions */}
  <div className="flex gap-2 pt-1">
- <button
- onClick={() => router.push(`/listings?seller_id=${listing.seller_id}&seller_name=${encodeURIComponent(sellerName)}`)}
- className="flex-1 h-9 rounded-xl border border-slate-200 bg-white text-[12px] font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 active:scale-[0.99] transition-all"
+ <Link
+ href={`/users/${listing.seller_id}`}
+ className="flex-1 h-9 rounded-xl border border-slate-200 bg-white text-[12px] font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 active:scale-[0.99] transition-all flex items-center justify-center"
  >
- View Listings
- </button>
+ View Profile
+ </Link>
  <button
  onClick={() => router.push(`/listings?seller_id=${listing.seller_id}&seller_name=${encodeURIComponent(sellerName)}`)}
  className="flex-1 h-9 rounded-xl border border-indigo-200 bg-indigo-50 text-[12px] font-semibold text-indigo-700 hover:bg-indigo-100 active:scale-[0.99] transition-all"
@@ -770,6 +772,12 @@ export default function ListingDetailPage() {
  View Storefront
  </button>
  </div>
+ {/* Follow button */}
+ {session?.userId && session.userId !== listing.seller_id && (
+ <div className="pt-2">
+ <FollowButton userId={listing.seller_id} fullWidth />
+ </div>
+ )}
  </div>
  </div>
 

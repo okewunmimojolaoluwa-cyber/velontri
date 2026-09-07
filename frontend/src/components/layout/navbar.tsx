@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { List, X, CaretDown, SignOut, SquaresFour, User, CreditCard, Storefront, Plus, Bell } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/features/auth/auth-provider';
@@ -67,9 +68,33 @@ export function Navbar() {
  }
 
  const dashPath = session ? resolveHomePath(session.role) : ROUTES.dashboard;
- const initials = (session?.userId?.slice(0, 2) ?? 'V').toUpperCase();
- const roleName = session?.role ?? 'account';
  const unreadCount = useUnreadCount();
+
+ // Fetch user profile data for avatar and name
+ const { data: userData } = useQuery({
+ queryKey: ['user-me', session?.userId],
+ queryFn: async () => {
+ const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
+ headers: {
+ 'Authorization': `Bearer ${document.cookie.split('access_token=')[1]?.split(';')[0] || ''}`,
+ },
+ });
+ if (!res.ok) return null;
+ const json = await res.json();
+ return json.data;
+ },
+ enabled: isAuth && mounted,
+ staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+ });
+
+ const fullName = userData?.full_name || session?.role || 'Account';
+ const profilePhotoUrl = userData?.avatar_url || userData?.profile_photo_url;
+ const initials = fullName
+ .split(' ')
+ .map((n: string) => n[0])
+ .slice(0, 2)
+ .join('')
+ .toUpperCase() || 'U';
 
   /* ── Active link check ── */
  function isActive(href: string) {
@@ -202,11 +227,19 @@ export function Navbar() {
  : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200',
  )}
  >
-                    {/* Avatar circle */}
+                    {/* Avatar circle with actual profile photo or initials */}
+ {profilePhotoUrl ? (
+ <img
+ src={profilePhotoUrl}
+ alt={fullName}
+ className="h-8 w-8 rounded-full object-cover shadow-sm flex-shrink-0"
+ />
+ ) : (
  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-[11px] font-black text-white shadow-sm flex-shrink-0">
  {initials}
  </span>
- <span className="capitalize hidden lg:block">{roleName}</span>
+ )}
+ <span className="hidden lg:block max-w-[120px] truncate">{fullName}</span>
  <CaretDown className={cn(
  'h-3.5 w-3.5 opacity-40 transition-transform duration-200',
  userOpen ? 'rotate-180' : '',
@@ -220,7 +253,7 @@ export function Navbar() {
                       {/* Account info header */}
  <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
  <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Account</p>
- <p className="text-[13px] font-bold text-slate-900 dark:text-white capitalize mt-0.5">{roleName}</p>
+ <p className="text-[13px] font-bold text-slate-900 dark:text-white mt-0.5">{fullName}</p>
  </div>
 
  <div className="py-1.5">
