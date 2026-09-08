@@ -773,9 +773,9 @@ export default function ListingDetailPage() {
  </button>
  </div>
  {/* Follow button */}
- {session?.userId && session.userId !== listing.seller_id && (
+ {session?.userId && listing.seller_id && session.userId !== listing.seller_id && (
  <div className="pt-2">
- <FollowButton userId={listing.seller_id} fullWidth />
+ <FollowButton userId={listing.seller_id} className="w-full" />
  </div>
  )}
  </div>

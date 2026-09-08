@@ -13,6 +13,7 @@ interface FollowButtonProps {
   size?: 'sm' | 'md' | 'lg';
   variant?: 'default' | 'outline' | 'ghost';
   showIcon?: boolean;
+  fullWidth?: boolean;
   className?: string;
 }
 
@@ -32,6 +33,7 @@ export function FollowButton({
   size = 'md',
   variant = 'default',
   showIcon = true,
+  fullWidth = false,
   className = '',
 }: FollowButtonProps) {
   const router = useRouter();
@@ -164,7 +166,7 @@ export function FollowButton({
       onClick={handleClick}
       disabled={isDisabled}
       variant={isCurrentlyFollowing ? 'outline' : variant}
-      className={`${sizeClasses[size]} ${className} font-semibold transition-all`}
+      className={`${sizeClasses[size]} ${fullWidth ? 'w-full' : ''} ${className} font-semibold transition-all`}
     >
       {isLoading ? (
         <>
