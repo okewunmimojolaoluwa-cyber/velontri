@@ -4,7 +4,7 @@ import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { SquaresFour, PlusCircle, Package, Pulse, BookmarkSimple, Storefront, ChartBar, ChatCircle, Bell, User, Gear, Lock, Question, SignOut, List, X, CreditCard, Warning, SealCheck } from '@phosphor-icons/react';
+import { SquaresFour, PlusCircle, Package, Pulse, BookmarkSimple, Storefront, ChartBar, ChatCircle, Bell, User, Gear, Lock, Question, SignOut, List, X, CreditCard, Warning, SealCheck, Users, UserPlus } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils/cn';
 import { ROUTES } from '@/config/routes';
 import { useAuth } from '@/features/auth/auth-provider';
@@ -40,8 +40,10 @@ const NAV = [
  ],
  },
  {
- label: 'MESSAGES',
+ label: 'SOCIAL',
  items: [
+ { icon: Users, label: 'Following', href: ROUTES.user.following },
+ { icon: UserPlus, label: 'Followers', href: ROUTES.user.followers },
  { icon: ChatCircle, label: 'Messages', href: ROUTES.user.messages },
  { icon: Bell, label: 'Notifications',href: ROUTES.user.notifications },
  ],
