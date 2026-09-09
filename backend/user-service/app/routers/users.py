@@ -798,3 +798,96 @@ try:
 except Exception as _ver_err:
     import logging as _log
     _log.getLogger(__name__).warning(f'verification_router_load_failed: {_ver_err}')
+
+
+
+@router.get(
+    "/search",
+    response_model=SuccessResponse,
+    summary="Search users/sellers by name",
+)
+async def search_users(
+    q: str = Query(..., min_length=2, description="Search query (name)"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+) -> SuccessResponse:
+    """
+    Search for users/sellers by name.
+    Returns user profiles with follower counts and listing counts.
+    """
+    search_term = f"%{q.strip()}%"
+    offset = (page - 1) * page_size
+
+    # Count total matching users
+    count_query = select(func.count(User.id)).where(
+        User.full_name.ilike(search_term),
+        User.is_active == True  # noqa: E712
+    )
+    total_result = await db.execute(count_query)
+    total = total_result.scalar() or 0
+
+    # Fetch users
+    query = (
+        select(User)
+        .where(
+            User.full_name.ilike(search_term),
+            User.is_active == True  # noqa: E712
+        )
+        .order_by(User.followers_count.desc(), User.full_name)
+        .limit(page_size)
+        .offset(offset)
+    )
+    result = await db.execute(query)
+    users = result.scalars().all()
+
+    # Count listings for each user
+    user_data = []
+    for user in users:
+        # Get listing count from marketplace service (if available)
+        listings_count = 0
+        try:
+            # Query listings table if accessible
+            from sqlalchemy import text as sql_text
+            listing_count_query = sql_text(
+                "SELECT COUNT(*) FROM listings WHERE seller_id = :seller_id AND status = 'active'"
+            )
+            count_res = await db.execute(listing_count_query, {"seller_id": str(user.id)})
+            listings_count = count_res.scalar() or 0
+        except Exception:
+            listings_count = 0
+
+        user_data.append({
+            "id": str(user.id),
+            "full_name": user.full_name,
+            "email": user.email if hasattr(user, 'email') else None,
+            "profile_photo_url": user.profile_photo_url,
+            "city": user.city,
+            "state": user.state,
+            "country": user.country,
+            "bio": user.bio,
+            "followers_count": user.followers_count or 0,
+            "following_count": user.following_count or 0,
+            "seller_verification_status": user.seller_verification_status,
+            "is_phone_verified": user.is_phone_verified,
+            "trust_badge": user.trust_badge,
+            "listings_count": listings_count,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+        })
+
+    total_pages = max(1, -(-total // page_size))  # Ceiling division
+
+    return SuccessResponse(
+        message=f"{total} user(s) found.",
+        data={
+            "users": user_data,
+            "meta": {
+                "total": total,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": total_pages,
+                "has_prev": page > 1,
+                "has_next": page < total_pages,
+            },
+        },
+    )

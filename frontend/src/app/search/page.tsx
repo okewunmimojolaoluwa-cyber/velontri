@@ -3,10 +3,11 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { MagnifyingGlass, X, CaretLeft, CaretRight, SlidersHorizontal, Clock, TrendUp, MapPin, Tag, Lightning, Car, House, DeviceMobile, TShirt, Briefcase, Wrench } from '@phosphor-icons/react';
+import { MagnifyingGlass, X, CaretLeft, CaretRight, SlidersHorizontal, Clock, TrendUp, MapPin, Tag, Lightning, Car, House, DeviceMobile, TShirt, Briefcase, Wrench, UserCircle, Package } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
 import { listingKeys } from '@/lib/api/endpoints/listings';
 import { ListingCard, ListingCardSkeleton } from '@/components/marketplace/listing-card';
+import { SellerResults } from '@/components/search/seller-results';
 import { Navbar } from '@/components/layout/navbar';
 import { cn } from '@/lib/utils/cn';
 import type { ApiResponse } from '@/types/api';
@@ -19,6 +20,22 @@ interface SearchResult {
  avg_rating?: number; review_count?: number; seller_id?: string; status?: string;
  seller_verified?: boolean;
 }
+
+interface UserSearchResult {
+ id: string;
+ full_name: string;
+ profile_photo_url?: string;
+ city?: string;
+ state?: string;
+ country?: string;
+ bio?: string;
+ followers_count?: number;
+ seller_verification_status?: string;
+ listings_count?: number;
+ is_phone_verified?: boolean;
+}
+
+type SearchTab = 'listings' | 'sellers';
 
 type SortValue = 'newest' | 'price_asc' | 'price_desc';
 
@@ -309,10 +326,12 @@ function SearchInner() {
  const sp = useSearchParams();
  const router = useRouter();
 
+ const [activeTab, setActiveTab] = useState<SearchTab>('listings');
  const [query, setQuery] = useState(sp.get('q') ?? '');
  const [committed, setCommitted] = useState(sp.get('q') ?? '');
  const cityParam = sp.get('city') ?? '';
  const [page, setPage] = useState(1);
+ const [sellerPage, setSellerPage] = useState(1);
  const [sort, setSort] = useState<SortValue>('newest');
  const [dropOpen, setDropOpen] = useState(false);
  const [filterOpen, setFilterOpen] = useState(false);
@@ -322,7 +341,7 @@ function SearchInner() {
  const [maxPrice, setMaxPrice] = useState('');
  const inputRef = useRef<HTMLInputElement>(null);
  const wrapRef = useRef<HTMLDivElement>(null);
- const { recent, add: addRecent, remove: removeRecent } = useRecentSearches();
+ const { recent, add: addRecent, remove: removeRecent} = useRecentSearches();
 
   // Debounce for instant-search
  const debouncedQuery = useDebounce(query, 320);
@@ -388,9 +407,27 @@ function SearchInner() {
  } catch {}
  return { data: [], meta: null, message: '' };
  },
- enabled: committed.trim().length > 0,
+ enabled: committed.trim().length > 0 && activeTab === 'listings',
  staleTime: 20_000,
  placeholderData: (prev: any) => prev, // keep previous results while refetching
+ });
+
+  // Seller search query
+ const { 
+ data: sellerData, 
+ isLoading: sellerLoading, 
+ isError: sellerError 
+ } = useQuery({
+ queryKey: ['seller-search', committed, sellerPage],
+ queryFn: async () => {
+ const res = await apiClient.get<ApiResponse<{ users: UserSearchResult[]; meta: any }>>(
+ '/users/search',
+ { params: { q: committed, page: sellerPage, page_size: 20 } }
+ );
+ return res.data;
+ },
+ enabled: committed.trim().length > 0 && activeTab === 'sellers',
+ staleTime: 20_000,
  });
 
   // Client-side sort
@@ -402,6 +439,10 @@ function SearchInner() {
  : raw;
 
  const meta = (data as any)?.meta;
+
+  // Seller results
+ const sellers = (sellerData?.data as any)?.users ?? [];
+ const sellerMeta = (sellerData?.data as any)?.meta;
 
  function commit(q: string) {
  const t = q.trim();
@@ -510,7 +551,7 @@ function SearchInner() {
  </div>
 
       {/* ── Funnel bar ─────────────────────────────────────── */}
- {committed && (
+ {committed && activeTab === 'listings' && (
  <FilterBar
  category={category} condition={condition}
  minPrice={minPrice} maxPrice={maxPrice}
@@ -519,11 +560,51 @@ function SearchInner() {
  />
  )}
 
+      {/* ── Tab switcher ───────────────────────────────────── */}
+ {committed && (
+ <div className="border-b border-slate-100 bg-white dark:bg-[#1c1c1c] dark:border-[#222]">
+ <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+ <div className="flex items-center gap-1">
+ <button
+ onClick={() => { setActiveTab('listings'); setPage(1); }}
+ className={cn(
+ 'relative flex items-center gap-2 px-4 py-3 text-[14px] font-bold transition-all',
+ activeTab === 'listings'
+ ? 'text-indigo-600 dark:text-indigo-400'
+ : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+ )}
+ >
+ <Package className="h-4 w-4" />
+ Listings
+ {activeTab === 'listings' && (
+ <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400" />
+ )}
+ </button>
+ <button
+ onClick={() => { setActiveTab('sellers'); setSellerPage(1); }}
+ className={cn(
+ 'relative flex items-center gap-2 px-4 py-3 text-[14px] font-bold transition-all',
+ activeTab === 'sellers'
+ ? 'text-indigo-600 dark:text-indigo-400'
+ : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+ )}
+ >
+ <UserCircle className="h-4 w-4" />
+ Sellers
+ {activeTab === 'sellers' && (
+ <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400" />
+ )}
+ </button>
+ </div>
+ </div>
+ </div>
+ )}
+
       {/* ── Results ────────────────────────────────────────── */}
  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-7">
 
-        {/* Count + sort */}
- {committed && (
+        {/* Count + sort (listings only) */}
+ {committed && activeTab === 'listings' && (
  <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
  <div>
  {isLoading ? (
@@ -557,6 +638,19 @@ function SearchInner() {
  </div>
  )}
 
+        {/* Seller count */}
+ {committed && activeTab === 'sellers' && !sellerLoading && (
+ <div className="mb-6">
+ <p className="text-[14px] text-slate-500">
+ <span className="font-black text-slate-900 dark:text-slate-100">
+ {(sellerMeta?.total ?? 0).toLocaleString()}
+ </span>
+ {' '}seller{sellerMeta?.total !== 1 ? 's' : ''} found for{' '}
+ <span className="font-semibold text-indigo-600">&ldquo;{committed}&rdquo;</span>
+ </p>
+ </div>
+ )}
+
         {/* Empty start state */}
  {!committed && (
  <div className="py-20 text-center space-y-3">
@@ -571,22 +665,31 @@ function SearchInner() {
  )}
 
         {/* Error */}
- {committed && isError && (
+ {committed && activeTab === 'listings' && isError && (
  <div className="py-16 text-center space-y-2">
  <p className="text-[15px] font-semibold text-slate-700 dark:text-slate-300">Search failed</p>
  <p className="text-[13px] text-slate-400">Please check your connection and try again.</p>
  </div>
  )}
 
-        {/* Loading skeleton */}
- {committed && isLoading && (
+        {/* Loading skeleton - listings */}
+ {committed && activeTab === 'listings' && isLoading && (
  <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
  {Array.from({ length: 12 }).map((_, i) => <ListingCardSkeleton key={i} />)}
  </div>
  )}
 
-        {/* No results */}
- {committed && !isLoading && !isError && listings.length === 0 && (
+        {/* Seller results */}
+ {committed && activeTab === 'sellers' && (
+ <SellerResults 
+ sellers={sellers} 
+ isLoading={sellerLoading} 
+ query={committed}
+ />
+ )}
+
+        {/* No results - listings */}
+ {committed && activeTab === 'listings' && !isLoading && !isError && listings.length === 0 && (
  <div className="py-16 text-center space-y-5">
             {/* Icon */}
  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 mx-auto dark:bg-[#242424]">
@@ -669,8 +772,8 @@ function SearchInner() {
  </div>
  )}
 
-        {/* Results grid */}
- {committed && !isLoading && listings.length > 0 && (
+        {/* Results grid - listings */}
+ {committed && activeTab === 'listings' && !isLoading && listings.length > 0 && (
  <>
  <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
  {listings.map((l: any) => <ListingCard key={l.id} listing={l} />)}
@@ -698,6 +801,33 @@ function SearchInner() {
  </div>
  )}
  </>
+ )}
+
+        {/* Seller pagination */}
+ {committed && activeTab === 'sellers' && !sellerLoading && sellers.length > 0 && sellerMeta && sellerMeta.total_pages > 1 && (
+ <div className="mt-8 flex items-center justify-center gap-2">
+ <button 
+ disabled={!sellerMeta.has_prev} 
+ onClick={() => { setSellerPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+ className="flex items-center gap-1.5 rounded-xl border border-slate-200
+ px-4 py-2.5 text-[13px] font-medium text-slate-500 hover:text-slate-800
+ disabled:opacity-35 disabled:cursor-not-allowed transition-all
+ dark:border-[#2a2a2a] dark:text-slate-400">
+ <CaretLeft className="h-4 w-4" /> Previous
+ </button>
+ <span className="px-4 text-[13px] text-slate-400">
+ {sellerMeta.page} / {sellerMeta.total_pages}
+ </span>
+ <button 
+ disabled={!sellerMeta.has_next} 
+ onClick={() => { setSellerPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+ className="flex items-center gap-1.5 rounded-xl border border-slate-200
+ px-4 py-2.5 text-[13px] font-medium text-slate-500 hover:text-slate-800
+ disabled:opacity-35 disabled:cursor-not-allowed transition-all
+ dark:border-[#2a2a2a] dark:text-slate-400">
+ Next <CaretRight className="h-4 w-4" />
+ </button>
+ </div>
  )}
  </div>
  </div>
