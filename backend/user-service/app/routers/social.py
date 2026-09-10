@@ -23,7 +23,7 @@ from sqlalchemy import and_, func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.errors import (
-    BadRequestError,
+    InvalidInputError,
     ForbiddenError,
     NotFoundError,
     SuccessResponse,
@@ -196,11 +196,11 @@ async def follow_user(
     try:
         uuid.UUID(user_id)
     except ValueError:
-        raise BadRequestError("Invalid user ID format")
+        raise InvalidInputError("Invalid user ID format")
     
     # Prevent self-follow
     if current_user_id == user_id:
-        raise BadRequestError("You cannot follow yourself")
+        raise InvalidInputError("You cannot follow yourself")
     
     async with request.app.state.session_factory() as session:
         # Check if target user exists and is active
@@ -259,9 +259,9 @@ async def follow_user(
             await session.rollback()
             # Check if it was a constraint violation (duplicate or self-follow)
             if "uq_user_follows_pair" in str(e):
-                raise BadRequestError("Already following this user")
+                raise InvalidInputError("Already following this user")
             elif "ck_user_follows_no_self" in str(e):
-                raise BadRequestError("Cannot follow yourself")
+                raise InvalidInputError("Cannot follow yourself")
             else:
                 raise HTTPException(status_code=500, detail=f"Failed to follow user: {str(e)}")
 
@@ -281,7 +281,7 @@ async def unfollow_user(
     try:
         uuid.UUID(user_id)
     except ValueError:
-        raise BadRequestError("Invalid user ID format")
+        raise InvalidInputError("Invalid user ID format")
     
     async with request.app.state.session_factory() as session:
         # Delete the follow relationship
@@ -322,7 +322,7 @@ async def get_follow_status(
     try:
         uuid.UUID(user_id)
     except ValueError:
-        raise BadRequestError("Invalid user ID format")
+        raise InvalidInputError("Invalid user ID format")
     
     async with request.app.state.session_factory() as session:
         # Check follow status
@@ -355,7 +355,7 @@ async def get_user_followers(
     try:
         uuid.UUID(user_id)
     except ValueError:
-        raise BadRequestError("Invalid user ID format")
+        raise InvalidInputError("Invalid user ID format")
     
     offset = (page - 1) * page_size
     
@@ -433,7 +433,7 @@ async def get_user_following(
     try:
         uuid.UUID(user_id)
     except ValueError:
-        raise BadRequestError("Invalid user ID format")
+        raise InvalidInputError("Invalid user ID format")
     
     offset = (page - 1) * page_size
     
