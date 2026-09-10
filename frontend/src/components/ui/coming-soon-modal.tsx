@@ -82,10 +82,7 @@ export function ComingSoonModal({ store, onClose }: ComingSoonModalProps) {
           <button
             onClick={handleClose}
             aria-label="Close modal"
-            className="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center
-              rounded-full bg-white/10 backdrop-blur-sm text-white/70
-              hover:bg-white/20 hover:text-white hover:scale-110
-              active:scale-95 transition-all duration-200 shadow-lg"
+            className="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm text-white/70 hover:bg-white/20 hover:text-white hover:scale-110 active:scale-95 transition-all duration-200 shadow-lg"
           >
             <X className="h-5 w-5" weight="bold" />
           </button>
@@ -192,8 +189,7 @@ export function ComingSoonModal({ store, onClose }: ComingSoonModalProps) {
             {/* Action button */}
             <button
               onClick={handleClose}
-              className="mt-6 w-full h-12 rounded-xl font-bold text-[15px] text-white
-                transition-all hover:scale-105 active:scale-95 shadow-lg"
+              className="mt-6 w-full h-12 rounded-xl font-bold text-[15px] text-white transition-all hover:scale-105 active:scale-95 shadow-lg"
               style={{
                 background: isGoogle
                   ? 'linear-gradient(135deg, #4285F4, #34A853)'

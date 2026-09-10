@@ -23,20 +23,24 @@ async def _notify(request: Request, user_id: str, title: str, message: str,
                   notif_type: str = 'system', action_url: str | None = None) -> None:
     """Insert a notification and send an email to the user."""
     import os, asyncio
-    # In-app notification
+    # Unified notification with email
     try:
         async with request.app.state.session_factory() as db:
-            from sqlalchemy import text as _t
-            await db.execute(_t("""
-                INSERT INTO notifications (id, user_id, type, title, message, is_read, action_url, created_at)
-                VALUES (:id, :uid, :ntype, :title, :msg, false, :url, NOW())
-            """), {'id': str(uuid.uuid4()), 'uid': user_id, 'ntype': notif_type,
-                   'title': title, 'msg': message, 'url': action_url})
+            from shared.email_notifications import send_notification_with_email
+            await send_notification_with_email(
+                db_session=db,
+                recipient_user_id=user_id,
+                notification_type=notif_type,
+                title=title,
+                message=message,
+                action_url=action_url,
+                sender_role='system'
+            )
             await db.commit()
     except Exception as e:
         logger.warning('verification_notify_failed', error=str(e))
 
-    # Email notification (fire-and-forget)
+    # Email notification fallback (if unified system fails)
     try:
         async with request.app.state.session_factory() as db:
             from sqlalchemy import text as _t

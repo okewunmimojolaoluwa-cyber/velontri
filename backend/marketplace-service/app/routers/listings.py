@@ -54,54 +54,89 @@ async def create_listing(
             listing_id = result.id
             listing_title = body.title[:50] + ('...' if len(body.title) > 50 else '')
             
-            # Create notification for each follower
+            # Import email notification helper
+            import sys
+            sys.path.insert(0, '/workspace/backend/shared') if '/workspace/backend/shared' not in sys.path else None
+            try:
+                from shared.email_notifications import send_notification_with_email
+            except ImportError:
+                # Fallback if import fails - use old method
+                send_notification_with_email = None
+            
+            # Create notification for each follower (with email)
             for follower_row in followers:
                 follower_id = str(follower_row[0])
-                await db.execute(
-                    _text("""
-                        INSERT INTO notifications (
-                            id,
-                            user_id,
-                            recipient_user_id,
-                            notification_type,
-                            type,
-                            title,
-                            message,
-                            sender_user_id,
-                            sender_role,
-                            related_resource_type,
-                            related_resource_id,
-                            action_url,
-                            is_read,
-                            created_at
-                        ) VALUES (
-                            :id,
-                            :user_id,
-                            :recipient_id,
-                            'NEW_LISTING',
-                            'listing',
-                            :title,
-                            :message,
-                            :sender_id,
-                            'seller',
-                            'listing',
-                            :listing_id,
-                            :action_url,
-                            FALSE,
-                            NOW()
+                
+                if send_notification_with_email:
+                    # Use new unified notification system with email
+                    try:
+                        await send_notification_with_email(
+                            db_session=db,
+                            recipient_user_id=follower_id,
+                            notification_type='listing',
+                            title="New Listing from Seller You Follow",
+                            message=f"{seller_name} posted a new listing: {listing_title}",
+                            action_url=f"/listings/{listing_id}",
+                            sender_user_id=str(current_user_id),
+                            sender_role='seller',
+                            related_resource_type='listing',
+                            related_resource_id=str(listing_id)
                         )
-                    """),
-                    {
-                        "id": str(_uuid.uuid4()),
-                        "user_id": follower_id,
-                        "recipient_id": follower_id,
-                        "title": "New Listing from Seller You Follow",
-                        "message": f"{seller_name} posted a new listing: {listing_title}",
-                        "sender_id": str(current_user_id),
-                        "listing_id": str(listing_id),
-                        "action_url": f"/listings/{listing_id}"
-                    }
-                )
+                    except Exception as email_error:
+                        print(f"Email notification failed for follower {follower_id}: {email_error}")
+                        # Fallback to database-only notification
+                        await db.execute(
+                            _text("""
+                                INSERT INTO notifications (
+                                    id, user_id, recipient_user_id, notification_type, type,
+                                    title, message, sender_user_id, sender_role,
+                                    related_resource_type, related_resource_id, action_url,
+                                    is_read, created_at
+                                ) VALUES (
+                                    :id, :user_id, :recipient_id, 'NEW_LISTING', 'listing',
+                                    :title, :message, :sender_id, 'seller',
+                                    'listing', :listing_id, :action_url,
+                                    FALSE, NOW()
+                                )
+                            """),
+                            {
+                                "id": str(_uuid.uuid4()),
+                                "user_id": follower_id,
+                                "recipient_id": follower_id,
+                                "title": "New Listing from Seller You Follow",
+                                "message": f"{seller_name} posted a new listing: {listing_title}",
+                                "sender_id": str(current_user_id),
+                                "listing_id": str(listing_id),
+                                "action_url": f"/listings/{listing_id}"
+                            }
+                        )
+                else:
+                    # Old method - database only
+                    await db.execute(
+                        _text("""
+                            INSERT INTO notifications (
+                                id, user_id, recipient_user_id, notification_type, type,
+                                title, message, sender_user_id, sender_role,
+                                related_resource_type, related_resource_id, action_url,
+                                is_read, created_at
+                            ) VALUES (
+                                :id, :user_id, :recipient_id, 'NEW_LISTING', 'listing',
+                                :title, :message, :sender_id, 'seller',
+                                'listing', :listing_id, :action_url,
+                                FALSE, NOW()
+                            )
+                        """),
+                        {
+                            "id": str(_uuid.uuid4()),
+                            "user_id": follower_id,
+                            "recipient_id": follower_id,
+                            "title": "New Listing from Seller You Follow",
+                            "message": f"{seller_name} posted a new listing: {listing_title}",
+                            "sender_id": str(current_user_id),
+                            "listing_id": str(listing_id),
+                            "action_url": f"/listings/{listing_id}"
+                        }
+                    )
             
             await db.commit()
             

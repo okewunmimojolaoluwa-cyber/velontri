@@ -671,19 +671,20 @@ async def send_chat_message(request: Request, payload: Annotated[dict, Depends(g
                 # Get sender name
                 sender_row = (await db.execute(_text('SELECT full_name, email FROM users WHERE CAST(id AS TEXT)=:p0'), {'p0': sender_id})).mappings().first()
                 sender_name = (sender_row['full_name'] or sender_row['email'] or 'Someone') if sender_row else 'Someone'
-                notif_id = str(uuid.uuid4())
                 preview = content[:80] + ('…' if len(content) > 80 else '')
-                await db.execute(_text("""
-                    INSERT INTO notifications (id, user_id, type, title, message, is_read,
-                                              sender_user_id, action_url, created_at)
-                    VALUES (:id, :uid, 'message', :title, :msg, FALSE, :sender_id, '/dashboard/messages', NOW())
-                """), {
-                    'id': notif_id,
-                    'uid': recipient_id,
-                    'title': f'New message from {sender_name}',
-                    'msg': preview,
-                    'sender_id': sender_id,
-                })
+                
+                # Use unified notification system with email
+                from shared.email_notifications import send_notification_with_email
+                await send_notification_with_email(
+                    db_session=db,
+                    recipient_user_id=recipient_id,
+                    notification_type='message',
+                    title=f'New message from {sender_name}',
+                    message=preview,
+                    action_url='/dashboard/messages',
+                    sender_user_id=sender_id,
+                    sender_role='user'
+                )
             except Exception as _ne:
                 import logging
                 logging.getLogger(__name__).warning(f'chat_notification_error: {_ne}')

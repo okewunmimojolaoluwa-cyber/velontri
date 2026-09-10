@@ -141,45 +141,18 @@ async def create_follow_notification(
 ):
     """Create a notification when someone follows a user."""
     try:
-        await session.execute(
-            text("""
-                INSERT INTO notifications (
-                    id,
-                    recipient_user_id,
-                    user_id,
-                    notification_type,
-                    title,
-                    message,
-                    sender_user_id,
-                    sender_role,
-                    related_resource_type,
-                    related_resource_id,
-                    action_url,
-                    is_read,
-                    created_at
-                ) VALUES (
-                    gen_random_uuid(),
-                    :recipient,
-                    :recipient,
-                    'NEW_FOLLOWER',
-                    'New Follower',
-                    :message,
-                    :sender,
-                    :sender_name,
-                    'user',
-                    :sender,
-                    :action_url,
-                    FALSE,
-                    NOW()
-                )
-            """),
-            {
-                "recipient": following_id,
-                "sender": follower_id,
-                "sender_name": follower_name,
-                "message": f"{follower_name} started following you",
-                "action_url": f"/users/{follower_id}"
-            }
+        from shared.email_notifications import send_notification_with_email
+        await send_notification_with_email(
+            db_session=session,
+            recipient_user_id=following_id,
+            notification_type='info',
+            title='New Follower',
+            message=f"{follower_name} started following you",
+            action_url=f"/users/{follower_id}",
+            sender_user_id=follower_id,
+            sender_role=follower_name,
+            related_resource_type='user',
+            related_resource_id=follower_id
         )
     except Exception as e:
         # Don't fail the follow operation if notification fails

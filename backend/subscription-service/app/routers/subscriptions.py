@@ -218,15 +218,18 @@ async def paystack_verify(request: Request, payload: Annotated[dict, Depends(get
                    'action': 'subscription.payment', 'resource': 'subscriptions',
                    'resource_id': reference,
                    'detail': f'Subscription payment: {plan_id} plan ₦{_amount:,}'})
-            # Notification
+            # Notification with email
             _plan_name = plan_id.capitalize()
-            await _db_conn.execute(_text("""
-                INSERT INTO notifications (id, user_id, type, title, message, is_read)
-                VALUES (:id, :user_id, 'payment', :title, :message, FALSE)
-                ON CONFLICT (id) DO NOTHING
-            """), {'id': str(uuid.uuid4()), 'user_id': str(user_id),
-                   'title': f'✅ {_plan_name} Plan Activated',
-                   'message': f'Your payment of ₦{_amount:,} was successful. Your {_plan_name} subscription is now active for 30 days.'})
+            from shared.email_notifications import send_notification_with_email
+            await send_notification_with_email(
+                db_session=_db_conn,
+                recipient_user_id=str(user_id),
+                notification_type='payment',
+                title=f'✅ {_plan_name} Plan Activated',
+                message=f'Your payment of ₦{_amount:,} was successful. Your {_plan_name} subscription is now active for 30 days.',
+                action_url='/dashboard/subscription',
+                sender_role='system'
+            )
             await _db_conn.commit()
     except Exception as _e:
         import logging as _log2
@@ -343,10 +346,18 @@ async def _enforce_subscription_expiry(session_factory) -> None:
                         await db.execute(_text("UPDATE listings SET status='archived' WHERE id=:p0"), {'p0': str(listing['id'])})
                         log.info(f"listing_archived_expired_sub: listing={listing['id']} user={user_id_str}")
                 try:
-                    import uuid as _u
                     _plan_label = old_tier.capitalize()
                     _msg = f'Your {_plan_label} subscription has expired. You are now on the Free plan ({FREE_PLAN_LIMIT} listings). ' + (f'{archived_count} listing(s) have been archived. Renew your plan to restore them.' if archived_count > 0 else '')
-                    await db.execute(_text('INSERT INTO notifications (id, user_id, type, title, message, is_read) VALUES (:p0,:p1,:p2,:p3,:p4,FALSE)'), {'p0': str(_u.uuid4()), 'p1': user_id_str, 'p2': 'payment', 'p3': 'Subscription Expired', 'p4': _msg})
+                    from shared.email_notifications import send_notification_with_email
+                    await send_notification_with_email(
+                        db_session=db,
+                        recipient_user_id=user_id_str,
+                        notification_type='payment',
+                        title='Subscription Expired',
+                        message=_msg,
+                        action_url='/dashboard/subscription',
+                        sender_role='system'
+                    )
                 except Exception:
                     pass
             await db.commit()
