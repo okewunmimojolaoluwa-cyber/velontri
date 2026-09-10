@@ -444,6 +444,7 @@ async def _search_fallback(
                 "review_count": r["review_count"] or 0,
                 "seller_id":    str(r["seller_id"]),
                 "status":       r["status"],
+                "created_at":   r["created_at"].isoformat() if r.get("created_at") else None,
                 "updated_at":   str(r["updated_at"]) if r.get("updated_at") else None,
             }
             for r in rows
