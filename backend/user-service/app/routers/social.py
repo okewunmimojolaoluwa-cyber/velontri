@@ -94,20 +94,31 @@ async def user_exists(session: AsyncSession, user_id: str) -> bool:
 
 
 async def get_follow_counts(session: AsyncSession, user_id: str) -> tuple[int, int]:
-    """Get followers and following counts for a user."""
-    result = await session.execute(
+    """
+    Get followers and following counts for a user.
+    Counts directly from user_follows table for accuracy.
+    """
+    # Count followers (people following this user)
+    followers_result = await session.execute(
         text("""
-            SELECT 
-                COALESCE(followers_count, 0) as followers,
-                COALESCE(following_count, 0) as following
-            FROM users WHERE id = :uid
+            SELECT COUNT(*) FROM user_follows 
+            WHERE following_id = :uid
         """),
         {"uid": user_id}
     )
-    row = result.first()
-    if row:
-        return (row[0], row[1])
-    return (0, 0)
+    followers_count = followers_result.scalar() or 0
+    
+    # Count following (people this user follows)
+    following_result = await session.execute(
+        text("""
+            SELECT COUNT(*) FROM user_follows 
+            WHERE follower_id = :uid
+        """),
+        {"uid": user_id}
+    )
+    following_count = following_result.scalar() or 0
+    
+    return (followers_count, following_count)
 
 
 async def is_following(session: AsyncSession, follower_id: str, following_id: str) -> bool:
@@ -360,14 +371,14 @@ async def get_user_followers(
     offset = (page - 1) * page_size
     
     async with request.app.state.session_factory() as session:
-        # Get followers
+        # Get followers with accurate counts from user_follows
         result = await session.execute(
             text("""
                 SELECT 
                     u.id,
                     u.full_name,
-                    COALESCE(u.followers_count, 0) as followers_count,
-                    COALESCE(u.following_count, 0) as following_count,
+                    (SELECT COUNT(*) FROM user_follows WHERE following_id = CAST(u.id AS TEXT)) as followers_count,
+                    (SELECT COUNT(*) FROM user_follows WHERE follower_id = CAST(u.id AS TEXT)) as following_count,
                     u.seller_verification_status,
                     u.created_at,
                     uf.created_at as followed_at
@@ -438,14 +449,14 @@ async def get_user_following(
     offset = (page - 1) * page_size
     
     async with request.app.state.session_factory() as session:
-        # Get following
+        # Get following with accurate counts from user_follows
         result = await session.execute(
             text("""
                 SELECT 
                     u.id,
                     u.full_name,
-                    COALESCE(u.followers_count, 0) as followers_count,
-                    COALESCE(u.following_count, 0) as following_count,
+                    (SELECT COUNT(*) FROM user_follows WHERE following_id = CAST(u.id AS TEXT)) as followers_count,
+                    (SELECT COUNT(*) FROM user_follows WHERE follower_id = CAST(u.id AS TEXT)) as following_count,
                     u.seller_verification_status,
                     u.created_at,
                     uf.created_at as followed_at
@@ -536,13 +547,14 @@ async def search_users(
     
     async with request.app.state.session_factory() as session:
         # Search users with listings count and profile info
+        # Count followers/following directly from user_follows table for accuracy
         result = await session.execute(
             text("""
                 SELECT 
                     u.id,
                     u.full_name,
-                    COALESCE(u.followers_count, 0) as followers_count,
-                    COALESCE(u.following_count, 0) as following_count,
+                    (SELECT COUNT(*) FROM user_follows WHERE following_id = CAST(u.id AS TEXT)) as followers_count,
+                    (SELECT COUNT(*) FROM user_follows WHERE follower_id = CAST(u.id AS TEXT)) as following_count,
                     u.seller_verification_status,
                     u.created_at,
                     u.phone_verified as is_phone_verified,
@@ -560,7 +572,7 @@ async def search_users(
                   AND (u.full_name ILIKE :pattern)
                 ORDER BY 
                     CASE WHEN u.seller_verification_status = 'verified' THEN 0 ELSE 1 END,
-                    u.followers_count DESC,
+                    (SELECT COUNT(*) FROM user_follows WHERE following_id = CAST(u.id AS TEXT)) DESC,
                     u.full_name
                 LIMIT :limit OFFSET :offset
             """),

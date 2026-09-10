@@ -344,6 +344,45 @@ async def get_profile(user_id: uuid.UUID, request: Request, service: UserService
     except Exception:
         profile_data['active_listing_count'] = 0
 
+    # Follower/following counts from user_follows table
+    try:
+        # Count followers
+        followers_row = (await service.session.execute(
+            text("SELECT COUNT(*) FROM user_follows WHERE following_id = CAST(:uid AS TEXT)"),
+            {'uid': str(user_id)}
+        )).fetchone()
+        profile_data['followers_count'] = int(followers_row[0]) if followers_row else 0
+        
+        # Count following
+        following_row = (await service.session.execute(
+            text("SELECT COUNT(*) FROM user_follows WHERE follower_id = CAST(:uid AS TEXT)"),
+            {'uid': str(user_id)}
+        )).fetchone()
+        profile_data['following_count'] = int(following_row[0]) if following_row else 0
+    except Exception:
+        profile_data['followers_count'] = 0
+        profile_data['following_count'] = 0
+    
+    # Check if phone is verified
+    try:
+        phone_row = (await service.session.execute(
+            text("SELECT phone_verified FROM users WHERE id = :uid"),
+            {'uid': str(user_id)}
+        )).fetchone()
+        profile_data['is_phone_verified'] = bool(phone_row[0]) if phone_row and phone_row[0] is not None else False
+    except Exception:
+        profile_data['is_phone_verified'] = False
+    
+    # User creation date
+    try:
+        created_row = (await service.session.execute(
+            text("SELECT created_at FROM users WHERE id = :uid"),
+            {'uid': str(user_id)}
+        )).fetchone()
+        profile_data['created_at'] = str(created_row[0]) if created_row and created_row[0] else None
+    except Exception:
+        profile_data['created_at'] = None
+
     return SuccessResponse(data=profile_data)
 
 @router.post('/users/me/avatar', response_model=SuccessResponse, summary='Upload a profile avatar image')
