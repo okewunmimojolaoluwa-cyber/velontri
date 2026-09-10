@@ -132,17 +132,22 @@ export default function UserFollowersPage() {
             {followers.map((user) => (
               <li
                 key={user.id}
-                className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition-colors"
+                className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition-colors group"
               >
-                {/* Avatar */}
-                <div className="h-14 w-14 flex-shrink-0 rounded-full bg-indigo-100
-                  flex items-center justify-center text-[16px] font-bold text-indigo-700">
+                {/* Avatar - Clickable */}
+                <Link
+                  href={`/users/${user.id}`}
+                  className="h-14 w-14 flex-shrink-0 rounded-full bg-indigo-100
+                    flex items-center justify-center text-[16px] font-bold text-indigo-700
+                    hover:bg-indigo-200 transition-colors cursor-pointer"
+                >
                   <UserCircle className="h-10 w-10" weight="fill" />
-                </div>
+                </Link>
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold text-slate-900 truncate">
+                {/* Info - Clickable */}
+                <Link href={`/users/${user.id}`} className="flex-1 min-w-0 cursor-pointer">
+                  <p className="text-[14px] font-semibold text-slate-900 truncate
+                    group-hover:text-indigo-600 transition-colors">
                     {user.full_name}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
@@ -156,7 +161,7 @@ export default function UserFollowersPage() {
                       Following you since {new Date(user.followed_at).toLocaleDateString()}
                     </p>
                   )}
-                </div>
+                </Link>
 
                 {/* Follow back button */}
                 <FollowButton userId={user.id} size="sm" />

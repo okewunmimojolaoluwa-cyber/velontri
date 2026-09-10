@@ -18,10 +18,97 @@ def _build_service(session=Depends(get_db_session), redis=Depends(get_redis), ch
     return MarketplaceService(session=session, redis=redis, settings=settings, rabbitmq_channel=channel)
 
 @router.post('/listings', response_model=SuccessResponse, status_code=status.HTTP_201_CREATED, summary='Create a new listing')
-async def create_listing(body: CreateListingRequest, service: MarketplaceService=Depends(_build_service), current_user_id: uuid.UUID=Depends(get_current_user_id), tier: str=Depends(get_subscription_tier)) -> SuccessResponse:
+async def create_listing(
+    request: Request,
+    body: CreateListingRequest, 
+    service: MarketplaceService=Depends(_build_service), 
+    current_user_id: uuid.UUID=Depends(get_current_user_id), 
+    tier: str=Depends(get_subscription_tier)
+) -> SuccessResponse:
     if not getattr(body, 'contact_phone', None) and getattr(body, 'whatsapp_number', None):
         body.contact_phone = body.whatsapp_number
     result = await service.create_listing(current_user_id, tier, body)
+    
+    # Notify followers about new listing
+    try:
+        async with request.app.state.session_factory() as db:
+            from sqlalchemy import text as _text
+            import uuid as _uuid
+            
+            # Get seller name
+            seller_row = (await db.execute(
+                _text("SELECT full_name FROM users WHERE id = :uid"),
+                {"uid": str(current_user_id)}
+            )).fetchone()
+            seller_name = seller_row[0] if seller_row else "A seller"
+            
+            # Get all followers
+            followers = (await db.execute(
+                _text("""
+                    SELECT follower_id FROM user_follows 
+                    WHERE following_id = :uid
+                """),
+                {"uid": str(current_user_id)}
+            )).fetchall()
+            
+            listing_id = result.id
+            listing_title = body.title[:50] + ('...' if len(body.title) > 50 else '')
+            
+            # Create notification for each follower
+            for follower_row in followers:
+                follower_id = str(follower_row[0])
+                await db.execute(
+                    _text("""
+                        INSERT INTO notifications (
+                            id,
+                            user_id,
+                            recipient_user_id,
+                            notification_type,
+                            type,
+                            title,
+                            message,
+                            sender_user_id,
+                            sender_role,
+                            related_resource_type,
+                            related_resource_id,
+                            action_url,
+                            is_read,
+                            created_at
+                        ) VALUES (
+                            :id,
+                            :user_id,
+                            :recipient_id,
+                            'NEW_LISTING',
+                            'listing',
+                            :title,
+                            :message,
+                            :sender_id,
+                            'seller',
+                            'listing',
+                            :listing_id,
+                            :action_url,
+                            FALSE,
+                            NOW()
+                        )
+                    """),
+                    {
+                        "id": str(_uuid.uuid4()),
+                        "user_id": follower_id,
+                        "recipient_id": follower_id,
+                        "title": "New Listing from Seller You Follow",
+                        "message": f"{seller_name} posted a new listing: {listing_title}",
+                        "sender_id": str(current_user_id),
+                        "listing_id": str(listing_id),
+                        "action_url": f"/listings/{listing_id}"
+                    }
+                )
+            
+            await db.commit()
+            
+    except Exception as e:
+        # Don't fail listing creation if notification fails
+        print(f"Failed to notify followers: {e}")
+    
     return SuccessResponse(message='Listing created.', data=result.model_dump())
 
 @router.get('/listings', response_model=SuccessResponse, summary='Browse active listings with optional filters')
