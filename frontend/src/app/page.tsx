@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { MagnifyingGlass, CaretDown, CaretRight, MapPin, Shield, SealCheck, Lightning, TrendUp, Sparkle, Star, Quotes, List, X, ShoppingBag, Car, House, DeviceMobile, TShirt, Briefcase, Wrench } from '@phosphor-icons/react';
+import { MagnifyingGlass, CaretDown, CaretRight, MapPin, Shield, SealCheck, Lightning, TrendUp, Sparkle, Star, Quotes, List, X, ShoppingBag, Car, House, DeviceMobile, TShirt, Briefcase, Wrench, Timer } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { listingsApi, listingKeys } from '@/lib/api/endpoints/listings';
 import { ROUTES } from '@/config/routes';
@@ -816,19 +816,46 @@ export default function HomePage() {
  text-[10px] font-black uppercase tracking-wide text-white capitalize z-10">
  {car.condition ?? 'Used'}
  </span>
+ {(car as any).created_at && (() => {
+ try {
+ const ms = Date.now() - new Date((car as any).created_at).getTime();
+ if (ms < 0 || isNaN(ms)) return null;
+ const days = Math.floor(ms / 86_400_000);
+ const months = Math.floor(days / 30);
+ const years = Math.floor(days / 365);
+ let label = '';
+ if (ms < 3_600_000) label = 'Just listed';
+ else if (ms < 86_400_000) label = `${Math.floor(ms/3_600_000)}h ago`;
+ else if (days < 7) label = `${days} day${days>1?'s':''}`;
+ else if (months < 1) label = `${Math.floor(days/7)} week${Math.floor(days/7)>1?'s':''}`;
+ else if (months < 12) label = `${months} month${months>1?'s':''}`;
+ else label = `${years} year${years>1?'s':''}`;
+ if (!label) return null;
+ return (
+ <span className="absolute bottom-2 left-2 rounded-full bg-black/55 px-2 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm pointer-events-none">
+ {label}
+ </span>
+ );
+ } catch { return null; }
+ })()}
  </div>
  <div className="p-4">
  <p className="mb-1.5 text-[13px] font-bold leading-tight text-slate-900 line-clamp-2 min-h-[2.5rem]">{car.title}</p>
- <div className="mb-3 flex items-center justify-between">
+ <div className="mb-3 flex items-baseline gap-1.5">
  <span className="text-[16px] font-black tracking-tight text-slate-900">
  {fmtPrice(car.price, car.currency)}
  </span>
- {car.city && (
- <span className="flex items-center gap-1 text-[11px] text-slate-400">
- <MapPin size={10} />{car.city}
+ {car.is_negotiable && (
+ <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap">
+ Negotiable
  </span>
  )}
  </div>
+ {car.city && (
+ <span className="flex items-center gap-1 text-[11px] text-slate-400 mb-3">
+ <MapPin size={10} />{car.city}
+ </span>
+ )}
  <div className="block w-full rounded-lg bg-indigo-50 py-2.5 text-center
  text-[12px] font-bold text-indigo-600 transition-colors hover:bg-indigo-100">
  View Details →
@@ -891,19 +918,48 @@ export default function HomePage() {
  className="flex-shrink-0 w-[240px] block cursor-pointer overflow-hidden rounded-2xl
  border border-slate-200 bg-slate-50 transition-all duration-200
  hover:-translate-y-1 hover:shadow-md no-underline">
+ <div className="relative">
  <ListingImage src={item.image_url} alt={item.title} category="Electronics" ratio="4/3" />
+ {(item as any).created_at && (() => {
+ try {
+ const ms = Date.now() - new Date((item as any).created_at).getTime();
+ if (ms < 0 || isNaN(ms)) return null;
+ const days = Math.floor(ms / 86_400_000);
+ const months = Math.floor(days / 30);
+ const years = Math.floor(days / 365);
+ let label = '';
+ if (ms < 3_600_000) label = 'Just listed';
+ else if (ms < 86_400_000) label = `${Math.floor(ms/3_600_000)}h ago`;
+ else if (days < 7) label = `${days} day${days>1?'s':''}`;
+ else if (months < 1) label = `${Math.floor(days/7)} week${Math.floor(days/7)>1?'s':''}`;
+ else if (months < 12) label = `${months} month${months>1?'s':''}`;
+ else label = `${years} year${years>1?'s':''}`;
+ if (!label) return null;
+ return (
+ <span className="absolute bottom-2 left-2 rounded-full bg-black/55 px-2 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm pointer-events-none">
+ {label}
+ </span>
+ );
+ } catch { return null; }
+ })()}
+ </div>
  <div className="border-t border-slate-100 bg-white p-4">
  <p className="mb-1 text-[13px] font-bold leading-tight text-slate-900 line-clamp-2 min-h-[2.5rem]">{item.title}</p>
- <div className="flex items-center justify-between mt-2">
+ <div className="flex items-baseline gap-1.5 mt-2">
  <span className="text-[15px] font-black tracking-tight text-slate-900">
  {fmtPrice(item.price, item.currency)}
  </span>
- {item.city && (
- <span className="flex items-center gap-1 text-[11px] text-slate-400">
- <MapPin size={9} />{item.city}
+ {item.is_negotiable && (
+ <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap">
+ Negotiable
  </span>
  )}
  </div>
+ {item.city && (
+ <span className="flex items-center gap-1 text-[11px] text-slate-400 mt-1">
+ <MapPin size={9} />{item.city}
+ </span>
+ )}
  </div>
  </Link>
  ))}
@@ -962,7 +1018,31 @@ export default function HomePage() {
  className="flex-shrink-0 w-[280px] block cursor-pointer overflow-hidden rounded-2xl
  border border-slate-200 bg-white transition-all duration-200
  hover:-translate-y-1 hover:shadow-md no-underline">
+ <div className="relative">
  <ListingImage src={p.image_url} alt={p.title} type="property" ratio="4/3" />
+ {(p as any).created_at && (() => {
+ try {
+ const ms = Date.now() - new Date((p as any).created_at).getTime();
+ if (ms < 0 || isNaN(ms)) return null;
+ const days = Math.floor(ms / 86_400_000);
+ const months = Math.floor(days / 30);
+ const years = Math.floor(days / 365);
+ let label = '';
+ if (ms < 3_600_000) label = 'Just listed';
+ else if (ms < 86_400_000) label = `${Math.floor(ms/3_600_000)}h ago`;
+ else if (days < 7) label = `${days} day${days>1?'s':''}`;
+ else if (months < 1) label = `${Math.floor(days/7)} week${Math.floor(days/7)>1?'s':''}`;
+ else if (months < 12) label = `${months} month${months>1?'s':''}`;
+ else label = `${years} year${years>1?'s':''}`;
+ if (!label) return null;
+ return (
+ <span className="absolute bottom-2 left-2 rounded-full bg-black/55 px-2 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm pointer-events-none">
+ {label}
+ </span>
+ );
+ } catch { return null; }
+ })()}
+ </div>
  <div className="p-4">
  <p className="mb-1.5 text-[13px] font-bold leading-tight text-slate-900 line-clamp-2 min-h-[2.5rem]">{p.title}</p>
  {p.city && (
@@ -970,9 +1050,16 @@ export default function HomePage() {
  <MapPin size={10} />{p.city}
  </p>
  )}
+ <div className="flex items-baseline gap-1.5">
  <p className="text-[17px] font-black tracking-tight text-slate-900">
  {fmtPrice(p.price, p.currency)}
  </p>
+ {p.is_negotiable && (
+ <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap">
+ Negotiable
+ </span>
+ )}
+ </div>
  </div>
  </Link>
  ))}
