@@ -535,7 +535,7 @@ async def search_users(
     search_pattern = f"%{q}%"
     
     async with request.app.state.session_factory() as session:
-        # Search users
+        # Search users with listings count and profile info
         result = await session.execute(
             text("""
                 SELECT 
@@ -544,8 +544,18 @@ async def search_users(
                     COALESCE(u.followers_count, 0) as followers_count,
                     COALESCE(u.following_count, 0) as following_count,
                     u.seller_verification_status,
-                    u.created_at
+                    u.created_at,
+                    u.phone_verified as is_phone_verified,
+                    p.bio,
+                    p.city,
+                    p.state,
+                    p.country,
+                    p.profile_photo_url,
+                    (SELECT COUNT(*) FROM listings l 
+                     WHERE CAST(l.seller_id AS TEXT) = CAST(u.id AS TEXT) 
+                     AND l.status = 'active') as listings_count
                 FROM users u
+                LEFT JOIN user_profiles p ON CAST(p.user_id AS TEXT) = CAST(u.id AS TEXT)
                 WHERE u.is_active = TRUE 
                   AND (u.full_name ILIKE :pattern)
                 ORDER BY 
@@ -565,7 +575,14 @@ async def search_users(
                 "followers_count": row[2],
                 "following_count": row[3],
                 "seller_verification_status": row[4],
-                "created_at": str(row[5]),
+                "created_at": str(row[5]) if row[5] else None,
+                "is_phone_verified": bool(row[6]) if row[6] is not None else False,
+                "bio": row[7],
+                "city": row[8],
+                "state": row[9],
+                "country": row[10],
+                "profile_photo_url": row[11],
+                "listings_count": row[12] if row[12] is not None else 0,
             })
         
         # Get total count
