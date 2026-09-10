@@ -154,6 +154,38 @@ function BrowseCard({ listing }: { listing: any }) {
  {COND_LABEL[listing.condition] ?? listing.condition}
  </span>
  )}
+        {/* Time badge - active duration */}
+ {listing.created_at && (() => {
+ try {
+ const date = new Date(listing.created_at);
+ if (isNaN(date.getTime()) || date.getFullYear() < 2020) return null;
+ const ms = Date.now() - date.getTime();
+ if (ms < 0) return null;
+ const minutes = Math.floor(ms / 60_000);
+ const hours = Math.floor(ms / 3_600_000);
+ const days = Math.floor(ms / 86_400_000);
+ const weeks = Math.floor(days / 7);
+ const months = Math.floor(days / 30);
+ const years = Math.floor(days / 365);
+ let duration = '';
+ if (minutes < 60) duration = 'Just listed';
+ else if (hours < 24) duration = `${hours}h ago`;
+ else if (days === 1) duration = '1 day';
+ else if (days < 7) duration = `${days} days`;
+ else if (weeks === 1) duration = '1 week';
+ else if (weeks < 5) duration = `${weeks} weeks`;
+ else if (months === 1) duration = '1 month';
+ else if (months < 12) duration = `${months} months`;
+ else if (years === 1) duration = '1 year';
+ else duration = `${years} years`;
+ return (
+ <span className="absolute bottom-2 left-2 rounded-full bg-black/50 px-2 py-0.5
+ text-[9px] font-bold text-white backdrop-blur-sm pointer-events-none">
+ {duration}
+ </span>
+ );
+ } catch { return null; }
+ })()}
  </div>
 
       {/* Body */}
