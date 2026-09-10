@@ -377,8 +377,8 @@ async def get_user_followers(
                 SELECT 
                     u.id,
                     u.full_name,
-                    (SELECT COUNT(*) FROM user_follows WHERE following_id = CAST(u.id AS TEXT)) as followers_count,
-                    (SELECT COUNT(*) FROM user_follows WHERE follower_id = CAST(u.id AS TEXT)) as following_count,
+                    (SELECT COUNT(*) FROM user_follows WHERE following_id = u.id) as followers_count,
+                    (SELECT COUNT(*) FROM user_follows WHERE follower_id = u.id) as following_count,
                     u.seller_verification_status,
                     u.created_at,
                     uf.created_at as followed_at
@@ -455,8 +455,8 @@ async def get_user_following(
                 SELECT 
                     u.id,
                     u.full_name,
-                    (SELECT COUNT(*) FROM user_follows WHERE following_id = CAST(u.id AS TEXT)) as followers_count,
-                    (SELECT COUNT(*) FROM user_follows WHERE follower_id = CAST(u.id AS TEXT)) as following_count,
+                    (SELECT COUNT(*) FROM user_follows WHERE following_id = u.id) as followers_count,
+                    (SELECT COUNT(*) FROM user_follows WHERE follower_id = u.id) as following_count,
                     u.seller_verification_status,
                     u.created_at,
                     uf.created_at as followed_at
@@ -553,8 +553,8 @@ async def search_users(
                 SELECT 
                     u.id,
                     u.full_name,
-                    (SELECT COUNT(*) FROM user_follows WHERE following_id = CAST(u.id AS TEXT)) as followers_count,
-                    (SELECT COUNT(*) FROM user_follows WHERE follower_id = CAST(u.id AS TEXT)) as following_count,
+                    (SELECT COUNT(*) FROM user_follows WHERE following_id = u.id) as followers_count,
+                    (SELECT COUNT(*) FROM user_follows WHERE follower_id = u.id) as following_count,
                     u.seller_verification_status,
                     u.created_at,
                     u.phone_verified as is_phone_verified,
@@ -572,7 +572,7 @@ async def search_users(
                   AND (u.full_name ILIKE :pattern)
                 ORDER BY 
                     CASE WHEN u.seller_verification_status = 'verified' THEN 0 ELSE 1 END,
-                    (SELECT COUNT(*) FROM user_follows WHERE following_id = CAST(u.id AS TEXT)) DESC,
+                    (SELECT COUNT(*) FROM user_follows WHERE following_id = u.id) DESC,
                     u.full_name
                 LIMIT :limit OFFSET :offset
             """),

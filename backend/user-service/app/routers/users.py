@@ -346,17 +346,17 @@ async def get_profile(user_id: uuid.UUID, request: Request, service: UserService
 
     # Follower/following counts from user_follows table
     try:
-        # Count followers
+        # Count followers (people following this user)
         followers_row = (await service.session.execute(
-            text("SELECT COUNT(*) FROM user_follows WHERE following_id = CAST(:uid AS TEXT)"),
-            {'uid': str(user_id)}
+            text("SELECT COUNT(*) FROM user_follows WHERE following_id = :uid"),
+            {'uid': user_id}
         )).fetchone()
         profile_data['followers_count'] = int(followers_row[0]) if followers_row else 0
         
-        # Count following
+        # Count following (people this user is following)
         following_row = (await service.session.execute(
-            text("SELECT COUNT(*) FROM user_follows WHERE follower_id = CAST(:uid AS TEXT)"),
-            {'uid': str(user_id)}
+            text("SELECT COUNT(*) FROM user_follows WHERE follower_id = :uid"),
+            {'uid': user_id}
         )).fetchone()
         profile_data['following_count'] = int(following_row[0]) if following_row else 0
     except Exception:
