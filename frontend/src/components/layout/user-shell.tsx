@@ -116,10 +116,16 @@ export function UserShell({ children }: { children: ReactNode }) {
  useEffect(() => { setMounted(true); }, []);
  if (!mounted) return null;
 
- const fullName = profileData?.data?.full_name ?? '';
- const firstName = fullName.split(' ')[0] || 'User';
- const avatarUrl = profileData?.data?.avatar_url;
- const initials = firstName.charAt(0).toUpperCase();
+ const fullName = profileData?.data?.full_name ?? profileData?.data?.email ?? session?.email ?? '';
+ const firstName = fullName.split(' ')[0] || fullName.split('@')[0] || 'User';
+ const avatarUrl = profileData?.data?.avatar_url || profileData?.data?.profile_photo_url;
+ const initials = fullName
+   .split(' ')
+   .map(n => n[0])
+   .filter(Boolean)
+   .slice(0, 2)
+   .join('')
+   .toUpperCase() || (fullName[0]?.toUpperCase() || 'U');
 
  async function logout() {
  try {
