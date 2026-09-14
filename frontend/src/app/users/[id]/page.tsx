@@ -23,6 +23,7 @@ interface UserProfile {
   followers_count?: number;
   following_count?: number;
   is_phone_verified?: boolean;
+  seller_verification_status?: string;
 }
 
 interface UserListing {
@@ -144,7 +145,7 @@ export default function UserProfilePage() {
                   <span className="text-white text-4xl font-black">{initials}</span>
                 </div>
               )}
-              {profile.is_phone_verified && (
+              {(profile.seller_verification_status === 'verified' || profile.seller_verification_status === 'approved') && (
                 <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-2 border-4 border-indigo-900">
                   <CheckCircle className="h-5 w-5 text-white" weight="fill" />
                 </div>
