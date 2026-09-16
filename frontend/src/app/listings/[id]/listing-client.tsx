@@ -269,6 +269,9 @@ export default function ListingDetailPage() {
  });
 
  const sellerName = sellerData?.data?.full_name || sellerData?.data?.display_name || (listing as any)?.seller_name || 'Seller';
+ const displaySellerName = (sellerName === 'Uuser' || !sellerName || sellerName === 'Seller') 
+   ? (sellerData?.data?.full_name || sellerData?.data?.display_name || 'Seller')
+   : sellerName;
  const isVerifiedSeller = (
  ['approved', 'verified'].includes(sellerData?.data?.seller_verification_status ?? '') ||
  sellerData?.data?.trust_badge === 'verified' ||
@@ -679,7 +682,7 @@ export default function ListingDetailPage() {
                 {/* Header */}
  <div className="px-4 pt-4 pb-3 border-b border-slate-100">
  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
- {sellerName !== 'Seller' ? sellerName : 'Seller'}
+ {displaySellerName !== 'Seller' ? displaySellerName : 'Seller'}
  </p>
  </div>
 
@@ -691,12 +694,12 @@ export default function ListingDetailPage() {
  {sellerData?.data?.profile_photo_url ? (
  <img
  src={sellerData.data.profile_photo_url}
- alt={sellerName}
+ alt={displaySellerName}
  className="h-14 w-14 rounded-full object-cover border-2 border-white shadow-sm ring-1 ring-slate-200"
  />
  ) : (
  <div className="h-14 w-14 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-[18px] font-black uppercase shadow-sm flex-shrink-0">
- {sellerName.split(' ').map((w: string) => w[0]).slice(0, 2).join('')}
+ {displaySellerName.split(' ').map((w: string) => w[0]).slice(0, 2).join('')}
  </div>
  )}
  </div>
@@ -704,7 +707,7 @@ export default function ListingDetailPage() {
                     {/* Name + badge + rating */}
  <div className="flex-1 min-w-0">
  <div className="flex items-center gap-1.5 flex-wrap">
- <p className="text-[15px] font-bold text-slate-900 leading-tight">{sellerName}</p>
+ <p className="text-[15px] font-bold text-slate-900 leading-tight">{displaySellerName}</p>
  {isVerifiedSeller && (
  <span className="inline-flex items-center gap-0.5 rounded-full bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 text-[9px] font-bold text-indigo-700 flex-shrink-0 whitespace-nowrap">
  <SealCheck className="h-2.5 w-2.5" />
@@ -766,7 +769,7 @@ export default function ListingDetailPage() {
  View Profile
  </Link>
  <button
- onClick={() => router.push(`/listings?seller_id=${listing.seller_id}&seller_name=${encodeURIComponent(sellerName)}`)}
+ onClick={() => router.push(`/listings?seller_id=${listing.seller_id}&seller_name=${encodeURIComponent(displaySellerName)}`)}
  className="flex-1 h-9 rounded-xl border border-indigo-200 bg-indigo-50 text-[12px] font-semibold text-indigo-700 hover:bg-indigo-100 active:scale-[0.99] transition-all"
  >
  View Storefront
