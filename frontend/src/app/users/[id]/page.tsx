@@ -145,17 +145,18 @@ export default function UserProfilePage() {
                   <span className="text-white text-4xl font-black">{initials}</span>
                 </div>
               )}
-              {(profile.seller_verification_status === 'verified' || profile.seller_verification_status === 'approved') && (
-                <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1.5 border-2 border-indigo-900 shadow-lg">
-                  <CheckCircle className="h-4 w-4 text-green-600" weight="fill" />
-                </div>
-              )}
             </div>
 
             {/* Info */}
             <div className="flex-1">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
                 <h1 className="text-white font-black text-3xl">{profile.full_name}</h1>
+                {(profile.seller_verification_status === 'verified' || profile.seller_verification_status === 'approved') && (
+                  <span className="inline-flex items-center gap-1 text-[10px] text-green-400">
+                    <CheckCircle weight="fill" className="h-3 w-3" />
+                    Verified Seller
+                  </span>
+                )}
                 {profile.trust_badge && profile.trust_badge !== 'none' && profile.trust_badge !== 'null' && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 text-xs font-bold uppercase">
                     <Star className="h-3 w-3" weight="fill" />
