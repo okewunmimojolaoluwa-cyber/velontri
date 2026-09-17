@@ -60,7 +60,7 @@ export default function DashboardPage() {
  queryKey: [uid, 'conversations'],
  queryFn: async () => {
  const { apiClient } = await import('@/lib/api/client');
- return apiClient.get<any>('/chat/conversations').then(r => r.data);
+ return apiClient.get<any>('/chat/inbox').then(r => r.data);
  },
  enabled: !!session.isAuthenticated,
  staleTime: 5 * 60 * 1000,

@@ -53,7 +53,7 @@ export default function UserOrdersPage() {
  const { data: chatData, isLoading: chatLoading } = useQuery({
  queryKey: [uid, 'conversations'],
  queryFn: () =>
- apiClient.get<ApiResponse<Conversation[]>>('/chat/conversations').then(r => r.data).catch(() => ({ data: [] })),
+ apiClient.get<ApiResponse<Conversation[]>>('/chat/inbox').then(r => r.data).catch(() => ({ data: [] })),
  enabled: !!session.isAuthenticated,
  staleTime: 30_000,
  });
