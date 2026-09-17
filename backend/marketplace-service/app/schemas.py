@@ -86,6 +86,7 @@ class CreateListingRequest(BaseModel):
     variants: list["VariantRequest"] | None = None
     image_url: str | None = Field(default=None, description="Data URL or HTTPS URL for the primary image")
     extra_image_urls: list[str] | None = Field(default=None, description="Additional image data URLs (index 1+). Stored atomically in listing_media.")
+    extra_video_urls: list[str] | None = Field(default=None, description="Video data URLs (MP4, MOV, WebM). Max 3 videos per listing. Stored in listing_media with media_type='video'.")
     whatsapp_number: str | None = Field(default=None, max_length=20, description="Seller WhatsApp number in E.164 format")
     contact_phone: str | None = Field(default=None, max_length=20, description="Optional extra contact phone")
     is_negotiable: bool | None = Field(default=None, description="Whether the price is negotiable")

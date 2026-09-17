@@ -320,6 +320,29 @@ class MarketplaceService:
                 )
             await self.session.commit()
 
+        # Batch-insert videos atomically - stored after images in sort order
+        extra_videos: list[str] = body.extra_video_urls or []
+        if extra_videos:
+            from sqlalchemy import text as _ins_text
+            import uuid as _uuid_mod
+            base_sort_order = len(extra_urls)  # Videos come after images
+            for i, video_url in enumerate(extra_videos[:3]):  # max 3 videos
+                if not video_url:
+                    continue
+                await self.session.execute(
+                    _ins_text("""
+                        INSERT INTO listing_media (id, listing_id, media_type, s3_key, sort_order, uploaded_at)
+                        VALUES (:mid, :lid, 'video', :s3key, :sorder, NOW())
+                    """),
+                    {
+                        "mid": str(_uuid_mod.uuid4()),
+                        "lid": str(listing.id),
+                        "s3key": video_url,
+                        "sorder": base_sort_order + i,
+                    },
+                )
+            await self.session.commit()
+
         # Invalidate quota cache so next check reads fresh DB count
         await self.redis.delete(RedisKeys.seller_listing_count(str(seller_id)))
 
@@ -329,6 +352,7 @@ class MarketplaceService:
             seller_id=str(seller_id),
             type=body.listing_type,
             extra_images=len(extra_urls),
+            extra_videos=len(extra_videos),
         )
 
         # If extra images were added, build media_urls for the response
@@ -353,10 +377,9 @@ class MarketplaceService:
         from sqlalchemy import text as _text_raw
         media_rows_raw = (await self.session.execute(
             _text_raw("""
-                SELECT s3_key, sort_order
+                SELECT s3_key, sort_order, media_type
                 FROM listing_media
                 WHERE CAST(listing_id AS TEXT) = :lid
-                  AND media_type = 'image'
                   AND s3_key IS NOT NULL
                   AND s3_key != ''
                 ORDER BY sort_order ASC
@@ -364,14 +387,20 @@ class MarketplaceService:
             {"lid": str(listing_id)},
         )).mappings().all()
 
-        # Deduplicate preserving sort order
+        # Deduplicate preserving sort order - separate images and videos
         seen_keys: set[str] = set()
         media_urls: list[str] = []
+        video_urls: list[str] = []
+        
         for row in media_rows_raw:
             k = row["s3_key"]
+            media_type = row["media_type"]
             if k and k not in seen_keys:
                 seen_keys.add(k)
-                media_urls.append(k)
+                if media_type == 'video':
+                    video_urls.append(k)
+                else:  # image or tour_360
+                    media_urls.append(k)
 
         # Prepend cover image_url if not already in the list
         if listing.image_url and listing.image_url not in seen_keys:
