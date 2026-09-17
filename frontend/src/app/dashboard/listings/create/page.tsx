@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { sellerApi, sellerKeys, type CreateListingRequest } from '@/lib/api/endpoints/seller';
@@ -8,7 +8,7 @@ import { listingKeys } from '@/lib/api/endpoints/listings';
 import { ROUTES } from '@/config/routes';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { MapPin, CaretRight, ImageIcon, UploadSimple, X, Lock, Lightning, ArrowRight } from '@phosphor-icons/react';
+import { MapPin, CaretRight, ImageIcon, UploadSimple, X, Lock, Lightning, ArrowRight, PlayCircle } from '@phosphor-icons/react';
 import { useAuth } from '@/features/auth/auth-provider';
 import { normalizePhoneNumber } from '@/lib/utils/formatters';
 import Link from 'next/link';
@@ -327,8 +327,24 @@ export default function CreateListingPage() {
  whatsapp_number: '',
  contact_phone: '',
  images: [] as string[],
+ videos: [] as string[],
  is_negotiable: false,
  });
+
+  // Cleanup video blob URLs on unmount to prevent memory leaks
+ useEffect(() => {
+ return () => {
+ form.videos.forEach(url => {
+ if (url.startsWith('blob:')) {
+ try {
+ URL.revokeObjectURL(url);
+ } catch (e) {
+ // URL might already be revoked
+ }
+ }
+ });
+ };
+ }, [form.videos]);
 
  const { mutate: submit, isPending } = useMutation({
  retry: 1,
@@ -394,6 +410,7 @@ export default function CreateListingPage() {
  is_negotiable: form.is_negotiable,
  image_url: coverImageUrl,
  extra_image_urls: extraImageUrls.length > 0 ? extraImageUrls : undefined,
+ extra_video_urls: form.videos.length > 0 ? form.videos : undefined,
  ...(form.subcategory ? { subcategory: form.subcategory } : {}),
  } as any);
 
@@ -454,26 +471,106 @@ export default function CreateListingPage() {
  }
 
   /* ── File handling ─────────────────────────────────── */
- const readFilesAsDataURLs = useCallback((files: FileList | File[]) => {
+ const readMediaFiles = useCallback((files: FileList | File[]) => {
  const fileArr = Array.from(files);
- const remaining = 6 - form.images.length;
- if (remaining <= 0) return;
+ const totalMedia = form.images.length + form.videos.length;
+ 
+ // CRITICAL: First upload MUST be an image
+ if (totalMedia === 0) {
+ const firstFile = fileArr[0];
+ if (!firstFile?.type.startsWith('image/')) {
+ setError('❌ First upload must be a cover image (not a video)');
+ return;
+ }
+ }
+ 
+ const remaining = 6 - totalMedia;
+ if (remaining <= 0) {
+ setError('Maximum 6 media items reached');
+ return;
+ }
+ 
  const toRead = fileArr.slice(0, remaining);
- toRead.forEach((file) => {
- if (!file.type.startsWith('image/')) return;
+ 
+ toRead.forEach(async (file) => {
+ // Handle Images
+ if (file.type.startsWith('image/')) {
+ if (file.size > 20 * 1024 * 1024) {
+ setError(`Image "${file.name}" is too large (max 20MB)`);
+ return;
+ }
+ 
  const reader = new FileReader();
  reader.onload = (e) => {
  const dataUrl = e.target?.result as string;
  if (dataUrl) {
  setForm((f) => {
- if (f.images.length >= 6) return f;
+ if (f.images.length + f.videos.length >= 6) return f;
  return { ...f, images: [...f.images, dataUrl] };
  });
  }
  };
  reader.readAsDataURL(file);
+ }
+ 
+ // Handle Videos
+ else if (file.type.startsWith('video/')) {
+ // Validate format
+ const validFormats = ['video/mp4', 'video/quicktime', 'video/webm'];
+ if (!validFormats.includes(file.type)) {
+ setError(`Video format not supported. Use MP4, MOV, or WebM`);
+ return;
+ }
+ 
+ // Validate size
+ if (file.size > 100 * 1024 * 1024) {
+ const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+ setError(`Video "${file.name}" is too large (${sizeMB}MB). Max is 100MB`);
+ return;
+ }
+ 
+ // Check video limit
+ if (form.videos.length >= 3) {
+ setError('Maximum 3 videos per listing');
+ return;
+ }
+ 
+ // Validate video is not corrupt
+ const video = document.createElement('video');
+ video.onloadedmetadata = () => {
+ if (video.duration > 0 && video.duration < Infinity) {
+ const reader = new FileReader();
+ reader.onload = (e) => {
+ const dataUrl = e.target?.result as string;
+ if (dataUrl) {
+ setForm((f) => {
+ if (f.videos.length >= 3) return f;
+ if (f.images.length + f.videos.length >= 6) return f;
+ return { ...f, videos: [...f.videos, dataUrl] };
  });
- }, [form.images.length]);
+ }
+ };
+ reader.readAsDataURL(file);
+ } else {
+ setError(`Video "${file.name}" appears to be corrupt`);
+ }
+ URL.revokeObjectURL(video.src);
+ };
+ video.onerror = () => {
+ setError(`Failed to load video "${file.name}"`);
+ URL.revokeObjectURL(video.src);
+ };
+ video.src = URL.createObjectURL(file);
+ }
+ });
+ }, [form.images.length, form.videos.length]);
+
+ function removeVideo(index: number) {
+ setForm(f => ({
+ ...f,
+ videos: f.videos.filter((_, i) => i !== index)
+ }));
+ }
 
  function openFilePicker() {
  fileInputRef.current?.click();
@@ -485,7 +582,7 @@ export default function CreateListingPage() {
 
  function onFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
  if (e.target.files?.length) {
- readFilesAsDataURLs(e.target.files);
+ readMediaFiles(e.target.files);
  e.target.value = '';
  }
  }
@@ -494,7 +591,7 @@ export default function CreateListingPage() {
  e.preventDefault();
  setDragOver(false);
  if (e.dataTransfer.files?.length) {
- readFilesAsDataURLs(e.dataTransfer.files);
+ readMediaFiles(e.dataTransfer.files);
  }
  }
 
@@ -862,16 +959,21 @@ export default function CreateListingPage() {
  </div>
  )}
 
-        {/* STEP 2 — Photos (formerly step 3) */}
+        {/* STEP 2 — Photos & Videos (formerly step 3) */}
  {step === 2 && (
  <div className="space-y-4">
- <p className="text-sm font-bold text-slate-700">Add photos (up to 6)</p>
+ <div>
+ <p className="text-sm font-bold text-slate-700">Add photos and videos (up to 6 total)</p>
+ <p className="text-xs text-slate-500 mt-1">
+ ⚠️ First upload must be a cover image. Then add more photos or videos (MP4, MOV, WebM).
+ </p>
+ </div>
 
             {/* Hidden file inputs */}
  <input
  ref={fileInputRef}
  type="file"
- accept="image/*"
+ accept="image/*,video/mp4,video/quicktime,video/webm"
  multiple
  className="hidden"
  onChange={onFileInputChange}
@@ -932,12 +1034,39 @@ export default function CreateListingPage() {
  )}
  </div>
 
+            {/* Video Preview Grid */}
+ {form.videos.length > 0 && (
+ <div className="space-y-2">
+ <p className="text-xs font-semibold text-slate-600">Videos ({form.videos.length}/3)</p>
+ <div className="grid grid-cols-3 gap-3">
+ {form.videos.map((url, i) => (
+ <div key={`video-${i}`} className="relative aspect-square rounded-xl overflow-hidden border border-purple-200 bg-purple-50">
+ <video src={url} className="h-full w-full object-cover" muted />
+ <span className="absolute top-1 left-1 rounded-full bg-purple-600 px-2 py-0.5
+ text-[9px] font-bold text-white uppercase tracking-wide flex items-center gap-1">
+ <PlayCircle className="h-2.5 w-2.5" weight="fill" />
+ VIDEO
+ </span>
+ <button
+ type="button"
+ onClick={() => removeVideo(i)}
+ className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 text-white
+ flex items-center justify-center hover:bg-red-600 transition-colors"
+ >
+ <X className="h-3 w-3" />
+ </button>
+ </div>
+ ))}
+ </div>
+ </div>
+ )}
+
             {/* Camera + Gallery buttons */}
  <div className="grid grid-cols-2 gap-3">
  <button
  type="button"
  onClick={openCamera}
- disabled={form.images.length >= 6}
+ disabled={form.images.length + form.videos.length >= 6}
  className="flex items-center justify-center gap-2 rounded-xl border border-slate-200
  bg-white py-3.5 text-[13px] font-semibold text-slate-700
  hover:bg-slate-50 hover:border-slate-300 transition-colors
@@ -949,18 +1078,18 @@ export default function CreateListingPage() {
  <button
  type="button"
  onClick={openFilePicker}
- disabled={form.images.length >= 6}
+ disabled={form.images.length + form.videos.length >= 6}
  className="flex items-center justify-center gap-2 rounded-xl border border-indigo-200
  bg-indigo-50 py-3.5 text-[13px] font-semibold text-indigo-600
  hover:bg-indigo-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
  >
  <UploadSimple className="h-4 w-4" />
- {form.images.length === 0 ? 'Choose from Gallery' : `Gallery (${form.images.length}/6)`}
+ {form.images.length === 0 && form.videos.length === 0 ? 'Choose Photos/Videos' : `Media (${form.images.length + form.videos.length}/6)`}
  </button>
  </div>
 
  <p className="text-xs text-slate-400 text-center">
- Drag &amp; drop photos here, or tap the button above · JPG, PNG, WEBP, HEIC · Max 10 MB each
+ Drag &amp; drop media here · Images: JPG, PNG, WEBP (max 20MB) · Videos: MP4, MOV, WebM (max 100MB)
  </p>
  <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-center space-y-1">
  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">📐 Image Requirements</p>
