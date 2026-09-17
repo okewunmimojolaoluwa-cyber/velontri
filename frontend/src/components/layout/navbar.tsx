@@ -80,6 +80,7 @@ export function Navbar() {
  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
  headers: {
  'Authorization': `Bearer ${token}`,
+ 'Cache-Control': 'no-cache', // Force fresh data
  },
  });
  if (!res.ok) return null;
@@ -89,6 +90,8 @@ export function Navbar() {
  enabled: isAuth && mounted && !!session?.userId,
  staleTime: 5 * 60 * 1000, // Cache for 5 minutes
  retry: false, // Don't retry on 401
+ refetchOnWindowFocus: true, // Refetch when window gains focus
+ refetchOnMount: 'always', // Always refetch on mount
  });
 
  // Build display name with proper fallbacks - filter out invalid names
