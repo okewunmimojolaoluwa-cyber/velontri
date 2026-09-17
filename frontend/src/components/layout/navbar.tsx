@@ -20,7 +20,7 @@ const NAV_LINKS = [
  { label: 'Vehicles', href: '/listings?listing_type=vehicle' },
  { label: 'Property', href: '/listings?listing_type=property' },
  { label: 'Electronics',href: '/listings?category=Electronics' },
- { label: 'Pricing', href: '/subscriptions/tiers' },
+ { label: 'Pricing', href: '/plans' },
 ] as const;
 
 export function Navbar() {
@@ -70,21 +70,25 @@ export function Navbar() {
  const dashPath = session ? resolveHomePath(session.role) : ROUTES.dashboard;
  const unreadCount = useUnreadCount();
 
- // Fetch user profile data for avatar and name
+ // Fetch user profile data for avatar and name - only when authenticated
  const { data: userData } = useQuery({
  queryKey: ['user-me', session?.userId],
  queryFn: async () => {
+ const token = document.cookie.split('access_token=')[1]?.split(';')[0];
+ if (!token) return null;
+ 
  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
  headers: {
- 'Authorization': `Bearer ${document.cookie.split('access_token=')[1]?.split(';')[0] || ''}`,
+ 'Authorization': `Bearer ${token}`,
  },
  });
  if (!res.ok) return null;
  const json = await res.json();
  return json.data;
  },
- enabled: isAuth && mounted,
+ enabled: isAuth && mounted && !!session?.userId,
  staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+ retry: false, // Don't retry on 401
  });
 
  // Build display name with proper fallbacks - filter out invalid names

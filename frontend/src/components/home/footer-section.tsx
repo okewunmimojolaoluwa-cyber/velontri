@@ -6,7 +6,7 @@ const FOOTER_LINKS = {
  Product: [
  { label: 'Browse listings', href: '/listings' },
  { label: 'AI Search', href: '/search' },
- { label: 'Pricing', href: '/subscriptions/tiers' },
+ { label: 'Pricing', href: '/plans' },
  { label: 'Mobile app', href: '#download' },
  { label: 'Business solutions', href: '/business' },
  ],
