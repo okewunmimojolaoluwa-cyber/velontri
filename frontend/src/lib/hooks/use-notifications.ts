@@ -58,6 +58,7 @@ export function useNotifications(params: { page?: number; page_size?: number; un
     mutationFn: (id: string) => apiClient.post(`/notifications/${id}/read`, {}),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [uid, 'notifications'] });
+      qc.invalidateQueries({ queryKey: [uid, 'notifications', 'unread-count'] });
     },
   });
 
@@ -65,6 +66,7 @@ export function useNotifications(params: { page?: number; page_size?: number; un
     mutationFn: () => apiClient.post('/notifications/read-all', {}),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [uid, 'notifications'] });
+      qc.invalidateQueries({ queryKey: [uid, 'notifications', 'unread-count'] });
     },
   });
 

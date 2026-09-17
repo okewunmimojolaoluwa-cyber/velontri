@@ -95,10 +95,14 @@ export default function UserNotificationsPage() {
  return (
  <li
  key={n.id}
- className={`flex items-start gap-3 px-5 py-4 transition-colors cursor-default ${
+ className={`flex items-start gap-3 px-5 py-4 transition-colors cursor-pointer ${
  !n.is_read ? 'bg-indigo-50/40' : 'hover:bg-slate-50'
  }`}
- onClick={() => { if (!n.is_read) markRead(n.id); }}
+ onClick={() => { 
+   if (!n.is_read) {
+     markRead(n.id);
+   }
+ }}
  >
                   {/* Icon */}
  <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl ${iconCls}`}>

@@ -87,15 +87,20 @@ export function Navbar() {
  staleTime: 5 * 60 * 1000, // Cache for 5 minutes
  });
 
- const fullName = userData?.full_name || userData?.email || session?.email || session?.role || 'Account';
+ // Build display name with proper fallbacks
+ const fullName = userData?.full_name || userData?.display_name || userData?.email || 'User';
  const profilePhotoUrl = userData?.avatar_url || userData?.profile_photo_url;
- const initials = fullName
- .split(' ')
- .map((n: string) => n[0])
- .filter(Boolean)
- .slice(0, 2)
- .join('')
- .toUpperCase() || (fullName[0]?.toUpperCase() || 'U');
+ 
+ // Generate initials from name, avoiding "Uuser"
+ const initials = fullName && fullName !== 'User' && fullName !== 'Uuser' && !fullName.startsWith('Uuser')
+   ? fullName
+       .split(' ')
+       .map((n: string) => n[0])
+       .filter(Boolean)
+       .slice(0, 2)
+       .join('')
+       .toUpperCase()
+   : 'U';
 
   /* ── Active link check ── */
  function isActive(href: string) {
