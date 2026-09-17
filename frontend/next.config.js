@@ -7,7 +7,6 @@ const nextConfig = {
   },
   
   // Production optimizations
-  swcMinify: true, // Faster minification with SWC
   compress: true, // Enable gzip compression
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {

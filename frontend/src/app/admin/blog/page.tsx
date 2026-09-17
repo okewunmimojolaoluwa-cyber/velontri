@@ -224,6 +224,10 @@ export default function AdminBlogPage() {
  <div className="flex gap-2">
  <Button variant="outline" size="sm">
  Edit
+ </Button>
+ <Button 
+ variant="outline" 
+ size="sm"
  disabled={deleteMutation.isPending}
  >
  Delete

@@ -1,20 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
-import dynamic from 'next/dynamic';
 import { Providers } from '@/app/providers';
+import { BottomNavWrapper } from '@/components/layout/bottom-nav-wrapper';
+import { MaintenanceBannerWrapper } from '@/components/ui/maintenance-banner-wrapper';
 import './globals.css';
-
-// Load BottomNav client-only (it uses cookies/localStorage) to prevent hydration mismatch
-const BottomNav = dynamic(
- () => import('@/components/layout/bottom-nav').then(m => ({ default: m.BottomNav })),
- { ssr: false }
-);
-
-// Maintenance banner — client-only, checks API on each load
-const MaintenanceBanner = dynamic(
- () => import('@/components/ui/maintenance-banner').then(m => ({ default: m.MaintenanceBanner })),
- { ssr: false }
-);
 
 const inter = Inter({
  subsets: ['latin'],
@@ -152,9 +141,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
  </head>
  <body className="font-sans antialiased" suppressHydrationWarning>
  <Providers>
- <MaintenanceBanner />
+ <MaintenanceBannerWrapper />
  {children}
- <BottomNav />
+ <BottomNavWrapper />
  </Providers>
  </body>
  </html>
