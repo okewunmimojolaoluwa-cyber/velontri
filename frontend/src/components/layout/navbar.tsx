@@ -87,12 +87,16 @@ export function Navbar() {
  staleTime: 5 * 60 * 1000, // Cache for 5 minutes
  });
 
- // Build display name with proper fallbacks
- const fullName = userData?.full_name || userData?.display_name || userData?.email || 'User';
+ // Build display name with proper fallbacks - filter out invalid names
+ const rawName = userData?.full_name || userData?.display_name || '';
+ const fullName = rawName && rawName !== 'User' && rawName !== 'Uuser' && !rawName.toLowerCase().includes('user') 
+   ? rawName
+   : (userData?.email?.split('@')[0] || 'User');
+   
  const profilePhotoUrl = userData?.avatar_url || userData?.profile_photo_url;
  
- // Generate initials from name, avoiding "Uuser"
- const initials = fullName && fullName !== 'User' && fullName !== 'Uuser' && !fullName.startsWith('Uuser')
+ // Generate initials from name, avoiding "Uuser" and generic "User"
+ const initials = fullName && fullName !== 'User' && !fullName.toLowerCase().includes('user')
    ? fullName
        .split(' ')
        .map((n: string) => n[0])
@@ -100,7 +104,7 @@ export function Navbar() {
        .slice(0, 2)
        .join('')
        .toUpperCase()
-   : 'U';
+   : (userData?.email?.[0]?.toUpperCase() || 'U');
 
   /* ── Active link check ── */
  function isActive(href: string) {

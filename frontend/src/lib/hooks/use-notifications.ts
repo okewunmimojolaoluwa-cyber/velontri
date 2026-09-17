@@ -49,14 +49,40 @@ export function useNotifications(params: { page?: number; page_size?: number; un
           };
         }),
     enabled: session.isAuthenticated,
-    staleTime: 15_000,
-    refetchInterval: 20_000,
+    staleTime: 10_000, // Reduce stale time for quicker updates
+    refetchInterval: 15_000, // Refetch more frequently
     refetchOnWindowFocus: true,
+    refetchOnMount: 'always', // Always refetch on mount
   });
 
   const { mutate: markRead } = useMutation({
     mutationFn: (id: string) => apiClient.post(`/notifications/${id}/read`, {}),
+    onMutate: async (id) => {
+      // Cancel any outgoing refetches
+      await qc.cancelQueries({ queryKey: [uid, 'notifications'] });
+      
+      // Optimistically update the count
+      qc.setQueryData([uid, 'notifications', 'unread-count'], (old: number = 0) => Math.max(0, old - 1));
+      
+      // Optimistically update the notification list
+      qc.setQueryData([uid, 'notifications', 'list', params], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          notifications: old.notifications.map((n: Notification) => 
+            n.id === id ? { ...n, is_read: true } : n
+          ),
+          unread_count: Math.max(0, old.unread_count - 1),
+        };
+      });
+    },
     onSuccess: () => {
+      // Refetch to sync with server
+      qc.invalidateQueries({ queryKey: [uid, 'notifications'] });
+      qc.invalidateQueries({ queryKey: [uid, 'notifications', 'unread-count'] });
+    },
+    onError: () => {
+      // On error, refetch to revert optimistic update
       qc.invalidateQueries({ queryKey: [uid, 'notifications'] });
       qc.invalidateQueries({ queryKey: [uid, 'notifications', 'unread-count'] });
     },
@@ -64,7 +90,30 @@ export function useNotifications(params: { page?: number; page_size?: number; un
 
   const { mutate: markAllRead } = useMutation({
     mutationFn: () => apiClient.post('/notifications/read-all', {}),
+    onMutate: async () => {
+      // Cancel any outgoing refetches
+      await qc.cancelQueries({ queryKey: [uid, 'notifications'] });
+      
+      // Optimistically set count to 0
+      qc.setQueryData([uid, 'notifications', 'unread-count'], 0);
+      
+      // Optimistically mark all notifications as read
+      qc.setQueryData([uid, 'notifications', 'list', params], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          notifications: old.notifications.map((n: Notification) => ({ ...n, is_read: true })),
+          unread_count: 0,
+        };
+      });
+    },
     onSuccess: () => {
+      // Refetch to sync with server
+      qc.invalidateQueries({ queryKey: [uid, 'notifications'] });
+      qc.invalidateQueries({ queryKey: [uid, 'notifications', 'unread-count'] });
+    },
+    onError: () => {
+      // On error, refetch to revert optimistic update
       qc.invalidateQueries({ queryKey: [uid, 'notifications'] });
       qc.invalidateQueries({ queryKey: [uid, 'notifications', 'unread-count'] });
     },
@@ -100,9 +149,10 @@ export function useUnreadCount() {
         .then(r => (r.data?.data as any)?.unread_count ?? 0)
         .catch(() => 0), // never fail the UI on a count error
     enabled: session.isAuthenticated,
-    staleTime: 20_000,
+    staleTime: 15_000, // Reduce staleTime so it refetches sooner
     refetchInterval: 20_000,
     refetchOnWindowFocus: true,
+    refetchOnMount: 'always', // Always refetch on mount to get latest count
   });
 
   return (data as number) ?? 0;
