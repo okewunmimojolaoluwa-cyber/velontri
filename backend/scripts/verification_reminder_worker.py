@@ -19,6 +19,7 @@ load_dotenv(ROOT / '.env')
 from sqlalchemy import text as _text
 from shared.database import get_supabase_session_factory
 from shared.logging import get_logger
+from shared.email_notifications import send_notification_email
 
 logger = get_logger(__name__)
 
@@ -49,6 +50,7 @@ async def send_verification_reminders():
             """))).mappings().all()
             
             notification_count = 0
+            email_count = 0
             
             for user in unverified_users:
                 user_id = user['user_id']
@@ -60,17 +62,24 @@ async def send_verification_reminders():
                 if status == 'rejected':
                     title = "Resubmit Your Verification"
                     message = "Your previous verification was rejected. Please review the feedback and resubmit with the required documents."
+                    email_subject = "Velontri: Resubmit Your Verification"
+                    email_message = "Your previous verification was rejected. Please review the feedback and resubmit with the required documents to start selling on Velontri."
                 elif status == 'pending':
                     title = "Verification Under Review"
                     message = "Your verification is being reviewed. This usually takes 24-48 hours. We'll notify you once it's complete."
-                    # Don't send notification for pending - they already submitted
-                    continue
+                    email_subject = "Velontri: Verification Under Review"
+                    email_message = "Your seller verification is currently being reviewed by our team. This process typically takes 24-48 hours. We'll notify you as soon as it's complete!"
+                    # Send notification for pending too - users want updates
                 else:  # not_verified
                     title = "Complete Your Seller Verification"
                     message = "Get verified to build trust with buyers! Verified sellers get 3× more inquiries. It only takes 5 minutes."
+                    email_subject = "Velontri: Complete Your Seller Verification"
+                    email_message = "Get verified to build trust with buyers! Verified sellers get 3× more inquiries and sell faster. The verification process only takes 5 minutes. Complete it now to unlock your full selling potential!"
+                
+                action_url = "https://velontri.pxxl.click/dashboard/verification"
                 
                 try:
-                    # Create notification record
+                    # Create web notification in database
                     await session.execute(_text("""
                         INSERT INTO notifications (
                             user_id,
@@ -88,7 +97,7 @@ async def send_verification_reminders():
                             'verification_reminder',
                             :title,
                             :message,
-                            '/dashboard/verification',
+                            :action_url,
                             'verification',
                             FALSE,
                             NOW()
@@ -97,7 +106,26 @@ async def send_verification_reminders():
                         'user_id': user_id,
                         'title': title,
                         'message': message,
+                        'action_url': '/dashboard/verification',
                     })
+                    
+                    notification_count += 1
+                    
+                    # Send email notification
+                    email_success, email_error = await send_notification_email(
+                        to_email=email,
+                        subject=email_subject,
+                        title=title,
+                        message=email_message,
+                        action_url=action_url,
+                        notification_type="alert" if status == 'rejected' else "info"
+                    )
+                    
+                    if email_success:
+                        email_count += 1
+                        logger.info(f"Sent email reminder to {email} (status: {status})")
+                    else:
+                        logger.warning(f"Web notification sent but email failed for {email}: {email_error}")
                     
                     # Update last reminder timestamp
                     await session.execute(_text("""
@@ -107,14 +135,13 @@ async def send_verification_reminders():
                     """), {'user_id': user_id})
                     
                     await session.commit()
-                    notification_count += 1
                     logger.info(f"Sent verification reminder to {email} (status: {status})")
                     
                 except Exception as e:
                     logger.error(f"Failed to send reminder to {user_id}: {e}")
                     await session.rollback()
             
-            logger.info(f"Sent {notification_count} verification reminders")
+            logger.info(f"Sent {notification_count} web notifications and {email_count} email reminders")
             return notification_count
             
     except Exception as e:
