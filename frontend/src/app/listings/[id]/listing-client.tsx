@@ -122,13 +122,13 @@ function MessagePanel({ listingId, sellerId, sellerName, listingTitle, onClose }
  );
 }
 
-/* ── Full-screen image viewer with swipe, keyboard, counter ── */
-function ImageViewer({ images, startIdx, onClose }: { images: string[]; startIdx: number; onClose: () => void }) {
+/* ── Full-screen image/video viewer with swipe, keyboard, counter ── */
+function MediaViewer({ media, startIdx, onClose }: { media: Array<{ type: 'image' | 'video'; url: string }>; startIdx: number; onClose: () => void }) {
  const [idx, setIdx] = useState(startIdx);
  const touchStartX = useRef<number | null>(null);
 
- const prev = () => setIdx(i => (i - 1 + images.length) % images.length);
- const next = () => setIdx(i => (i + 1) % images.length);
+ const prev = () => setIdx(i => (i - 1 + media.length) % media.length);
+ const next = () => setIdx(i => (i + 1) % media.length);
 
  useEffect(() => {
  document.body.style.overflow = 'hidden';
@@ -155,32 +155,44 @@ function ImageViewer({ images, startIdx, onClose }: { images: string[]; startIdx
  >
       {/* Header */}
  <div className="flex items-center justify-between px-5 py-4 flex-shrink-0">
- <p className="text-white font-bold text-[15px] tabular-nums">{idx + 1} / {images.length}</p>
+ <p className="text-white font-bold text-[15px] tabular-nums">{idx + 1} / {media.length}</p>
  <button onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/25 transition-colors active:scale-95">
  <X className="h-5 w-5" />
  </button>
  </div>
 
-      {/* Main image */}
+      {/* Main media */}
  <div className="relative flex-1 flex items-center justify-center min-h-0 px-2">
+ {media[idx].type === 'image' ? (
  <img
  key={idx}
- src={images[idx]}
- alt={`Photo ${idx + 1} of ${images.length}`}
+ src={media[idx].url}
+ alt={`Photo ${idx + 1} of ${media.length}`}
  className="max-h-full max-w-full object-contain rounded-xl"
  style={{ maxHeight: 'calc(100dvh - 200px)' }}
  draggable={false}
  />
- {images.length > 1 && (
+ ) : (
+ <video
+ key={idx}
+ src={media[idx].url}
+ controls
+ autoPlay
+ playsInline
+ className="max-h-full max-w-full object-contain rounded-xl"
+ style={{ maxHeight: 'calc(100dvh - 200px)', maxWidth: '100%' }}
+ />
+ )}
+ {media.length > 1 && (
  <>
  <button onClick={e => { e.stopPropagation(); prev(); }}
  className="absolute left-2 sm:left-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/30 transition-colors active:scale-95 backdrop-blur-sm"
- aria-label="Previous image">
+ aria-label="Previous media">
  <CaretLeft className="h-6 w-6" />
  </button>
  <button onClick={e => { e.stopPropagation(); next(); }}
  className="absolute right-2 sm:right-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/30 transition-colors active:scale-95 backdrop-blur-sm"
- aria-label="Next image">
+ aria-label="Next media">
  <CaretRight className="h-6 w-6" />
  </button>
  </>
@@ -189,22 +201,31 @@ function ImageViewer({ images, startIdx, onClose }: { images: string[]; startIdx
 
       {/* Bottom: dots + thumbnails */}
  <div className="flex-shrink-0 pb-safe pb-6 pt-3 space-y-2.5">
- {images.length > 1 && images.length <= 10 && (
+ {media.length > 1 && media.length <= 10 && (
  <div className="flex items-center justify-center gap-1.5 px-4">
- {images.map((_, i) => (
+ {media.map((_, i) => (
  <button key={i} onClick={() => setIdx(i)}
  className={`rounded-full transition-all ${i === idx ? 'h-2 w-6 bg-white' : 'h-2 w-2 bg-white/40 hover:bg-white/70'}`}
- aria-label={`Go to image ${i + 1}`} />
+ aria-label={`Go to media ${i + 1}`} />
  ))}
  </div>
  )}
- {images.length > 1 && (
+ {media.length > 1 && (
  <div className="flex gap-2 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: 'none' }}>
- {images.map((img, i) => (
+ {media.map((item, i) => (
  <button key={i} onClick={() => setIdx(i)}
- className={`flex-shrink-0 h-14 w-14 rounded-lg overflow-hidden border-2 transition-all ${i === idx ? 'border-white scale-105 shadow-lg' : 'border-white/25 opacity-55 hover:opacity-80'}`}
- aria-label={`View image ${i + 1}`}>
- <img src={img} alt="" className="h-full w-full object-cover" />
+ className={`relative flex-shrink-0 h-14 w-14 rounded-lg overflow-hidden border-2 transition-all ${i === idx ? 'border-white scale-105 shadow-lg' : 'border-white/25 opacity-55 hover:opacity-80'}`}
+ aria-label={`View ${item.type} ${i + 1}`}>
+ {item.type === 'image' ? (
+ <img src={item.url} alt="" className="h-full w-full object-cover" />
+ ) : (
+ <>
+ <video src={item.url} className="h-full w-full object-cover" muted />
+ <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+ <PlayCircle className="h-5 w-5 text-white" weight="fill" />
+ </div>
+ </>
+ )}
  </button>
  ))}
  </div>
@@ -348,9 +369,9 @@ export default function ListingDetailPage() {
  <div className="min-h-screen bg-[#F8F9FA]">
  <Navbar />
 
-      {/* Full-screen image viewer */}
+      {/* Full-screen media viewer */}
  {viewerOpen && hasMedia && allMedia.length > 0 && (
- <ImageViewer images={allMedia.map(m => m.url)} startIdx={imgIdx} onClose={() => setViewerOpen(false)} />
+ <MediaViewer media={allMedia} startIdx={imgIdx} onClose={() => setViewerOpen(false)} />
  )}
 
       {/* Message panel */}
@@ -425,13 +446,14 @@ export default function ListingDetailPage() {
  <div className="relative h-full w-full">
  <video
  src={allMedia[imgIdx].url}
- className="h-full w-full object-cover"
+ className="h-full w-full object-contain bg-black"
  controls
  preload="metadata"
+ playsInline
  />
- <div className="absolute top-3 left-3 flex items-center gap-1 rounded-full bg-purple-600 px-2.5 py-1 text-[12px] font-bold text-white backdrop-blur-sm pointer-events-none">
+ <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-purple-600 px-2.5 py-1 text-[12px] font-bold text-white backdrop-blur-sm pointer-events-none tabular-nums">
  <PlayCircle className="h-3 w-3" weight="fill" />
- VIDEO
+ VIDEO {imgIdx + 1}/{allMedia.length}
  </div>
  </div>
  )}
