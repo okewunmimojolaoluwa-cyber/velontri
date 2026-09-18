@@ -584,49 +584,112 @@ async def keyword_search(
 @router.get(
     "/autocomplete",
     response_model=SuccessResponse,
-    summary="Autocomplete suggestions by prefix",
+    summary="Autocomplete suggestions by prefix - smart listings + sellers",
 )
 async def autocomplete(
     q: str = Query(..., description="Search prefix (min 2 chars)"),
     request: Request = None,
     svc: SearchService = Depends(_build_service),
 ) -> SuccessResponse:
+    """
+    Enhanced autocomplete that returns both listings and sellers.
+    Response format:
+    {
+      "listings": [{"id": "...", "title": "...", "type": "listing"}],
+      "sellers": [{"id": "...", "full_name": "...", "type": "seller"}],
+      "suggestions": ["..."]  // backward compatibility
+    }
+    """
     prefix = (q or "").strip()
     if len(prefix) < 2:
-        return SuccessResponse(data=AutocompleteResponse(suggestions=[]).model_dump())
+        return SuccessResponse(data={
+            "listings": [],
+            "sellers": [],
+            "suggestions": []
+        })
 
-    try:
-        suggestions = await svc.autocomplete(prefix)
-        if suggestions:
-            return SuccessResponse(data=AutocompleteResponse(suggestions=suggestions).model_dump())
-    except Exception:
-        pass
-
+    listings = []
+    sellers = []
     suggestions = []
+
     try:
         from sqlalchemy import text as _text
         async with request.app.state.session_factory() as db:
-            like = f"{prefix}%"
-            rows = (await db.execute(_text("""
-                SELECT DISTINCT title FROM listings
-                WHERE title ILIKE :like AND status = 'active'
-                ORDER BY title ASC LIMIT 8
-            """), {"like": like})).fetchall()
-            suggestions = [r[0] for r in rows if r[0]]
+            like = f"%{prefix}%"
+            like_start = f"{prefix}%"
 
-            if len(suggestions) < 8:
+            # Search listings by title (prioritize starts-with, then contains)
+            listing_rows = (await db.execute(_text("""
+                SELECT DISTINCT id, title, listing_type, category, image_url, city, price, currency
+                FROM listings
+                WHERE (title ILIKE :like_start OR title ILIKE :like) 
+                  AND status = 'active'
+                ORDER BY 
+                  CASE WHEN title ILIKE :like_start THEN 0 ELSE 1 END,
+                  title ASC
+                LIMIT 6
+            """), {"like": like, "like_start": like_start})).mappings().all()
+
+            for row in listing_rows:
+                if row["title"]:
+                    listings.append({
+                        "id": str(row["id"]),
+                        "title": row["title"],
+                        "listing_type": row["listing_type"],
+                        "category": row["category"],
+                        "image_url": row["image_url"],
+                        "city": row["city"],
+                        "price": float(row["price"]) if row["price"] else 0,
+                        "currency": row["currency"] or "NGN",
+                        "type": "listing"
+                    })
+                    suggestions.append(row["title"])
+
+            # Search sellers by name (prioritize starts-with, then contains)
+            seller_rows = (await db.execute(_text("""
+                SELECT DISTINCT id, full_name, profile_photo_url, city, seller_verification_status
+                FROM users
+                WHERE (full_name ILIKE :like_start OR full_name ILIKE :like)
+                  AND is_active = true
+                ORDER BY 
+                  CASE WHEN full_name ILIKE :like_start THEN 0 ELSE 1 END,
+                  full_name ASC
+                LIMIT 4
+            """), {"like": like, "like_start": like_start})).mappings().all()
+
+            for row in seller_rows:
+                if row["full_name"]:
+                    sellers.append({
+                        "id": str(row["id"]),
+                        "full_name": row["full_name"],
+                        "profile_photo_url": row["profile_photo_url"],
+                        "city": row["city"],
+                        "seller_verification_status": row["seller_verification_status"],
+                        "type": "seller"
+                    })
+                    # Add seller name to suggestions with prefix
+                    suggestions.append(f"Seller: {row['full_name']}")
+
+            # If we still have room, add categories
+            if len(listings) + len(sellers) < 8:
                 cat_rows = (await db.execute(_text("""
                     SELECT DISTINCT category FROM listings
                     WHERE category ILIKE :like AND status = 'active'
-                    ORDER BY category ASC LIMIT 4
+                    ORDER BY category ASC LIMIT 3
                 """), {"like": like})).fetchall()
                 for r in cat_rows:
                     if r[0] and r[0] not in suggestions:
                         suggestions.append(r[0])
-    except Exception:
-        pass
 
-    return SuccessResponse(data=AutocompleteResponse(suggestions=suggestions[:8]).model_dump())
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error("autocomplete_error: %s", exc)
+
+    return SuccessResponse(data={
+        "listings": listings[:6],
+        "sellers": sellers[:4],
+        "suggestions": suggestions[:10]  # backward compatibility
+    })
 
 
 @router.post(

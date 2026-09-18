@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { MagnifyingGlass, CaretDown, CaretRight, MapPin, Shield, SealCheck, Lightning, TrendUp, Sparkle, Star, Quotes, List, X, ShoppingBag, Car, House, DeviceMobile, TShirt, Briefcase, Wrench, Timer } from '@phosphor-icons/react';
+import { MagnifyingGlass, CaretDown, CaretRight, MapPin, Shield, SealCheck, Lightning, TrendUp, Sparkle, Star, Quotes, List, X, ShoppingBag, Car, House, DeviceMobile, TShirt, Briefcase, Wrench, Timer, Package } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { listingsApi, listingKeys } from '@/lib/api/endpoints/listings';
 import { ROUTES } from '@/config/routes';
@@ -175,6 +175,8 @@ export default function HomePage() {
  const [locOpen, setLocOpen] = useState(false);
  const [acOpen, setAcOpen] = useState(false);
  const [acSugg, setAcSugg] = useState<string[]>([]);
+ const [acListings, setAcListings] = useState<any[]>([]);
+ const [acSellers, setAcSellers] = useState<any[]>([]);
  const acTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
  const searchWrapRef = useRef<HTMLDivElement>(null);
 
@@ -270,12 +272,24 @@ export default function HomePage() {
  useEffect(() => {
  if (acTimer.current) clearTimeout(acTimer.current);
  const trimmed = query.trim();
- if (trimmed.length < 2) { setAcSugg([]); return; }
+ if (trimmed.length < 2) { 
+   setAcSugg([]); 
+   setAcListings([]);
+   setAcSellers([]);
+   return; 
+ }
  acTimer.current = setTimeout(async () => {
  try {
  const res = await apiClient.get('/search/autocomplete', { params: { q: trimmed } });
- setAcSugg((res as any)?.data?.data?.suggestions ?? []);
- } catch { setAcSugg([]); }
+ const data = (res as any)?.data?.data;
+ setAcSugg(data?.suggestions ?? []);
+ setAcListings(data?.listings ?? []);
+ setAcSellers(data?.sellers ?? []);
+ } catch { 
+   setAcSugg([]); 
+   setAcListings([]);
+   setAcSellers([]);
+ }
  }, 280);
  return () => { if (acTimer.current) clearTimeout(acTimer.current); };
  }, [query]);
@@ -490,30 +504,155 @@ export default function HomePage() {
  )}
 
                 {/* Autocomplete dropdown */}
- {acOpen && acSugg.length > 0 && (
+ {acOpen && (acListings.length > 0 || acSellers.length > 0 || acSugg.length > 0) && (
  <div className="absolute left-0 right-0 top-full mt-1 z-50 overflow-hidden rounded-2xl
- border border-slate-200 bg-white shadow-xl">
- {acSugg.slice(0, 8).map(s => (
- <button key={s}
- onMouseDown={e => e.preventDefault()} // prevent input blur before click
- onClick={() => {
- setQuery(s);
- setAcOpen(false);
- const loc = location ? `&city=${encodeURIComponent(location)}` : '';
- window.location.href = `/search?q=${encodeURIComponent(s)}${loc}`;
- }}
- className="flex w-full items-center gap-3 px-4 py-3 text-left text-[13px]
- text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors">
- <MagnifyingGlass className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
- <span dangerouslySetInnerHTML={{
- __html: s.replace(
- new RegExp(`(${query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
- '<strong>$1</strong>'
- )
- }} />
- </button>
- ))}
- </div>
+ border border-slate-200 bg-white shadow-xl max-h-[480px] overflow-y-auto">
+                  
+                  {/* Listings Section */}
+                  {acListings.length > 0 && (
+                    <div className="border-b border-slate-100">
+                      <div className="px-3 py-2 bg-slate-50">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                          <ShoppingBag className="h-3 w-3" /> Listings
+                        </p>
+                      </div>
+                      {acListings.map((listing) => (
+                        <button key={listing.id}
+                          onMouseDown={e => e.preventDefault()}
+                          onClick={() => {
+                            setAcOpen(false);
+                            window.location.href = `/listings/${listing.id}`;
+                          }}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left
+                          hover:bg-indigo-50 transition-colors group">
+                          {/* Listing image */}
+                          {listing.image_url ? (
+                            <img src={listing.image_url} alt={listing.title}
+                              className="h-10 w-10 rounded-lg object-cover flex-shrink-0 border border-slate-200" />
+                          ) : (
+                            <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                              <Package className="h-5 w-5 text-slate-400" />
+                            </div>
+                          )}
+                          {/* Listing details */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[13px] font-semibold text-slate-900 truncate group-hover:text-indigo-600">
+                              <span dangerouslySetInnerHTML={{
+                                __html: listing.title.replace(
+                                  new RegExp(`(${query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
+                                  '<strong class="text-indigo-600">$1</strong>'
+                                )
+                              }} />
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[11px] font-bold text-indigo-600">
+                                {new Intl.NumberFormat('en-NG', {
+                                  style: 'currency',
+                                  currency: listing.currency || 'NGN',
+                                  maximumFractionDigits: 0
+                                }).format(listing.price)}
+                              </span>
+                              {listing.city && (
+                                <>
+                                  <span className="text-slate-300">•</span>
+                                  <span className="text-[10px] text-slate-400">{listing.city}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          {/* Category badge */}
+                          {listing.category && (
+                            <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide px-2 py-1 rounded-md bg-slate-50 flex-shrink-0">
+                              {listing.category}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Sellers Section */}
+                  {acSellers.length > 0 && (
+                    <div className="border-b border-slate-100">
+                      <div className="px-3 py-2 bg-slate-50">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                          <Star className="h-3 w-3" /> Sellers
+                        </p>
+                      </div>
+                      {acSellers.map((seller) => (
+                        <button key={seller.id}
+                          onMouseDown={e => e.preventDefault()}
+                          onClick={() => {
+                            setAcOpen(false);
+                            window.location.href = `/users/${seller.id}`;
+                          }}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left
+                          hover:bg-violet-50 transition-colors group">
+                          {/* Seller avatar */}
+                          {seller.profile_photo_url ? (
+                            <img src={seller.profile_photo_url} alt={seller.full_name}
+                              className="h-10 w-10 rounded-full object-cover flex-shrink-0 border-2 border-slate-200" />
+                          ) : (
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 flex items-center justify-center flex-shrink-0">
+                              <span className="text-white text-sm font-black">
+                                {seller.full_name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                          {/* Seller details */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[13px] font-semibold text-slate-900 truncate group-hover:text-violet-600 flex items-center gap-1.5">
+                              <span dangerouslySetInnerHTML={{
+                                __html: seller.full_name.replace(
+                                  new RegExp(`(${query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
+                                  '<strong class="text-violet-600">$1</strong>'
+                                )
+                              }} />
+                              {(seller.seller_verification_status === 'verified' || seller.seller_verification_status === 'approved') && (
+                                <SealCheck className="h-3 w-3 text-green-500" weight="fill" />
+                              )}
+                            </p>
+                            {seller.city && (
+                              <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                <MapPin className="h-3 w-3" /> {seller.city}
+                              </p>
+                            )}
+                          </div>
+                          {/* Seller badge */}
+                          <span className="text-[9px] font-semibold text-violet-600 uppercase tracking-wide px-2 py-1 rounded-md bg-violet-50 flex-shrink-0">
+                            Seller
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Generic Suggestions (backward compatibility) */}
+                  {acSugg.length > 0 && acListings.length === 0 && acSellers.length === 0 && (
+                    <div>
+                      {acSugg.slice(0, 8).map(s => (
+                        <button key={s}
+                          onMouseDown={e => e.preventDefault()}
+                          onClick={() => {
+                            setQuery(s.replace(/^Seller:\s*/, ''));
+                            setAcOpen(false);
+                            const loc = location ? `&city=${encodeURIComponent(location)}` : '';
+                            window.location.href = `/search?q=${encodeURIComponent(s.replace(/^Seller:\s*/, ''))}${loc}`;
+                          }}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left text-[13px]
+                          text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors">
+                          <MagnifyingGlass className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                          <span dangerouslySetInnerHTML={{
+                            __html: s.replace(
+                              new RegExp(`(${query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
+                              '<strong>$1</strong>'
+                            )
+                          }} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
  )}
  </div>
 
