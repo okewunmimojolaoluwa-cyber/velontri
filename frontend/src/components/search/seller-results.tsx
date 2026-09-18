@@ -37,28 +37,31 @@ export function SellerResults({ sellers, isLoading, query }: SellerResultsProps)
   const { session } = useAuth();
 
   const getVerificationBadge = (status?: string) => {
-    switch (status) {
-      case 'verified':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 
-            border border-green-200 text-[10px] font-bold text-green-700 uppercase
-            dark:bg-green-950/40 dark:border-green-800 dark:text-green-400">
-            <CheckCircle weight="fill" className="h-3 w-3" />
-            Verified
-          </span>
-        );
-      case 'pending':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 
-            border border-amber-200 text-[10px] font-bold text-amber-700 uppercase
-            dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-400">
-            <Clock weight="fill" className="h-3 w-3" />
-            Pending
-          </span>
-        );
-      default:
-        return null;
+    // Only show badge for verified or pending - explicitly check
+    if (status === 'verified' || status === 'approved') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 
+          border border-green-200 text-[10px] font-bold text-green-700 uppercase
+          dark:bg-green-950/40 dark:border-green-800 dark:text-green-400">
+          <CheckCircle weight="fill" className="h-3 w-3" />
+          Verified
+        </span>
+      );
     }
+    
+    if (status === 'pending') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 
+          border border-amber-200 text-[10px] font-bold text-amber-700 uppercase
+          dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-400">
+          <Clock weight="fill" className="h-3 w-3" />
+          Pending
+        </span>
+      );
+    }
+    
+    // Don't show anything for not_verified, rejected, null, undefined, etc.
+    return null;
   };
 
   // Loading skeleton
@@ -139,12 +142,6 @@ export function SellerResults({ sellers, isLoading, query }: SellerResultsProps)
                 flex items-center justify-center border-2 border-slate-100 group-hover:border-indigo-200 
                 transition-colors dark:border-[#2a2a2a] dark:group-hover:border-indigo-800">
                 <span className="text-white text-xl font-black">{initials(seller.full_name)}</span>
-              </div>
-            )}
-            {seller.is_phone_verified && (
-              <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1 
-                border-2 border-white dark:border-[#1c1c1c]">
-                <CheckCircle className="h-3 w-3 text-white" weight="fill" />
               </div>
             )}
           </Link>
