@@ -76,8 +76,9 @@ export default function UserMessagesPage() {
     },
     enabled: session.isAuthenticated,
     refetchInterval: 8_000,
-    staleTime: 3_000,
+    staleTime: 7_000,
     refetchOnWindowFocus: true,
+    notifyOnChangeProps: ['data', 'error', 'isLoading'], // Only re-render when these change
   });
 
   /* Messages for active thread — polls every 4s */
@@ -93,7 +94,8 @@ export default function UserMessagesPage() {
     },
     enabled: !!active,
     refetchInterval: 4_000,
-    staleTime: 2_000,
+    staleTime: 3_000,
+    notifyOnChangeProps: ['data', 'error', 'isLoading'], // Only re-render when these change
   });
 
   /* Send message */

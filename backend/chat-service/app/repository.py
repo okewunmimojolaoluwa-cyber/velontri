@@ -11,23 +11,14 @@ async def get_or_create_thread(session: AsyncSession, participant_a: uuid.UUID, 
     # Ensure consistent ordering of participants (so A→B and B→A produce the same thread)
     a, b = (participant_a, participant_b) if str(participant_a) < str(participant_b) else (participant_b, participant_a)
     a_str, b_str = str(a), str(b)
-    lid_str = str(listing_id) if listing_id else None
 
-    # Use raw SQL for UUID string comparison (SQLite stores UUIDs as strings)
-    if listing_id is not None:
-        result = await session.execute(
-            text("SELECT id, participant_a, participant_b, listing_id, created_at FROM threads "
-                 "WHERE CAST(participant_a AS TEXT) = :a AND CAST(participant_b AS TEXT) = :b "
-                 "AND CAST(listing_id AS TEXT) = :lid LIMIT 1"),
-            {"a": a_str, "b": b_str, "lid": lid_str},
-        )
-    else:
-        result = await session.execute(
-            text("SELECT id, participant_a, participant_b, listing_id, created_at FROM threads "
-                 "WHERE CAST(participant_a AS TEXT) = :a AND CAST(participant_b AS TEXT) = :b "
-                 "AND listing_id IS NULL LIMIT 1"),
-            {"a": a_str, "b": b_str},
-        )
+    # Find existing thread between these two participants (IGNORE listing_id)
+    result = await session.execute(
+        text("SELECT id, participant_a, participant_b, listing_id, created_at FROM threads "
+             "WHERE CAST(participant_a AS TEXT) = :a AND CAST(participant_b AS TEXT) = :b "
+             "LIMIT 1"),
+        {"a": a_str, "b": b_str},
+    )
     row = result.fetchone()
     if row:
         # Reconstruct a Thread-like object from the raw row
@@ -39,7 +30,7 @@ async def get_or_create_thread(session: AsyncSession, participant_a: uuid.UUID, 
         thread.created_at = row[4]
         return thread, False
 
-    # Create a new thread
+    # Create a new thread (store listing_id for context but don't enforce uniqueness)
     thread = Thread(participant_a=a, participant_b=b, listing_id=listing_id)
     session.add(thread)
     await session.flush()

@@ -23,7 +23,7 @@ class Thread(Base):
     listing_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utc_now)
     __table_args__ = (
-        UniqueConstraint("participant_a", "participant_b", "listing_id", name="uq_thread_participants"),
+        UniqueConstraint("participant_a", "participant_b", name="uq_thread_participants"),
         Index("ix_threads_participant_a", "participant_a"),
         Index("ix_threads_participant_b", "participant_b"),
     )
