@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, ChatCircle, Heart, ShoppingBag, Storefront, Package, ArrowRight, Star, Sparkle, CaretRight, ChartBar, Gear, CreditCard, ShareNetwork, Copy, Check, WhatsappLogo, TwitterLogo, TelegramLogo, FacebookLogo, LinkedinLogo } from '@phosphor-icons/react';
+import { Plus, ChatCircle, Heart, ShoppingBag, Storefront, Package, ArrowRight, Star, Sparkle, CaretRight, ChartBar, Gear, CreditCard, ShareNetwork, Copy, Check, WhatsappLogo, TwitterLogo, TelegramLogo, FacebookLogo, LinkedinLogo, SnapchatLogo, InstagramLogo, TwitchLogo, TiktokLogo } from '@phosphor-icons/react';
 import {
  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
@@ -285,10 +285,34 @@ export default function DashboardPage() {
  url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== 'undefined' ? `${window.location.origin}?ref=${uid}` : '')}`,
  },
  {
+ name: 'Instagram',
+ icon: InstagramLogo,
+ color: '#E4405F',
+ url: `https://www.instagram.com/`,
+ },
+ {
  name: 'Telegram',
  icon: TelegramLogo,
  color: '#0088cc',
  url: `https://t.me/share/url?url=${encodeURIComponent(typeof window !== 'undefined' ? `${window.location.origin}?ref=${uid}` : '')}&text=${encodeURIComponent('Check out Velontri - Africa\'s marketplace!')}`,
+ },
+ {
+ name: 'Snapchat',
+ icon: SnapchatLogo,
+ color: '#FFFC00',
+ url: `https://www.snapchat.com/scan?attachmentUrl=${encodeURIComponent(typeof window !== 'undefined' ? `${window.location.origin}?ref=${uid}` : '')}`,
+ },
+ {
+ name: 'TikTok',
+ icon: TiktokLogo,
+ color: '#000000',
+ url: `https://www.tiktok.com/`,
+ },
+ {
+ name: 'Twitch',
+ icon: TwitchLogo,
+ color: '#9146FF',
+ url: `https://www.twitch.tv/`,
  },
  {
  name: 'LinkedIn',
