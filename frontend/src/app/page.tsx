@@ -444,7 +444,7 @@ export default function HomePage() {
  }
  if (e.key === 'Escape') setAcOpen(false);
  }}
- placeholder="Search cars, phones, properties, jobs…"
+ placeholder="Search items, sellers, categories…"
  className="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-[14px] text-slate-800
  placeholder-slate-400 outline-none"
  />
@@ -461,6 +461,12 @@ export default function HomePage() {
  <span className="hidden sm:inline">Search</span>
  </Link>
  </div>
+                
+                {/* Search hint */}
+ <p className="mt-2 text-[11px] text-slate-400 flex items-center gap-1.5">
+ <MagnifyingGlass size={11} className="text-indigo-400 flex-shrink-0" />
+ <span>Search by product name, category, or <strong className="text-indigo-500 font-semibold">seller name</strong></span>
+ </p>
 
                 {/* Location dropdown — rendered outside overflow-hidden bar */}
  {locOpen && (
