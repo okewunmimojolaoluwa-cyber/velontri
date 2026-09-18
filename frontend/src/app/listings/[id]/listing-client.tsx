@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, MapPin, SealCheck, ChatCircle, CaretRight, Heart, ShareNetwork, Star, CaretLeft, X, PaperPlaneRight, CheckCircle, WarningCircle, Warning } from '@phosphor-icons/react';
+import { ArrowLeft, MapPin, SealCheck, ChatCircle, CaretRight, Heart, ShareNetwork, Star, CaretLeft, X, PaperPlaneRight, CheckCircle, WarningCircle, Warning, PlayCircle } from '@phosphor-icons/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useListing } from '@/features/listings/hooks/use-listings';
 import { listingKeys } from '@/lib/api/endpoints/listings';
@@ -303,12 +303,21 @@ export default function ListingDetailPage() {
  onError: (e: any) => { setReviewErr(e?.message || 'Could not submit review. You may have already reviewed this listing.'); },
  });
 
-  // Images — full array from backend
- const images: string[] = ((listing as any)?.media_urls?.length
+  // Images and videos — combine for gallery display
+ const imageUrls: string[] = ((listing as any)?.media_urls?.length
  ? (listing as any).media_urls
  : listing?.image_url ? [listing.image_url] : []
  ).filter(Boolean);
- const hasImages = images.length > 0;
+ 
+ const videoUrls: string[] = ((listing as any)?.video_urls || []).filter(Boolean);
+ 
+ // Combined media for gallery (images first, then videos)
+ const allMedia: Array<{ type: 'image' | 'video'; url: string }> = [
+ ...imageUrls.map(url => ({ type: 'image' as const, url })),
+ ...videoUrls.map(url => ({ type: 'video' as const, url }))
+ ];
+ 
+ const hasMedia = allMedia.length > 0;
 
  const whatsapp: string = (listing as any)?.whatsapp_number || (listing as any)?.contact_phone || sellerData?.data?.phone || '';
 
@@ -319,8 +328,8 @@ export default function ListingDetailPage() {
  return `https://wa.me/${clean}?text=${msg}`;
  }
 
- function prevImg() { setImgIdx(i => (i - 1 + images.length) % images.length); }
- function nextImg() { setImgIdx(i => (i + 1) % images.length); }
+ function prevImg() { setImgIdx(i => (i - 1 + allMedia.length) % allMedia.length); }
+ function nextImg() { setImgIdx(i => (i + 1) % allMedia.length); }
 
  function handleMessage() {
  if (!session.isAuthenticated) { router.push(`${ROUTES.login}?redirect=/listings/${id}`); return; }
@@ -340,8 +349,8 @@ export default function ListingDetailPage() {
  <Navbar />
 
       {/* Full-screen image viewer */}
- {viewerOpen && hasImages && (
- <ImageViewer images={images} startIdx={imgIdx} onClose={() => setViewerOpen(false)} />
+ {viewerOpen && hasMedia && allMedia.length > 0 && (
+ <ImageViewer images={allMedia.map(m => m.url)} startIdx={imgIdx} onClose={() => setViewerOpen(false)} />
  )}
 
       {/* Message panel */}
@@ -394,7 +403,7 @@ export default function ListingDetailPage() {
  <div
  className="relative overflow-hidden rounded-2xl bg-slate-100 border border-slate-200 cursor-pointer"
  style={{ aspectRatio: '4/3', touchAction: 'pan-y' }}
- onClick={() => hasImages && setViewerOpen(true)}
+ onClick={() => hasMedia && setViewerOpen(true)}
  onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
  onTouchEnd={e => {
  if (touchStartX.current === null) return;
@@ -403,24 +412,39 @@ export default function ListingDetailPage() {
  touchStartX.current = null;
  }}
  >
- {hasImages ? (
+ {hasMedia ? (
  <>
+ {allMedia[imgIdx].type === 'image' ? (
  <img
- src={images[imgIdx]}
+ src={allMedia[imgIdx].url}
  alt={listing.title}
  className="h-full w-full object-cover"
  draggable={false}
  />
+ ) : (
+ <div className="relative h-full w-full">
+ <video
+ src={allMedia[imgIdx].url}
+ className="h-full w-full object-cover"
+ controls
+ preload="metadata"
+ />
+ <div className="absolute top-3 left-3 flex items-center gap-1 rounded-full bg-purple-600 px-2.5 py-1 text-[12px] font-bold text-white backdrop-blur-sm pointer-events-none">
+ <PlayCircle className="h-3 w-3" weight="fill" />
+ VIDEO
+ </div>
+ </div>
+ )}
 
-                      {/* Counter badge — top left */}
- {images.length > 1 && (
+                      {/* Counter badge — top left (only for images, videos have their own badge) */}
+ {allMedia.length > 1 && allMedia[imgIdx].type === 'image' && (
  <div className="absolute top-3 left-3 flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[12px] font-bold text-white backdrop-blur-sm tabular-nums pointer-events-none">
- {imgIdx + 1} / {images.length}
+ {imgIdx + 1} / {allMedia.length}
  </div>
  )}
 
                       {/* Prev / Next arrows */}
- {images.length > 1 && (
+ {allMedia.length > 1 && (
  <>
  <button
  onClick={e => { e.stopPropagation(); prevImg(); }}
@@ -460,25 +484,34 @@ export default function ListingDetailPage() {
  )}
  </div>
 
-                {/* Thumbnail strip — shown when 2+ images */}
- {images.length > 1 && (
+                {/* Thumbnail strip — shown when 2+ media items */}
+ {allMedia.length > 1 && (
  <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
- {images.map((img, i) => (
+ {allMedia.map((media, i) => (
  <button
  key={i}
  onClick={() => setImgIdx(i)}
- className={`flex-shrink-0 h-16 w-16 rounded-xl overflow-hidden border-2 transition-all ${i === imgIdx ? 'border-indigo-500 scale-105 shadow-sm' : 'border-slate-200 opacity-70 hover:opacity-100'}`}
- aria-label={`View image ${i + 1}`}
+ className={`relative flex-shrink-0 h-16 w-16 rounded-xl overflow-hidden border-2 transition-all ${i === imgIdx ? 'border-indigo-500 scale-105 shadow-sm' : 'border-slate-200 opacity-70 hover:opacity-100'}`}
+ aria-label={`View ${media.type} ${i + 1}`}
  >
- <img src={img} alt="" className="h-full w-full object-cover" />
+ {media.type === 'image' ? (
+ <img src={media.url} alt="" className="h-full w-full object-cover" />
+ ) : (
+ <>
+ <video src={media.url} className="h-full w-full object-cover" muted />
+ <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+ <PlayCircle className="h-5 w-5 text-white" weight="fill" />
+ </div>
+ </>
+ )}
  </button>
  ))}
  </div>
  )}
 
                 {/* "Tap to view full size" hint — mobile */}
- {hasImages && (
- <p className="text-center text-[11px] text-slate-400 sm:hidden">Tap image to view full size · Swipe to browse</p>
+ {hasMedia && (
+ <p className="text-center text-[11px] text-slate-400 sm:hidden">Tap to view full size · Swipe to browse</p>
  )}
  </div>
 

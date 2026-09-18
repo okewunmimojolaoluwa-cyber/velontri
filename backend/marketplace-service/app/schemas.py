@@ -141,6 +141,7 @@ class ListingResponse(BaseModel):
     review_count: int
     image_url: str | None = None
     media_urls: list[str] = []          # all images in sort order
+    video_urls: list[str] = []          # all videos in sort order
     whatsapp_number: str | None = None
     contact_phone: str | None = None
     is_negotiable: bool = False

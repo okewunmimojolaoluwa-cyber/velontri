@@ -145,10 +145,11 @@ export default function UserMessagesPage() {
     }
   }, [messages.length, active]);
 
-  // Clear send error when text changes
-  useEffect(() => {
+  // Clear send error only when user starts typing after an error
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setText(e.target.value);
     if (sendErr) setSendErr('');
-  }, [text]); // eslint-disable-line react-hooks/exhaustive-deps
+  };
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -252,7 +253,7 @@ export default function UserMessagesPage() {
           <textarea
             ref={textareaRef}
             value={text}
-            onChange={e => setText(e.target.value)}
+            onChange={handleTextChange}
             onKeyDown={handleKeyDown}
             placeholder="Type a message (Enter to send, Shift+Enter for new line)"
             rows={1}

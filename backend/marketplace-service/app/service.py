@@ -170,12 +170,14 @@ QUOTA_MAP = {
 def _to_listing_response(
     listing: Listing,
     media_urls: list[str] | None = None,
+    video_urls: list[str] | None = None,
     seller_name: str | None = None,
     seller_verified: bool = False,
 ) -> ListingResponse:
     urls = media_urls if media_urls is not None else (
         [listing.image_url] if listing.image_url else []
     )
+    vids = video_urls if video_urls is not None else []
     return ListingResponse(
         id=listing.id,
         seller_id=listing.seller_id,
@@ -196,6 +198,7 @@ def _to_listing_response(
         review_count=listing.review_count,
         image_url=listing.image_url,
         media_urls=urls,
+        video_urls=vids,
         whatsapp_number=getattr(listing, 'whatsapp_number', None),
         contact_phone=getattr(listing, 'contact_phone', None),
         is_negotiable=getattr(listing, 'is_negotiable', False),
@@ -443,7 +446,7 @@ class MarketplaceService:
         except Exception as _sel_err:
             logger.warning("seller_info_fetch_failed", error=str(_sel_err))
 
-        response = _to_listing_response(listing, media_urls, seller_name=seller_name, seller_verified=seller_verified)
+        response = _to_listing_response(listing, media_urls, video_urls, seller_name=seller_name, seller_verified=seller_verified)
 
         # Only cache if we have more than 1 image — a single-image response might
         # represent an in-progress listing where extra images are still being committed.
