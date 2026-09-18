@@ -149,6 +149,12 @@ export default function UserNotificationsPage() {
  {n.action_url && (
  <Link
  href={n.action_url}
+ onClick={() => {
+   // Mark as read when clicking View button
+   if (!n.is_read) {
+     markRead(n.id);
+   }
+ }}
  className="inline-flex items-center gap-1 h-7 rounded-lg bg-indigo-50 border border-indigo-200
  px-2.5 text-[11px] font-semibold text-indigo-600 no-underline hover:bg-indigo-100 transition-colors"
  >
@@ -158,6 +164,12 @@ export default function UserNotificationsPage() {
  {isRejection && (
  <Link
  href="/dashboard/listings"
+ onClick={() => {
+   // Mark as read when clicking Edit & Resubmit button
+   if (!n.is_read) {
+     markRead(n.id);
+   }
+ }}
  className="inline-flex items-center gap-1 h-7 rounded-lg bg-slate-50 border border-slate-200
  px-2.5 text-[11px] font-semibold text-slate-600 no-underline hover:bg-slate-100 transition-colors"
  >
