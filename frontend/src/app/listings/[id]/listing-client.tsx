@@ -413,10 +413,10 @@ export default function ListingDetailPage() {
  )}
 
  {listing && (
- <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
+ <div className="grid gap-6 lg:gap-8 lg:grid-cols-[1fr_380px]">
 
             {/* LEFT */}
- <div className="space-y-6">
+ <div className="space-y-6 min-w-0">{/* min-w-0 prevents flex child overflow */}
 
               {/* ── Image gallery ─────────────────────────────────── */}
  <div className="space-y-2">
@@ -544,11 +544,11 @@ export default function ListingDetailPage() {
  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-500">{listing.category}</span>
  {listing.condition && <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-500 capitalize">{listing.condition}</span>}
  </div>
- <h1 className="text-[1.6rem] font-black text-slate-900 leading-tight tracking-tight mb-3">{listing.title}</h1>
+ <h1 className="text-[1.4rem] sm:text-[1.6rem] font-black text-slate-900 leading-tight tracking-tight mb-3 break-words">{listing.title}</h1>
  {(listing.city || listing.country) && (
  <div className="flex items-center gap-1.5 text-[13px] text-slate-500">
  <MapPin className="h-4 w-4 flex-shrink-0 text-slate-400" />
- {[listing.city, listing.country].filter(Boolean).join(', ')}
+ <span className="truncate">{[listing.city, listing.country].filter(Boolean).join(', ')}</span>
  </div>
  )}
  </div>
@@ -667,12 +667,12 @@ export default function ListingDetailPage() {
               {/* ── Price card ────────────────────────────── */}
  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
  <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 mb-1">Listed price</p>
- <div className="flex items-center gap-3 mb-5">
- <p className="text-[2.25rem] font-black text-slate-900 tracking-tight leading-none">
+ <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-5">
+ <p className="text-[1.75rem] sm:text-[2.25rem] font-black text-slate-900 tracking-tight leading-none break-all">
  {fmt(listing.price ?? 0, listing.currency ?? 'NGN')}
  </p>
  {(listing as any).is_negotiable && (
- <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-[11px] font-bold text-emerald-700">
+ <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-[11px] font-bold text-emerald-700 whitespace-nowrap">
  Negotiable
  </span>
  )}
