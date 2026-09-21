@@ -403,7 +403,7 @@ export default function CreateListingPage() {
  listing_type: form.listing_type as CreateListingRequest['listing_type'],
  city: form.city || undefined,
  state: form.state || undefined,
- country: 'NG',
+ country: form.country || 'NG',
  condition: form.condition,
  whatsapp_number: normalizedPhone || undefined,
  contact_phone: normalizedPhone || undefined,

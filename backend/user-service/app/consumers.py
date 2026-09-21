@@ -46,7 +46,7 @@ async def handle_user_registered(
             full_name=payload.get("full_name", ""),
             email=payload.get("email", ""),
             phone=payload.get("phone", ""),
-            country_code=payload.get("country_code", "NG"),
+            country_code=payload.get("country_code", ""),
         )
 
     logger.info("profile_created", user_id=user_id_str)

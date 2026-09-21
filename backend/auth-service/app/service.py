@@ -564,18 +564,20 @@ class AuthService:
             import secrets as _secrets
             placeholder_phone = f'+00000{_secrets.token_hex(6)}'
             password_hash = hash_password(_secrets.token_urlsafe(32))
+            # OAuth users can update their country later in profile settings
+            # Default to empty string instead of hardcoding Nigeria
             user = await repo.create_user(
                 self.session, email=info.email, phone=placeholder_phone,
                 password_hash=password_hash,
                 full_name=info.full_name or info.email.split('@')[0],
-                country_code='NG', is_active=True,
+                country_code='', is_active=True,
             )
             await publish_event(
                 self.channel, routing_key='user.registered',
                 payload={
                     'user_id': str(user.id), 'email': info.email,
                     'full_name': user.full_name, 'phone': placeholder_phone,
-                    'country_code': 'NG', 'oauth_provider': provider,
+                    'country_code': '', 'oauth_provider': provider,
                 },
                 correlation_id=str(user.id),
             )
