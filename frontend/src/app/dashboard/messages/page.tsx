@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChatCircle, PaperPlaneRight, MagnifyingGlass, Tray, ArrowClockwise, ArrowLeft, CircleNotch, WarningCircle } from '@phosphor-icons/react';
 import { apiClient } from '@/lib/api/client';
@@ -77,8 +77,8 @@ export default function UserMessagesPage() {
     enabled: session.isAuthenticated,
     refetchInterval: 8_000,
     staleTime: 7_000,
-    refetchOnWindowFocus: true,
-    notifyOnChangeProps: ['data', 'error', 'isLoading'], // Only re-render when these change
+    refetchOnWindowFocus: false, // Prevent re-render on window focus
+    refetchOnMount: false, // Prevent re-render on mount
   });
 
   /* Messages for active thread — polls every 4s */
@@ -95,7 +95,8 @@ export default function UserMessagesPage() {
     enabled: !!active,
     refetchInterval: 4_000,
     staleTime: 3_000,
-    notifyOnChangeProps: ['data', 'error', 'isLoading'], // Only re-render when these change
+    refetchOnWindowFocus: false, // Prevent re-render on window focus
+    refetchOnMount: false, // Prevent re-render on mount
   });
 
   /* Send message */
@@ -105,25 +106,37 @@ export default function UserMessagesPage() {
       const recipientId = thread?.other_user_id ?? '';
       if (!recipientId) throw new Error('Cannot identify recipient. Please refresh and try again.');
       if (!text.trim()) throw new Error('Message cannot be empty.');
-      await apiClient.post('/chat/messages', {
+      
+      // Send to correct endpoint
+      const response = await apiClient.post('/chat/messages', {
         recipient_id: recipientId,
         content: text.trim(),
         ...(thread?.listing_id ? { listing_id: thread.listing_id } : {}),
       });
+      
+      return response.data;
     },
     onSuccess: () => {
       setText('');
       setSendErr('');
-      qc.invalidateQueries({ queryKey: ['chat-messages', active] });
-      qc.invalidateQueries({ queryKey: ['chat-inbox', session.userId] });
+      // Use callback to prevent focus loss
       setTimeout(() => {
-        qc.refetchQueries({ queryKey: ['chat-messages', active] });
+        qc.invalidateQueries({ queryKey: ['chat-messages', active] });
+        qc.invalidateQueries({ queryKey: ['chat-inbox', session.userId] });
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        // Restore focus to textarea
         textareaRef.current?.focus();
-      }, 300);
+      }, 100);
     },
     onError: (e: any) => {
-      setSendErr(e?.response?.data?.error?.message ?? e?.message ?? 'Failed to send. Please try again.');
+      const errorMsg = e?.response?.data?.error?.message 
+        ?? e?.response?.data?.message 
+        ?? e?.message 
+        ?? 'Failed to send message. Please check your connection and try again.';
+      setSendErr(errorMsg);
+      console.error('Send message error:', e);
+      // Keep focus on textarea
+      textareaRef.current?.focus();
     },
   });
 
@@ -148,21 +161,21 @@ export default function UserMessagesPage() {
   }, [messages.length, active]);
 
   // Clear send error only when user starts typing after an error
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleTextChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setText(e.target.value);
     if (sendErr) setSendErr('');
-  };
+  }, [sendErr]);
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (text.trim() && !sending) sendMsg();
     }
-  }
+  }, [text, sending, sendMsg]);
 
-  function handleSend() {
+  const handleSend = useCallback(() => {
     if (text.trim() && !sending) sendMsg();
-  }
+  }, [text, sending, sendMsg]);
 
   /* ── Thread list panel (shared between mobile + desktop) ── */
   function ThreadList() {
