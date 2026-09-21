@@ -120,10 +120,14 @@ services:
         sync: false
       - key: EMAIL_FROM
         value: "okewunmimojolaoluwa@gmail.com"
+      - key: EMAIL_FROM_NAME
+        value: "Velontri"
       - key: GMAIL_USER
         value: "okewunmimojolaoluwa@gmail.com"
       - key: GMAIL_APP_PASSWORD
         value: "scivvkgnkqmgqedt"
+      - key: CURRENT_YEAR
+        value: "2024"
 
   - type: worker
     name: velontri-verification-reminder
@@ -144,3 +148,15 @@ services:
         value: "/opt/render/project/src/backend:/opt/render/project/src/backend/scripts"
       - key: DATABASE_URL
         value: "postgresql+asyncpg://postgres.nppxqvgetyetnsiphehm:Okewunmi123@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
+      - key: BREVO_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        value: "okewunmimojolaoluwa@gmail.com"
+      - key: EMAIL_FROM_NAME
+        value: "Velontri"
+      - key: GMAIL_USER
+        value: "okewunmimojolaoluwa@gmail.com"
+      - key: GMAIL_APP_PASSWORD
+        value: "scivvkgnkqmgqedt"
+      - key: CURRENT_YEAR
+        value: "2024"
