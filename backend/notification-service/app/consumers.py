@@ -73,5 +73,12 @@ async def handle_email_send(payload: dict[str, Any], session_factory: Any, setti
     subject = payload.get("subject", "Velontri Notification")
     html_body = payload.get("html_body", payload.get("message", ""))
     if email and html_body:
-        await send_email(email, subject, html_body, settings.SENDGRID_API_KEY, settings.EMAIL_FROM)
+        await send_email(
+            email, 
+            subject, 
+            html_body, 
+            settings.BREVO_API_KEY, 
+            settings.EMAIL_FROM,
+            settings.EMAIL_FROM_NAME
+        )
 

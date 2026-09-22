@@ -31,22 +31,34 @@ async def send_sms(phone: str, message: str, api_key: str, username: str, sender
         return False, str(exc)
 
 
-async def send_email(to_email: str, subject: str, html_body: str, api_key: str, from_email: str) -> tuple[bool, str | None]:
-    """Send email via SendGrid."""
+async def send_email(to_email: str, subject: str, html_body: str, api_key: str, from_email: str, from_name: str = "Velontri") -> tuple[bool, str | None]:
+    """Send email via Brevo (formerly Sendinblue)."""
     if not api_key or not to_email:
         return False, "Email not configured or missing recipient"
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.post(
-                "https://api.sendgrid.com/v3/mail/send",
-                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                json={"personalizations": [{"to": [{"email": to_email}]}], "from": {"email": from_email}, "subject": subject, "content": [{"type": "text/html", "value": html_body}]},
+                "https://api.brevo.com/v3/smtp/email",
+                headers={
+                    "api-key": api_key,
+                    "Content-Type": "application/json",
+                    "accept": "application/json"
+                },
+                json={
+                    "sender": {"name": from_name, "email": from_email},
+                    "to": [{"email": to_email}],
+                    "subject": subject,
+                    "htmlContent": html_body
+                },
             )
-            if resp.status_code in (200, 202):
+            if resp.status_code in (200, 201, 202):
+                logger.info("email_sent_successfully", to=to_email, status=resp.status_code)
                 return True, None
-            return False, f"SendGrid returned {resp.status_code}"
+            error_text = resp.text
+            logger.warning("email_send_failed", to=to_email, status=resp.status_code, response=error_text)
+            return False, f"Brevo returned {resp.status_code}: {error_text}"
     except Exception as exc:
-        logger.warning("email_send_failed", error=str(exc))
+        logger.error("email_send_exception", to=to_email, error=str(exc), exc_info=True)
         return False, str(exc)
 
 

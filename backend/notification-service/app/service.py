@@ -49,7 +49,14 @@ async def deliver_notification(
             success, failure_reason = await send_sms(recipient_phone, message_text, settings.AFRICASTALKING_API_KEY, settings.AFRICASTALKING_USERNAME, settings.AFRICASTALKING_SENDER_ID)
         elif channel == "email" and recipient_email:
             subject = content.get("subject", "Velontri Notification")
-            success, failure_reason = await send_email(recipient_email, subject, message_text, settings.SENDGRID_API_KEY, settings.EMAIL_FROM)
+            success, failure_reason = await send_email(
+                recipient_email, 
+                subject, 
+                message_text, 
+                settings.BREVO_API_KEY, 
+                settings.EMAIL_FROM,
+                settings.EMAIL_FROM_NAME
+            )
         elif channel == "whatsapp" and recipient_phone:
             success, failure_reason = await send_whatsapp(recipient_phone, message_text, settings.WHATSAPP_API_URL, settings.WHATSAPP_TOKEN)
         elif channel == "push":
