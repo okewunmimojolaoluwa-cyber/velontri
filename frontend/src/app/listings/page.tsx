@@ -251,7 +251,7 @@ export default function ListingsPage() {
  return '';
  });
 
- const [filterOpen, setFilterOpen] = useState(false);
+ const [filterSidebarOpen, setFilterSidebarOpen] = useState(false);
  const [search, setSearch] = useState('');
 
   // Fetch seller's store name when browsing a seller's store
@@ -298,6 +298,7 @@ export default function ListingsPage() {
  setFilters({ page: 1, page_size: 24, seller_id: sellerIdParam || undefined, q: undefined });
  setActiveCat('');
  setSearch('');
+ setFilterSidebarOpen(false);
  }
 
  function handleCategoryClick(cat: (typeof CATEGORIES)[number]) {
@@ -314,6 +315,20 @@ export default function ListingsPage() {
  e.preventDefault();
  setFilters(p => ({ ...p, q: search || undefined, page: 1 }));
  }
+
+  // Close filter sidebar on mobile when clicking outside
+ useEffect(() => {
+ const handleClickOutside = (e: MouseEvent) => {
+ const target = e.target as HTMLElement;
+ if (filterSidebarOpen && !target.closest('.filter-sidebar') && !target.closest('.filter-toggle-btn')) {
+ setFilterSidebarOpen(false);
+ }
+ };
+ if (filterSidebarOpen) {
+ document.addEventListener('mousedown', handleClickOutside);
+ return () => document.removeEventListener('mousedown', handleClickOutside);
+ }
+ }, [filterSidebarOpen]);
 
  return (
  <div className="min-h-screen bg-[#F8F9FA]">
@@ -420,16 +435,16 @@ export default function ListingsPage() {
             {/* Spacer + filter button */}
  <div className="ml-auto flex-shrink-0">
  <button
- onClick={() => setFilterOpen(v => !v)}
+ onClick={() => setFilterSidebarOpen(v => !v)}
  className={cn(
- 'flex items-center gap-2 rounded-full border px-4 py-2 text-[13px] font-semibold transition-all',
+ 'filter-toggle-btn flex items-center gap-2 rounded-full border px-4 py-2 text-[13px] font-semibold transition-all',
  activeFilterCount > 0
  ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300',
  )}
  >
  <SlidersHorizontal className="h-3.5 w-3.5" />
- Filters
+ <span className="hidden sm:inline">Filters</span>
  {activeFilterCount > 0 && (
  <span className="flex h-5 w-5 items-center justify-center rounded-full
  bg-indigo-600 text-[10px] font-black text-white">
@@ -439,82 +454,157 @@ export default function ListingsPage() {
  </button>
  </div>
  </div>
+ </div>
+ </div>
 
-          {/* Expanded filter panel */}
- {filterOpen && (
- <div className="border-t border-slate-100 py-4 space-y-4 animate-fade-up">
- <div className="flex flex-wrap gap-6">
-                {/* Country */}
- <div>
- <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-slate-400">Country</p>
- <div className="flex flex-wrap gap-2">
- {COUNTRIES.map(({ value, label }) => (
- <button key={label} onClick={() => set('country', value)}
+      {/* ── Filter Sidebar (New Design) ─────────────────────── */}
+      {/* Backdrop overlay for mobile */}
+ {filterSidebarOpen && (
+ <div 
+ className="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 md:hidden"
+ onClick={() => setFilterSidebarOpen(false)}
+ />
+ )}
+
+      {/* Sidebar */}
+ <div
  className={cn(
- 'rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition-all',
- filters.country === value || (!filters.country && !value)
- ? 'bg-indigo-600 text-white border-indigo-600'
- : 'border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600',
- )}>
- {label}
- </button>
- ))}
+ 'filter-sidebar fixed top-0 right-0 h-full bg-white shadow-2xl z-40 transition-transform duration-300 ease-out',
+ 'w-full max-w-[340px] md:max-w-[280px]',
+ filterSidebarOpen ? 'translate-x-0' : 'translate-x-full',
+ )}
+ >
+        {/* Header */}
+ <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 bg-gradient-to-r from-indigo-600 to-violet-600">
+ <div className="flex items-center gap-2">
+ <SlidersHorizontal className="h-5 w-5 text-white" />
+ <h3 className="text-[16px] font-black text-white">Refine Results</h3>
  </div>
+ <button 
+ onClick={() => setFilterSidebarOpen(false)}
+ className="text-white/80 hover:text-white transition-colors"
+ >
+ <X className="h-5 w-5" />
+ </button>
  </div>
 
-                {/* Sort */}
- <div>
- <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-slate-400">Sort by</p>
- <div className="flex flex-wrap gap-2">
- {SORT_OPTIONS.map(({ value, label }) => (
- <button key={label} onClick={() => set('sort', value)}
- className={cn(
- 'rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition-all',
- filters.sort === value || (!filters.sort && !value)
- ? 'bg-indigo-600 text-white border-indigo-600'
- : 'border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600',
- )}>
- {label}
- </button>
- ))}
- </div>
- </div>
- </div>
-
+        {/* Active filters summary */}
  {activeFilterCount > 0 && (
- <button onClick={clear}
- className="flex items-center gap-1.5 text-[12px] font-semibold text-red-500 hover:text-red-600 transition-colors">
- <X className="h-3.5 w-3.5" /> Clear all filters
+ <div className="border-b border-slate-100 bg-indigo-50/50 px-5 py-3">
+ <div className="flex items-center justify-between mb-2">
+ <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-600">
+ {activeFilterCount} Active Filter{activeFilterCount !== 1 ? 's' : ''}
+ </p>
+ <button 
+ onClick={clear}
+ className="text-[11px] font-semibold text-red-500 hover:text-red-600 transition-colors"
+ >
+ Clear all
  </button>
- )}
  </div>
- )}
-
-          {/* Active filter chips */}
- {activeFilterCount > 0 && !filterOpen && (
- <div className="flex flex-wrap gap-2 pb-3">
- {[
- filters.category && { key: 'category', label: filters.category },
- filters.listing_type && { key: 'listing_type', label: filters.listing_type },
- filters.country && { key: 'country', label: COUNTRIES.find(c => c.value === filters.country)?.label },
- ].filter(Boolean).map((chip: any) => (
- <span key={chip.key}
- className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 border
- border-indigo-200 px-3 py-1 text-[11px] font-semibold text-indigo-700">
- {chip.label}
- <button onClick={() => set(chip.key, '')} className="hover:text-indigo-500">
- <X className="h-3 w-3" />
+ <div className="flex flex-wrap gap-1.5">
+ {filters.category && (
+ <span className="inline-flex items-center gap-1 rounded-full bg-white border border-indigo-200 px-2.5 py-1 text-[10px] font-semibold text-indigo-700">
+ {filters.category}
+ <button onClick={() => set('category', '')} className="hover:text-indigo-500">
+ <X className="h-2.5 w-2.5" />
  </button>
  </span>
- ))}
+ )}
+ {filters.listing_type && (
+ <span className="inline-flex items-center gap-1 rounded-full bg-white border border-indigo-200 px-2.5 py-1 text-[10px] font-semibold text-indigo-700">
+ {filters.listing_type}
+ <button onClick={() => set('listing_type', '')} className="hover:text-indigo-500">
+ <X className="h-2.5 w-2.5" />
+ </button>
+ </span>
+ )}
+ {filters.country && (
+ <span className="inline-flex items-center gap-1 rounded-full bg-white border border-indigo-200 px-2.5 py-1 text-[10px] font-semibold text-indigo-700">
+ {COUNTRIES.find(c => c.value === filters.country)?.label || filters.country}
+ <button onClick={() => set('country', '')} className="hover:text-indigo-500">
+ <X className="h-2.5 w-2.5" />
+ </button>
+ </span>
+ )}
+ </div>
  </div>
  )}
+
+        {/* Results count */}
+ {!isLoading && (
+ <div className="px-5 py-3 bg-slate-50 border-b border-slate-100">
+ <p className="text-[13px] text-slate-600">
+ <span className="font-black text-indigo-600">{(meta?.total ?? listings.length).toLocaleString()}</span>
+ {' '}result{(meta?.total ?? listings.length) !== 1 ? 's' : ''} found
+ </p>
+ </div>
+ )}
+
+        {/* Filters */}
+ <div className="overflow-y-auto px-5 py-4 space-y-6" style={{ maxHeight: 'calc(100vh - 240px)' }}>
+          {/* Country filter */}
+ <div>
+ <label className="flex items-center gap-2 mb-3 text-[12px] font-black uppercase tracking-widest text-slate-700">
+ <MapPin className="h-3.5 w-3.5 text-indigo-600" />
+ Location
+ </label>
+ <select
+ value={filters.country || ''}
+ onChange={(e) => set('country', e.target.value)}
+ className="w-full h-10 rounded-lg border border-slate-200 px-3 text-[13px] font-medium
+ text-slate-700 bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100
+ transition-all outline-none cursor-pointer"
+ >
+ {COUNTRIES.map(({ value, label }) => (
+ <option key={value || 'all'} value={value}>{label}</option>
+ ))}
+ </select>
+ <p className="mt-2 text-[11px] text-slate-400">
+ Filter listings by country location
+ </p>
+ </div>
+
+          {/* Sort order */}
+ <div>
+ <label className="flex items-center gap-2 mb-3 text-[12px] font-black uppercase tracking-widest text-slate-700">
+ <CaretRight className="h-3.5 w-3.5 text-indigo-600" />
+ Sort By
+ </label>
+ <div className="space-y-2">
+ {SORT_OPTIONS.map(({ value, label }) => (
+ <button
+ key={value || 'default'}
+ onClick={() => set('sort', value)}
+ className={cn(
+ 'w-full text-left px-4 py-2.5 rounded-lg text-[13px] font-medium transition-all',
+ filters.sort === value || (!filters.sort && !value)
+ ? 'bg-indigo-600 text-white shadow-sm'
+ : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200',
+ )}
+ >
+ {label}
+ </button>
+ ))}
+ </div>
+ </div>
+ </div>
+
+        {/* Footer */}
+ <div className="absolute bottom-0 left-0 right-0 border-t border-slate-200 bg-white px-5 py-4">
+ <button
+ onClick={() => setFilterSidebarOpen(false)}
+ className="w-full h-11 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600
+ text-[14px] font-bold text-white shadow-lg hover:shadow-xl
+ transition-all duration-200 hover:scale-[1.02]"
+ >
+ Show Results
+ </button>
  </div>
  </div>
 
       {/* ── Listings ────────────────────────────────────────── */}
  <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
-
  {isError && (
  <div className="py-24 text-center">
  <p className="text-slate-400 mb-4 text-[14px]">Failed to load listings.</p>
