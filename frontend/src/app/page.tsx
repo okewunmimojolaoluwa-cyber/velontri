@@ -109,12 +109,56 @@ const AFRICA_LOCATIONS = [
   // Morocco
  { label: '🇲🇦 Casablanca', value: 'Casablanca' },
  { label: '🇲🇦 Rabat', value: 'Rabat' },
+  // Tunisia
+ { label: '🇹🇳 Tunis', value: 'Tunis' },
+  // Algeria
+ { label: '🇩🇿 Algiers', value: 'Algiers' },
+  // Libya
+ { label: '🇱🇾 Tripoli', value: 'Tripoli' },
   // Angola
  { label: '🇦🇴 Luanda', value: 'Luanda' },
   // Zambia
  { label: '🇿🇲 Lusaka', value: 'Lusaka' },
   // Zimbabwe
  { label: '🇿🇼 Harare', value: 'Harare' },
+  // Botswana
+ { label: '🇧🇼 Gaborone', value: 'Gaborone' },
+  // Namibia
+ { label: '🇳🇦 Windhoek', value: 'Windhoek' },
+  // Mozambique
+ { label: '🇲🇿 Maputo', value: 'Maputo' },
+  // Malawi
+ { label: '🇲🇼 Lilongwe', value: 'Lilongwe' },
+  // Madagascar
+ { label: '🇲🇬 Antananarivo', value: 'Antananarivo' },
+  // Mauritius
+ { label: '🇲🇺 Port Louis', value: 'Port Louis' },
+  // Seychelles
+ { label: '🇸🇨 Victoria', value: 'Victoria' },
+  // DR Congo
+ { label: '🇨🇩 Kinshasa', value: 'Kinshasa' },
+  // Republic of Congo
+ { label: '🇨🇬 Brazzaville', value: 'Brazzaville' },
+  // Gabon
+ { label: '🇬🇦 Libreville', value: 'Libreville' },
+  // Mali
+ { label: '🇲🇱 Bamako', value: 'Bamako' },
+  // Burkina Faso
+ { label: '🇧🇫 Ouagadougou', value: 'Ouagadougou' },
+  // Niger
+ { label: '🇳🇪 Niamey', value: 'Niamey' },
+  // Chad
+ { label: '🇹🇩 N\'Djamena', value: 'N\'Djamena' },
+  // Guinea
+ { label: '🇬🇳 Conakry', value: 'Conakry' },
+  // Sierra Leone
+ { label: '🇸🇱 Freetown', value: 'Freetown' },
+  // Liberia
+ { label: '🇱🇷 Monrovia', value: 'Monrovia' },
+  // Togo
+ { label: '🇹🇬 Lomé', value: 'Lomé' },
+  // Benin
+ { label: '🇧🇯 Cotonou', value: 'Cotonou' },
 ] as const;
 const REVIEWS = [
  {
@@ -660,12 +704,17 @@ export default function HomePage() {
  <div className="mb-8 flex flex-wrap gap-2">
  {([
  { label: 'All', href: '/listings', Icon: ShoppingBag },
- { label: 'Vehicles', href: '/listings?listing_type=vehicle', Icon: Car },
- { label: 'Property', href: '/listings?listing_type=property', Icon: House },
+ { label: 'Vehicles', href: '/listings?category=Vehicles', Icon: Car },
+ { label: 'Property', href: '/listings?category=Property', Icon: House },
+ { label: 'Phones & Tablets', href: '/listings?category=Phones & Tablets', Icon: DeviceMobile },
  { label: 'Electronics', href: '/listings?category=Electronics', Icon: DeviceMobile },
+ { label: 'Home & Furniture', href: '/listings?category=Home, Furniture & Appliances', Icon: House },
  { label: 'Fashion', href: '/listings?category=Fashion', Icon: TShirt },
- { label: 'Jobs', href: '/listings?listing_type=job', Icon: Briefcase },
- { label: 'Services', href: '/listings?listing_type=service', Icon: Wrench },
+ { label: 'Beauty', href: '/listings?category=Beauty & Personal Care', Icon: Sparkle },
+ { label: 'Services', href: '/listings?category=Services', Icon: Wrench },
+ { label: 'Jobs', href: '/listings?category=Jobs', Icon: Briefcase },
+ { label: 'Animals & Pets', href: '/listings?category=Animals & Pets', Icon: Package },
+ { label: 'Food & Agriculture', href: '/listings?category=Food, Agriculture & Farming', Icon: Package },
  ] as const).map(({ label, href, Icon }) => (
  <Link
  key={label}

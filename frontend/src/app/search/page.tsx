@@ -46,8 +46,23 @@ const SORT_OPTIONS: { value: SortValue; label: string }[] = [
 ];
 
 const CATEGORIES = [
- 'Electronics', 'Fashion', 'Vehicles', 'Property', 'Furniture',
- 'Agriculture', 'Services', 'Jobs', 'Sports', 'Other',
+ 'Vehicles',
+ 'Property',
+ 'Phones & Tablets',
+ 'Electronics',
+ 'Home, Furniture & Appliances',
+ 'Fashion',
+ 'Beauty & Personal Care',
+ 'Services',
+ 'Repair & Construction',
+ 'Commercial Equipment & Tools',
+ 'Leisure & Activities',
+ 'Babies & Kids',
+ 'Food, Agriculture & Farming',
+ 'Animals & Pets',
+ 'Jobs',
+ 'Seeking Work / CVs',
+ 'Business & Industry',
 ];
 
 const CONDITIONS = ['new', 'fairly used', 'used', 'refurbished'];

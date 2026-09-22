@@ -18,7 +18,7 @@ const CATEGORIES = [
  { label: 'Property', value: 'Property', icon: House, color: '#059669', bg: '#ecfdf5' },
  { label: 'Phones & Tablets', value: 'Phones & Tablets', icon: DeviceMobile, color: '#7C3AED', bg: '#f5f3ff' },
  { label: 'Electronics', value: 'Electronics', icon: DeviceMobile, color: '#7C3AED', bg: '#f5f3ff' },
- { label: 'Home & Furniture', value: 'Home, Furniture & Appliances', icon: Storefront, color: '#B45309', bg: '#fef3c7' },
+ { label: 'Home & Furniture', value: 'Home, Furniture & Appliances', icon: House, color: '#B45309', bg: '#fef3c7' },
  { label: 'Fashion', value: 'Fashion', icon: TShirt, color: '#DB2777', bg: '#fce7f3' },
  { label: 'Beauty', value: 'Beauty & Personal Care', icon: Package, color: '#EC4899', bg: '#fdf2f8' },
  { label: 'Services', value: 'Services', icon: Lightning, color: '#DC2626', bg: '#fef2f2' },
