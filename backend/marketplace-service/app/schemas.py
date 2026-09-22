@@ -78,8 +78,17 @@ class CreateListingRequest(BaseModel):
     city: str | None = Field(default=None, max_length=100)
     latitude: float | None = Field(default=None, ge=-90, le=90)
     longitude: float | None = Field(default=None, ge=-180, le=180)
-    category: str | None = Field(default=None, max_length=100)
-    subcategory: str | None = Field(default=None, max_length=100)
+    
+    # New UUID-based category system (preferred)
+    category_id: uuid.UUID | None = Field(default=None, description="Category UUID (level 1)")
+    subcategory_id: uuid.UUID | None = Field(default=None, description="Subcategory UUID (level 2)")
+    child_category_id: uuid.UUID | None = Field(default=None, description="Child category UUID (level 3)")
+    attributes: dict[str, Any] | None = Field(default=None, description="Category-specific attributes (e.g., {make: 'Toyota', year: 2020})")
+    
+    # Legacy string-based categories (backward compatibility)
+    category: str | None = Field(default=None, max_length=100, description="[DEPRECATED] Use category_id instead")
+    subcategory: str | None = Field(default=None, max_length=100, description="[DEPRECATED] Use subcategory_id instead")
+    
     condition: str | None = None
     brand: str | None = Field(default=None, max_length=100)
     specs: dict[str, str] | None = None
@@ -132,8 +141,17 @@ class ListingResponse(BaseModel):
     country: str | None
     state: str | None
     city: str | None
+    
+    # New UUID-based categories
+    category_id: uuid.UUID | None = None
+    subcategory_id: uuid.UUID | None = None
+    child_category_id: uuid.UUID | None = None
+    attributes: dict[str, Any] | None = None  # Category-specific attributes
+    
+    # Legacy string-based categories (backward compatibility)
     category: str | None
     subcategory: str | None
+    
     condition: str | None
     brand: str | None
     status: str

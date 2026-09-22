@@ -189,6 +189,12 @@ def _to_listing_response(
         country=listing.country,
         state=listing.state,
         city=listing.city,
+        # New category system
+        category_id=getattr(listing, 'category_id', None),
+        subcategory_id=getattr(listing, 'subcategory_id', None),
+        child_category_id=getattr(listing, 'child_category_id', None),
+        attributes=getattr(listing, 'attributes', None),
+        # Legacy categories
         category=listing.category,
         subcategory=listing.subcategory,
         condition=listing.condition,
@@ -266,6 +272,19 @@ class MarketplaceService:
         """Create a listing and enforce tier quota."""
         await self._enforce_quota(seller_id, subscription_tier)
 
+        # Validate category hierarchy if using new system
+        if body.category_id:
+            from . import category_repository as cat_repo
+            is_valid, error = await cat_repo.validate_category_hierarchy(
+                self.session,
+                category_id=body.category_id,
+                subcategory_id=body.subcategory_id,
+                child_category_id=body.child_category_id,
+            )
+            if not is_valid:
+                from shared.errors import InvalidInputError
+                raise InvalidInputError(f"Invalid category hierarchy: {error}")
+
         listing = await repo.create_listing(
             self.session,
             seller_id=seller_id,
@@ -287,6 +306,11 @@ class MarketplaceService:
             whatsapp_number=getattr(body, 'whatsapp_number', None),
             contact_phone=getattr(body, 'contact_phone', None),
             is_negotiable=getattr(body, 'is_negotiable', None),
+            # New category system
+            category_id=body.category_id,
+            subcategory_id=body.subcategory_id,
+            child_category_id=body.child_category_id,
+            attributes=body.attributes,
         )
 
         # Persist specs if provided

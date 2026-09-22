@@ -59,6 +59,11 @@ async def create_listing(
     whatsapp_number: str | None = None,
     contact_phone: str | None = None,
     is_negotiable: bool | None = None,
+    # New category system fields
+    category_id: uuid.UUID | None = None,
+    subcategory_id: uuid.UUID | None = None,
+    child_category_id: uuid.UUID | None = None,
+    attributes: dict[str, Any] | None = None,
 ) -> Listing:
     listing = Listing(
         seller_id=seller_id,
@@ -79,6 +84,19 @@ async def create_listing(
         image_url=image_url,
         status="draft",
     )
+    # Store new category system fields via setattr (safe if columns don't exist yet)
+    if category_id is not None:
+        try: setattr(listing, 'category_id', category_id)
+        except Exception: pass
+    if subcategory_id is not None:
+        try: setattr(listing, 'subcategory_id', subcategory_id)
+        except Exception: pass
+    if child_category_id is not None:
+        try: setattr(listing, 'child_category_id', child_category_id)
+        except Exception: pass
+    if attributes is not None:
+        try: setattr(listing, 'attributes', attributes)
+        except Exception: pass
     # Store whatsapp_number / contact_phone via setattr so missing columns don't crash
     if whatsapp_number is not None:
         try: setattr(listing, 'whatsapp_number', whatsapp_number)

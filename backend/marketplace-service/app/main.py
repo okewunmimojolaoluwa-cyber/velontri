@@ -19,6 +19,7 @@ from shared.redis_client import check_redis_health, close_redis_pool, create_red
 
 from .config import get_settings
 from .routers.listings import router as listings_router
+from .routers.categories import router as categories_router
 
 logger = get_logger(__name__)
 
@@ -96,6 +97,7 @@ def create_app() -> FastAPI:
     app.add_middleware(PrometheusMiddleware)
     register_error_handlers(app)
     app.include_router(listings_router, prefix="/api/v1")
+    app.include_router(categories_router, prefix="/api/v1")
 
     async def _db_check() -> bool:
         return await check_database_health(app.state.engine)
