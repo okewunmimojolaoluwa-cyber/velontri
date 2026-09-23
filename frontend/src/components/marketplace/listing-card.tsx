@@ -105,12 +105,12 @@ export function ListingCard({ listing }: { listing: ListingSummary }) {
  </h3>
 
         {/* Price + negotiable badge */}
- <div className="flex items-start gap-1.5 pt-1">
- <span className="text-base font-bold text-primary break-all flex-1 min-w-0 leading-tight">
+ <div className="grid grid-cols-[1fr_auto] items-start gap-1.5 pt-1">
+ <span className="text-base font-bold text-primary leading-tight overflow-hidden text-ellipsis">
  {fmt(listing.price, listing.currency)}
  </span>
  {listing.is_negotiable && (
- <span className="inline-flex flex-shrink-0 items-center rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap leading-none">
+ <span className="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap leading-none">
  Negotiable
  </span>
  )}

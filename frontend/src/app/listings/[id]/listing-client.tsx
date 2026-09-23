@@ -618,12 +618,12 @@ export default function ListingDetailPage() {
  </div>
  )}
 
- <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-6 shadow-sm">
+ <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 p-6 shadow-sm">
  <div className="flex items-center gap-2 mb-5">
  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center flex-shrink-0">
  <Package className="h-4 w-4 text-white" />
  </div>
- <h2 className="text-[15px] font-black text-slate-900 tracking-tight">Listing Specifications</h2>
+ <h2 className="text-[15px] font-black text-slate-900 dark:text-white tracking-tight">Listing Specifications</h2>
  </div>
  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
  {[
@@ -631,19 +631,19 @@ export default function ListingDetailPage() {
  { label: 'Type', value: listing.listing_type, icon: <ShoppingBag className="h-4 w-4" /> },
  { label: 'Condition', value: listing.condition, icon: <SealCheck className="h-4 w-4" /> },
  { label: 'City', value: listing.city, icon: <MapPin className="h-4 w-4" /> },
- { label: 'Country', value: listing.country ? COUNTRIES.find(c => c.value === listing.country)?.label.split(' ')[1] || listing.country : null, icon: <MapPin className="h-4 w-4" /> },
+ { label: 'Country', value: listing.country ? (COUNTRIES.find(c => c.value === listing.country)?.label.split(' ').slice(1).join(' ') || listing.country) : null, icon: <MapPin className="h-4 w-4" /> },
  { label: 'Currency', value: listing.currency, icon: <span className="text-[14px]">💰</span> },
  ].filter(r => r.value).map(({ label, value, icon }) => (
- <div key={label} className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 hover:border-indigo-300 hover:shadow-md transition-all duration-200">
- <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-indigo-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full -mr-10 -mt-10" />
+ <div key={label} className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-4 hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md transition-all duration-200">
+ <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-indigo-50 dark:from-indigo-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full -mr-10 -mt-10" />
  <div className="relative">
  <div className="flex items-center gap-2 mb-2">
- <div className="text-slate-400 group-hover:text-indigo-500 transition-colors">
+ <div className="text-slate-400 dark:text-slate-500 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors">
  {icon}
  </div>
- <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{label}</p>
+ <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{label}</p>
  </div>
- <p className="text-[15px] font-bold text-slate-900 capitalize leading-tight">{value}</p>
+ <p className="text-[15px] font-bold text-slate-900 dark:text-white capitalize leading-tight">{value}</p>
  </div>
  </div>
  ))}
