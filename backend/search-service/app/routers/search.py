@@ -173,6 +173,23 @@ _SYNONYMS: dict[str, list[str]] = {
     "fairly used":  ["fairly used", "used", "second hand"],
     "second hand":  ["second hand", "used", "fairly used"],
     "used":         ["used", "fairly used", "second hand"],
+    # African Countries - search by name should find listings
+    "nigeria":      [],
+    "nigerian":     [],
+    "naija":        [],
+    "ghana":        [],
+    "ghanaian":     [],
+    "kenya":        [],
+    "kenyan":       [],
+    "south africa": [],
+    "tanzania":     [],
+    "uganda":       [],
+    "ethiopia":     [],
+    "egypt":        [],
+    "egyptian":     [],
+    "algeria":      [],
+    "morocco":      [],
+    "moroccan":     [],
 }
 
 # Exact listing_type values in the DB — used for precise filtering
@@ -350,12 +367,13 @@ async def _search_fallback(
     search_clauses: list[str] = []
     all_params: dict = {}
 
-    # 1. ILIKE text search across all relevant columns
+    # 1. ILIKE text search across all relevant columns (including country for location search)
     for i, term in enumerate(expanded):
         like = f"%{term}%"
         search_clauses.append(
             f"(title ILIKE :q_{i} OR description ILIKE :q_{i} "
-            f"OR category ILIKE :q_{i} OR COALESCE(listing_type,'') ILIKE :q_{i})"
+            f"OR category ILIKE :q_{i} OR COALESCE(listing_type,'') ILIKE :q_{i} "
+            f"OR country ILIKE :q_{i} OR city ILIKE :q_{i} OR state ILIKE :q_{i})"
         )
         all_params[f"q_{i}"] = like
 
@@ -389,6 +407,11 @@ async def _search_fallback(
     if city:
         extra_conditions.append("city ILIKE :city")
         all_params["city"] = f"%{city}%"
+    if country:
+        # Support both 2-letter codes (NG) and full country names (Nigeria)
+        extra_conditions.append("(country ILIKE :country OR country = :country_code)")
+        all_params["country"] = f"%{country}%"
+        all_params["country_code"] = country
     if price_min is not None:
         extra_conditions.append("CAST(price AS NUMERIC) >= :pmin")
         all_params["pmin"] = price_min
