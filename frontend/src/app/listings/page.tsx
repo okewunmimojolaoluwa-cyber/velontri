@@ -253,6 +253,7 @@ export default function ListingsPage() {
 
  const [filterSidebarOpen, setFilterSidebarOpen] = useState(false);
  const [search, setSearch] = useState('');
+ const [showAllCategories, setShowAllCategories] = useState(false);
 
   // Fetch seller's store name when browsing a seller's store
  const [storeName, setStoreName] = useState('');
@@ -405,9 +406,11 @@ export default function ListingsPage() {
       {/* ── Category pills ───────────────────────────────────── */}
  <div className="sticky top-0 z-20 border-b border-slate-200 bg-white shadow-sm">
  <div className="mx-auto max-w-7xl px-4 sm:px-6">
- <div className="flex items-center gap-3 overflow-x-auto py-3"
+ <div className="flex items-center gap-3 py-3">
+            {/* Show first 6 categories + "More" button */}
+ <div className="flex items-center gap-3 overflow-x-auto flex-1"
  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
- {CATEGORIES.map(cat => {
+ {CATEGORIES.slice(0, showAllCategories ? CATEGORIES.length : 6).map(cat => {
  const Icon = cat.icon;
  const isActive = activeCat === cat.value;
  return (
@@ -431,6 +434,29 @@ export default function ListingsPage() {
  </button>
  );
  })}
+ 
+              {/* More Categories Button */}
+ {CATEGORIES.length > 6 && (
+ <button
+ onClick={() => setShowAllCategories(!showAllCategories)}
+ className="flex-shrink-0 flex items-center gap-2 rounded-full px-4 py-2
+ text-[13px] font-semibold transition-all border border-indigo-200 
+ bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+ >
+ {showAllCategories ? (
+ <>
+ <Package className="h-3.5 w-3.5 flex-shrink-0" />
+ Less
+ </>
+ ) : (
+ <>
+ <Package className="h-3.5 w-3.5 flex-shrink-0" />
+ More ({CATEGORIES.length - 6})
+ </>
+ )}
+ </button>
+ )}
+ </div>
 
             {/* Spacer + filter button */}
  <div className="ml-auto flex-shrink-0">

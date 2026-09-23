@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, MapPin, SealCheck, ChatCircle, CaretRight, Heart, ShareNetwork, Star, CaretLeft, X, PaperPlaneRight, CheckCircle, WarningCircle, Warning, PlayCircle } from '@phosphor-icons/react';
+import { ArrowLeft, MapPin, SealCheck, ChatCircle, CaretRight, Heart, ShareNetwork, Star, CaretLeft, X, PaperPlaneRight, CheckCircle, WarningCircle, Warning, PlayCircle, Package, ShoppingBag } from '@phosphor-icons/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useListing } from '@/features/listings/hooks/use-listings';
 import { listingKeys } from '@/lib/api/endpoints/listings';
@@ -29,6 +29,64 @@ const TYPE_EMOJI: Record<string, string> = {
  physical: '📦', product: '📦', service: '🔧',
  job: '💼', property: '🏠', vehicle: '🚗', digital: '💾',
 };
+
+const COUNTRIES = [
+ { value: '', label: '🌍 All countries' },
+ { value: 'NG', label: '🇳🇬 Nigeria' },
+ { value: 'GH', label: '🇬🇭 Ghana' },
+ { value: 'KE', label: '🇰🇪 Kenya' },
+ { value: 'ZA', label: '🇿🇦 South Africa' },
+ { value: 'TZ', label: '🇹🇿 Tanzania' },
+ { value: 'UG', label: '🇺🇬 Uganda' },
+ { value: 'ET', label: '🇪🇹 Ethiopia' },
+ { value: 'EG', label: '🇪🇬 Egypt' },
+ { value: 'DZ', label: '🇩🇿 Algeria' },
+ { value: 'MA', label: '🇲🇦 Morocco' },
+ { value: 'TN', label: '🇹🇳 Tunisia' },
+ { value: 'LY', label: '🇱🇾 Libya' },
+ { value: 'SD', label: '🇸🇩 Sudan' },
+ { value: 'SS', label: '🇸🇸 South Sudan' },
+ { value: 'CD', label: '🇨🇩 DR Congo' },
+ { value: 'CM', label: '🇨🇲 Cameroon' },
+ { value: 'CI', label: '🇨🇮 Côte d\'Ivoire' },
+ { value: 'SN', label: '🇸🇳 Senegal' },
+ { value: 'ML', label: '🇲🇱 Mali' },
+ { value: 'BF', label: '🇧🇫 Burkina Faso' },
+ { value: 'NE', label: '🇳🇪 Niger' },
+ { value: 'TD', label: '🇹🇩 Chad' },
+ { value: 'MR', label: '🇲🇷 Mauritania' },
+ { value: 'GN', label: '🇬🇳 Guinea' },
+ { value: 'GW', label: '🇬🇼 Guinea-Bissau' },
+ { value: 'SL', label: '🇸🇱 Sierra Leone' },
+ { value: 'LR', label: '🇱🇷 Liberia' },
+ { value: 'TG', label: '🇹🇬 Togo' },
+ { value: 'BJ', label: '🇧🇯 Benin' },
+ { value: 'GM', label: '🇬🇲 Gambia' },
+ { value: 'GQ', label: '🇬🇶 Equatorial Guinea' },
+ { value: 'GA', label: '🇬🇦 Gabon' },
+ { value: 'CG', label: '🇨🇬 Republic of Congo' },
+ { value: 'CF', label: '🇨🇫 Central African Republic' },
+ { value: 'AO', label: '🇦🇴 Angola' },
+ { value: 'ZM', label: '🇿🇲 Zambia' },
+ { value: 'ZW', label: '🇿🇼 Zimbabwe' },
+ { value: 'BW', label: '🇧🇼 Botswana' },
+ { value: 'NA', label: '🇳🇦 Namibia' },
+ { value: 'MZ', label: '🇲🇿 Mozambique' },
+ { value: 'MW', label: '🇲🇼 Malawi' },
+ { value: 'MG', label: '🇲🇬 Madagascar' },
+ { value: 'RW', label: '🇷🇼 Rwanda' },
+ { value: 'BI', label: '🇧🇮 Burundi' },
+ { value: 'SO', label: '🇸🇴 Somalia' },
+ { value: 'DJ', label: '🇩🇯 Djibouti' },
+ { value: 'ER', label: '🇪🇷 Eritrea' },
+ { value: 'SC', label: '🇸🇨 Seychelles' },
+ { value: 'MU', label: '🇲🇺 Mauritius' },
+ { value: 'CV', label: '🇨🇻 Cape Verde' },
+ { value: 'ST', label: '🇸🇹 São Tomé & Príncipe' },
+ { value: 'KM', label: '🇰🇲 Comoros' },
+ { value: 'LS', label: '🇱🇸 Lesotho' },
+ { value: 'SZ', label: '🇸🇿 Eswatini' },
+];
 
 function ListingImagePlaceholder({ type, title }: { type: string; title: string }) {
  const emoji = TYPE_EMOJI[type] ?? '📦';
@@ -560,19 +618,33 @@ export default function ListingDetailPage() {
  </div>
  )}
 
- <div className="rounded-2xl border border-slate-200 bg-white p-5">
- <h2 className="text-[13px] font-bold text-slate-700 uppercase tracking-wide mb-4">Listing Details</h2>
- <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+ <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-6 shadow-sm">
+ <div className="flex items-center gap-2 mb-5">
+ <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center flex-shrink-0">
+ <Package className="h-4 w-4 text-white" />
+ </div>
+ <h2 className="text-[15px] font-black text-slate-900 tracking-tight">Listing Specifications</h2>
+ </div>
+ <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
  {[
- { label: 'Category', value: listing.category },
- { label: 'Type', value: listing.listing_type },
- { label: 'Condition', value: listing.condition },
- { label: 'Location', value: [listing.city, listing.country].filter(Boolean).join(', ') || null },
- { label: 'Currency', value: listing.currency },
- ].filter(r => r.value).map(({ label, value }) => (
- <div key={label}>
- <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
- <p className="text-[13px] font-semibold text-slate-700 capitalize mt-0.5">{value}</p>
+ { label: 'Category', value: listing.category, icon: <Package className="h-4 w-4" /> },
+ { label: 'Type', value: listing.listing_type, icon: <ShoppingBag className="h-4 w-4" /> },
+ { label: 'Condition', value: listing.condition, icon: <SealCheck className="h-4 w-4" /> },
+ { label: 'City', value: listing.city, icon: <MapPin className="h-4 w-4" /> },
+ { label: 'Country', value: listing.country ? COUNTRIES.find(c => c.value === listing.country)?.label.split(' ')[1] || listing.country : null, icon: <MapPin className="h-4 w-4" /> },
+ { label: 'Currency', value: listing.currency, icon: <span className="text-[14px]">💰</span> },
+ ].filter(r => r.value).map(({ label, value, icon }) => (
+ <div key={label} className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 hover:border-indigo-300 hover:shadow-md transition-all duration-200">
+ <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-indigo-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full -mr-10 -mt-10" />
+ <div className="relative">
+ <div className="flex items-center gap-2 mb-2">
+ <div className="text-slate-400 group-hover:text-indigo-500 transition-colors">
+ {icon}
+ </div>
+ <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{label}</p>
+ </div>
+ <p className="text-[15px] font-bold text-slate-900 capitalize leading-tight">{value}</p>
+ </div>
  </div>
  ))}
  </div>
