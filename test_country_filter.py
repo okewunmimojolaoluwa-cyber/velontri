@@ -8,7 +8,9 @@ import os
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
-load_dotenv('backend/.env')
+# Load .env from backend directory
+env_path = os.path.join(os.path.dirname(__file__), 'backend', '.env')
+load_dotenv(env_path)
 
 DATABASE_URL = os.getenv('DATABASE_URL')
 

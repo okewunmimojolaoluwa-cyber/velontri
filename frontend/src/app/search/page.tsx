@@ -513,7 +513,7 @@ function SearchInner() {
  onChange={e => { setQuery(e.target.value); setDropOpen(true); }}
  onFocus={() => setDropOpen(true)}
  onKeyDown={handleKey}
- placeholder="Search for anything phones, cars, property, fashion…"
+ placeholder="Search phones, cars, property, fashion, countries (Nigeria, Ghana, Kenya)…"
  className="flex-1 bg-transparent text-[15px] text-slate-800 placeholder-slate-400
  focus:outline-none dark:text-slate-100 dark:placeholder-slate-500"
  />
@@ -541,6 +541,16 @@ function SearchInner() {
  visible={dropOpen}
  />
  </div>
+
+          {/* Country search hint */}
+ {!committed && (
+ <p className="mt-3 text-center text-xs text-slate-500 flex items-center justify-center gap-1.5">
+ <MapPin className="h-3 w-3 text-indigo-500" />
+ <span>
+ 💡 <span className="font-semibold">Tip:</span> Search by country names (Nigeria, Ghana, Kenya) or cities to find listings by location
+ </span>
+ </p>
+ )}
 
           {/* Trending chips */}
  {!committed && (
