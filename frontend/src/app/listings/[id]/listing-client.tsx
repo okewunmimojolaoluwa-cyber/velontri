@@ -744,7 +744,7 @@ export default function ListingDetailPage() {
  {fmt(listing.price ?? 0, listing.currency ?? 'NGN')}
  </p>
  {(listing as any).is_negotiable && (
- <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-[11px] font-bold text-emerald-700 whitespace-nowrap">
+ <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
  Negotiable
  </span>
  )}

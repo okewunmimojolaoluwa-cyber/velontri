@@ -916,7 +916,7 @@ export default function HomePage() {
  {fmtPrice(listing.price, listing.currency)}
  </p>
  {listing.is_negotiable && (
- <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap">
+ <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
  Negotiable
  </span>
  )}
@@ -1040,7 +1040,7 @@ export default function HomePage() {
  {fmtPrice(car.price, car.currency)}
  </span>
  {car.is_negotiable && (
- <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap">
+ <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
  Negotiable
  </span>
  )}
@@ -1144,7 +1144,7 @@ export default function HomePage() {
  {fmtPrice(item.price, item.currency)}
  </span>
  {item.is_negotiable && (
- <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap">
+ <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
  Negotiable
  </span>
  )}
@@ -1249,7 +1249,7 @@ export default function HomePage() {
  {fmtPrice(p.price, p.currency)}
  </p>
  {p.is_negotiable && (
- <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap">
+ <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
  Negotiable
  </span>
  )}
