@@ -192,6 +192,87 @@ _SYNONYMS: dict[str, list[str]] = {
     "moroccan":     [],
 }
 
+# Map country names to 2-letter ISO codes for exact matching
+_COUNTRY_CODE_MAP: dict[str, str] = {
+    "nigeria": "NG",
+    "nigerian": "NG",
+    "naija": "NG",
+    "ghana": "GH",
+    "ghanaian": "GH",
+    "kenya": "KE",
+    "kenyan": "KE",
+    "south africa": "ZA",
+    "south african": "ZA",
+    "tanzania": "TZ",
+    "tanzanian": "TZ",
+    "uganda": "UG",
+    "ugandan": "UG",
+    "ethiopia": "ET",
+    "ethiopian": "ET",
+    "egypt": "EG",
+    "egyptian": "EG",
+    "algeria": "DZ",
+    "algerian": "DZ",
+    "morocco": "MA",
+    "moroccan": "MA",
+    "tunisia": "TN",
+    "tunisian": "TN",
+    "libya": "LY",
+    "libyan": "LY",
+    "sudan": "SD",
+    "sudanese": "SD",
+    "south sudan": "SS",
+    "dr congo": "CD",
+    "congo": "CD",
+    "cameroon": "CM",
+    "cameroonian": "CM",
+    "ivory coast": "CI",
+    "cote d'ivoire": "CI",
+    "ivorian": "CI",
+    "senegal": "SN",
+    "senegalese": "SN",
+    "mali": "ML",
+    "malian": "ML",
+    "burkina faso": "BF",
+    "burkinabe": "BF",
+    "niger": "NE",
+    "nigerien": "NE",
+    "chad": "TD",
+    "chadian": "TD",
+    "mauritania": "MR",
+    "mauritanian": "MR",
+    "guinea": "GN",
+    "guinean": "GN",
+    "sierra leone": "SL",
+    "liberia": "LR",
+    "liberian": "LR",
+    "togo": "TG",
+    "togolese": "TG",
+    "benin": "BJ",
+    "beninese": "BJ",
+    "gambia": "GM",
+    "gambian": "GM",
+    "rwanda": "RW",
+    "rwandan": "RW",
+    "burundi": "BI",
+    "burundian": "BI",
+    "somalia": "SO",
+    "somali": "SO",
+    "mozambique": "MZ",
+    "mozambican": "MZ",
+    "zimbabwe": "ZW",
+    "zimbabwean": "ZW",
+    "zambia": "ZM",
+    "zambian": "ZM",
+    "botswana": "BW",
+    "namibia": "NA",
+    "namibian": "NA",
+    "angola": "AO",
+    "angolan": "AO",
+    "madagascar": "MG",
+    "malagasy": "MG",
+}
+
 # Exact listing_type values in the DB — used for precise filtering
 _LISTING_TYPE_MAP: dict[str, list[str]] = {
     "car":          ["vehicle"],
@@ -294,12 +375,13 @@ def _fuzzy_variants(word: str) -> list[str]:
     return list(variants)
 
 
-def _expand_query(raw: str) -> tuple[list[str], list[str], list[str]]:
+def _expand_query(raw: str) -> tuple[list[str], list[str], list[str], list[str]]:
     """
     Expand a raw search query into:
       text_terms   — used in ILIKE against title/description/category/listing_type
       exact_types  — exact listing_type IN (...) matches
       exact_cats   — exact category IN (...) matches
+      country_codes — exact country codes (e.g., "south africa" → ["ZA"])
 
     This is the SINGLE authoritative expand function.
     """
@@ -307,6 +389,7 @@ def _expand_query(raw: str) -> tuple[list[str], list[str], list[str]]:
     all_terms: set[str] = {q_lower}
     exact_types: set[str] = set()
     exact_cats:  set[str] = set()
+    country_codes: set[str] = set()
 
     # Check full phrase first
     if q_lower in _SYNONYMS:
@@ -315,6 +398,8 @@ def _expand_query(raw: str) -> tuple[list[str], list[str], list[str]]:
         exact_types.update(_LISTING_TYPE_MAP[q_lower])
     if q_lower in _CATEGORY_MAP:
         exact_cats.add(_CATEGORY_MAP[q_lower])
+    if q_lower in _COUNTRY_CODE_MAP:
+        country_codes.add(_COUNTRY_CODE_MAP[q_lower])
 
     # Expand each word individually
     for word in q_lower.split():
@@ -325,6 +410,8 @@ def _expand_query(raw: str) -> tuple[list[str], list[str], list[str]]:
             exact_types.update(_LISTING_TYPE_MAP[word])
         if word in _CATEGORY_MAP:
             exact_cats.add(_CATEGORY_MAP[word])
+        if word in _COUNTRY_CODE_MAP:
+            country_codes.add(_COUNTRY_CODE_MAP[word])
         # Fuzzy variants for words >= 4 chars
         if len(word) >= 4:
             for v in _fuzzy_variants(word):
@@ -334,9 +421,11 @@ def _expand_query(raw: str) -> tuple[list[str], list[str], list[str]]:
                         all_terms.update(_SYNONYMS[v])
                     if v in _LISTING_TYPE_MAP:
                         exact_types.update(_LISTING_TYPE_MAP[v])
+                    if v in _COUNTRY_CODE_MAP:
+                        country_codes.add(_COUNTRY_CODE_MAP[v])
 
     text_terms = [t for t in all_terms if t and len(t) >= 2]
-    return text_terms, list(exact_types), list(exact_cats)
+    return text_terms, list(exact_types), list(exact_cats), list(country_codes)
 
 
 async def _search_fallback(
@@ -362,7 +451,7 @@ async def _search_fallback(
     """
     from sqlalchemy import text as _text
 
-    expanded, exact_types, exact_cats = _expand_query(q)
+    expanded, exact_types, exact_cats, country_codes = _expand_query(q)
 
     search_clauses: list[str] = []
     all_params: dict = {}
@@ -390,6 +479,13 @@ async def _search_fallback(
         search_clauses.append(f"category IN ({ph})")
         for i, ec in enumerate(exact_cats):
             all_params[f"ec_{i}"] = ec
+
+    # 4. Exact country code matches — "south africa" → country = 'ZA'
+    if country_codes:
+        ph = ", ".join(f":cc_{i}" for i in range(len(country_codes)))
+        search_clauses.append(f"country IN ({ph})")
+        for i, cc in enumerate(country_codes):
+            all_params[f"cc_{i}"] = cc
 
     # Combine search clauses with OR so any match returns the listing
     search_condition = "(" + " OR ".join(search_clauses) + ")" if search_clauses else "TRUE"
