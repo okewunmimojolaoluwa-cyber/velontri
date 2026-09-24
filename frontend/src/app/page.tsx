@@ -13,7 +13,7 @@ import { AutoScrollRow } from '@/components/marketplace/auto-scroll-row';
 import { apiClient } from '@/lib/api/client';
 import { ComingSoonModal } from '@/components/ui/coming-soon-modal';
 
-/* ── Scroll reveal ─────────────────────────────────── */
+/* -- Scroll reveal ----------------------------------- */
 function useReveal() {
  useEffect(() => {
  const els = document.querySelectorAll<HTMLElement>('[data-reveal]');
@@ -33,7 +33,7 @@ function useReveal() {
  }, []);
 }
 
-/* ── Data ──────────────────────────────────────────── */
+/* -- Data -------------------------------------------- */
 const NAV_LINKS = [
  ['Browse', ROUTES.listings],
  ['Vehicles', '/listings?listing_type=vehicle'],
@@ -60,105 +60,105 @@ function getSectionVisibility(): Record<string, boolean> {
 }
 
 
-/* ── African locations ─────────────────────────────────── */
+/* -- African locations ----------------------------------- */
 const AFRICA_LOCATIONS = [
- { label: '🌍 All Africa', value: '' },
+ { label: '?? All Africa', value: '' },
   // Nigeria
- { label: '🇳🇬 Lagos', value: 'Lagos' },
- { label: '🇳🇬 Abuja', value: 'Abuja' },
- { label: '🇳🇬 Port Harcourt', value: 'Port Harcourt' },
- { label: '🇳🇬 Kano', value: 'Kano' },
- { label: '🇳🇬 Ibadan', value: 'Ibadan' },
- { label: '🇳🇬 Abeokuta', value: 'Abeokuta' },
- { label: '🇳🇬 Enugu', value: 'Enugu' },
- { label: '🇳🇬 Benin City', value: 'Benin City' },
- { label: '🇳🇬 Kaduna', value: 'Kaduna' },
- { label: '🇳🇬 Warri', value: 'Warri' },
+ { label: '???? Lagos', value: 'Lagos' },
+ { label: '???? Abuja', value: 'Abuja' },
+ { label: '???? Port Harcourt', value: 'Port Harcourt' },
+ { label: '???? Kano', value: 'Kano' },
+ { label: '???? Ibadan', value: 'Ibadan' },
+ { label: '???? Abeokuta', value: 'Abeokuta' },
+ { label: '???? Enugu', value: 'Enugu' },
+ { label: '???? Benin City', value: 'Benin City' },
+ { label: '???? Kaduna', value: 'Kaduna' },
+ { label: '???? Warri', value: 'Warri' },
   // Ghana
- { label: '🇬🇭 Accra', value: 'Accra' },
- { label: '🇬🇭 Kumasi', value: 'Kumasi' },
- { label: '🇬🇭 Tamale', value: 'Tamale' },
+ { label: '???? Accra', value: 'Accra' },
+ { label: '???? Kumasi', value: 'Kumasi' },
+ { label: '???? Tamale', value: 'Tamale' },
   // Kenya
- { label: '🇰🇪 Nairobi', value: 'Nairobi' },
- { label: '🇰🇪 Mombasa', value: 'Mombasa' },
- { label: '🇰🇪 Kisumu', value: 'Kisumu' },
+ { label: '???? Nairobi', value: 'Nairobi' },
+ { label: '???? Mombasa', value: 'Mombasa' },
+ { label: '???? Kisumu', value: 'Kisumu' },
   // South Africa
- { label: '🇿🇦 Johannesburg', value: 'Johannesburg' },
- { label: '🇿🇦 Cape Town', value: 'Cape Town' },
- { label: '🇿🇦 Durban', value: 'Durban' },
- { label: '🇿🇦 Pretoria', value: 'Pretoria' },
+ { label: '???? Johannesburg', value: 'Johannesburg' },
+ { label: '???? Cape Town', value: 'Cape Town' },
+ { label: '???? Durban', value: 'Durban' },
+ { label: '???? Pretoria', value: 'Pretoria' },
   // Tanzania
- { label: '🇹🇿 Dar es Salaam', value: 'Dar es Salaam' },
- { label: '🇹🇿 Dodoma', value: 'Dodoma' },
+ { label: '???? Dar es Salaam', value: 'Dar es Salaam' },
+ { label: '???? Dodoma', value: 'Dodoma' },
   // Uganda
- { label: '🇺🇬 Kampala', value: 'Kampala' },
+ { label: '???? Kampala', value: 'Kampala' },
   // Rwanda
- { label: '🇷🇼 Kigali', value: 'Kigali' },
+ { label: '???? Kigali', value: 'Kigali' },
   // Cameroon
- { label: '🇨🇲 Douala', value: 'Douala' },
- { label: '🇨🇲 Yaoundé', value: 'Yaoundé' },
+ { label: '???? Douala', value: 'Douala' },
+ { label: '???? Yaound�', value: 'Yaound�' },
   // Senegal
- { label: '🇸🇳 Dakar', value: 'Dakar' },
-  // Côte d'Ivoire
- { label: '🇨🇮 Abidjan', value: 'Abidjan' },
+ { label: '???? Dakar', value: 'Dakar' },
+  // C�te d'Ivoire
+ { label: '???? Abidjan', value: 'Abidjan' },
   // Ethiopia
- { label: '🇪🇹 Addis Ababa', value: 'Addis Ababa' },
+ { label: '???? Addis Ababa', value: 'Addis Ababa' },
   // Egypt
- { label: '🇪🇬 Cairo', value: 'Cairo' },
- { label: '🇪🇬 Alexandria', value: 'Alexandria' },
+ { label: '???? Cairo', value: 'Cairo' },
+ { label: '???? Alexandria', value: 'Alexandria' },
   // Morocco
- { label: '🇲🇦 Casablanca', value: 'Casablanca' },
- { label: '🇲🇦 Rabat', value: 'Rabat' },
+ { label: '???? Casablanca', value: 'Casablanca' },
+ { label: '???? Rabat', value: 'Rabat' },
   // Tunisia
- { label: '🇹🇳 Tunis', value: 'Tunis' },
+ { label: '???? Tunis', value: 'Tunis' },
   // Algeria
- { label: '🇩🇿 Algiers', value: 'Algiers' },
+ { label: '???? Algiers', value: 'Algiers' },
   // Libya
- { label: '🇱🇾 Tripoli', value: 'Tripoli' },
+ { label: '???? Tripoli', value: 'Tripoli' },
   // Angola
- { label: '🇦🇴 Luanda', value: 'Luanda' },
+ { label: '???? Luanda', value: 'Luanda' },
   // Zambia
- { label: '🇿🇲 Lusaka', value: 'Lusaka' },
+ { label: '???? Lusaka', value: 'Lusaka' },
   // Zimbabwe
- { label: '🇿🇼 Harare', value: 'Harare' },
+ { label: '???? Harare', value: 'Harare' },
   // Botswana
- { label: '🇧🇼 Gaborone', value: 'Gaborone' },
+ { label: '???? Gaborone', value: 'Gaborone' },
   // Namibia
- { label: '🇳🇦 Windhoek', value: 'Windhoek' },
+ { label: '???? Windhoek', value: 'Windhoek' },
   // Mozambique
- { label: '🇲🇿 Maputo', value: 'Maputo' },
+ { label: '???? Maputo', value: 'Maputo' },
   // Malawi
- { label: '🇲🇼 Lilongwe', value: 'Lilongwe' },
+ { label: '???? Lilongwe', value: 'Lilongwe' },
   // Madagascar
- { label: '🇲🇬 Antananarivo', value: 'Antananarivo' },
+ { label: '???? Antananarivo', value: 'Antananarivo' },
   // Mauritius
- { label: '🇲🇺 Port Louis', value: 'Port Louis' },
+ { label: '???? Port Louis', value: 'Port Louis' },
   // Seychelles
- { label: '🇸🇨 Victoria', value: 'Victoria' },
+ { label: '???? Victoria', value: 'Victoria' },
   // DR Congo
- { label: '🇨🇩 Kinshasa', value: 'Kinshasa' },
+ { label: '???? Kinshasa', value: 'Kinshasa' },
   // Republic of Congo
- { label: '🇨🇬 Brazzaville', value: 'Brazzaville' },
+ { label: '???? Brazzaville', value: 'Brazzaville' },
   // Gabon
- { label: '🇬🇦 Libreville', value: 'Libreville' },
+ { label: '???? Libreville', value: 'Libreville' },
   // Mali
- { label: '🇲🇱 Bamako', value: 'Bamako' },
+ { label: '???? Bamako', value: 'Bamako' },
   // Burkina Faso
- { label: '🇧🇫 Ouagadougou', value: 'Ouagadougou' },
+ { label: '???? Ouagadougou', value: 'Ouagadougou' },
   // Niger
- { label: '🇳🇪 Niamey', value: 'Niamey' },
+ { label: '???? Niamey', value: 'Niamey' },
   // Chad
- { label: '🇹🇩 N\'Djamena', value: 'N\'Djamena' },
+ { label: '???? N\'Djamena', value: 'N\'Djamena' },
   // Guinea
- { label: '🇬🇳 Conakry', value: 'Conakry' },
+ { label: '???? Conakry', value: 'Conakry' },
   // Sierra Leone
- { label: '🇸🇱 Freetown', value: 'Freetown' },
+ { label: '???? Freetown', value: 'Freetown' },
   // Liberia
- { label: '🇱🇷 Monrovia', value: 'Monrovia' },
+ { label: '???? Monrovia', value: 'Monrovia' },
   // Togo
- { label: '🇹🇬 Lomé', value: 'Lomé' },
+ { label: '???? Lom�', value: 'Lom�' },
   // Benin
- { label: '🇧🇯 Cotonou', value: 'Cotonou' },
+ { label: '???? Cotonou', value: 'Cotonou' },
 ] as const;
 const REVIEWS = [
  {
@@ -181,7 +181,7 @@ const REVIEWS = [
  },
 ];
 
-/* ── Price formatter ───────────────────────────────── */
+/* -- Price formatter --------------------------------- */
 function fmtPrice(price: number, currency = 'NGN') {
  try {
  return new Intl.NumberFormat('en-NG', {
@@ -192,7 +192,7 @@ function fmtPrice(price: number, currency = 'NGN') {
  }
 }
 
-/* ── Listing card skeleton ─────────────────────────── */
+/* -- Listing card skeleton --------------------------- */
 function CardSkeleton() {
  return (
  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white animate-pulse">
@@ -206,9 +206,9 @@ function CardSkeleton() {
  );
 }
 
-/* ════════════════════════════════════════════════════
+/* ----------------------------------------------------
  COMPONENT
-═══════════════════════════════════════════════════ */
+--------------------------------------------------- */
 export default function HomePage() {
  useReveal();
  const [query, setQuery] = useState('');
@@ -233,7 +233,7 @@ export default function HomePage() {
   // Helper: is section visible (default true if not configured)
  const isVisible = (id: string) => sectionVis[id] !== false;
 
-  /* Fetch ALL active listings — with IMMEDIATE loading priority */
+  /* Fetch ALL active listings � with IMMEDIATE loading priority */
  const { data: allData, isLoading: allLoading } = useQuery({
  queryKey: listingKeys.list({ page: 1, page_size: 12 }),
  queryFn: () => listingsApi.browse({ page: 1, page_size: 12 }),
@@ -282,7 +282,7 @@ export default function HomePage() {
  const properties = Array.isArray(propertyData?.data) ? propertyData.data : [];
  const allListings = Array.isArray(allData?.data) ? allData.data : [];
 
-  /* close drawer on resize ≥ 768 px */
+  /* close drawer on resize = 768 px */
  useEffect(() => {
  const fn = () => { if (window.innerWidth >= 768) setOpen(false); };
  window.addEventListener('resize', fn);
@@ -341,9 +341,9 @@ export default function HomePage() {
  return (
  <div className="min-h-screen overflow-x-hidden bg-[#F8F9FA] text-slate-900">
 
- {/* ══════════════════════════════════════════
+ {/* ------------------------------------------
  NAVBAR classic, polished
- ══════════════════════════════════════════ */}
+ ------------------------------------------ */}
  <header className="sticky top-0 z-50 bg-white/96 dark:bg-slate-950/96 backdrop-blur-xl shadow-[0_1px_0_0_rgba(0,0,0,0.07)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)]">
  <div className="mx-auto flex h-[62px] max-w-7xl items-center gap-5 px-4 sm:px-6 lg:px-10">
 
@@ -387,7 +387,7 @@ export default function HomePage() {
  </Link>
  </div>
 
-          {/* Hamburger — mobile only */}
+          {/* Hamburger � mobile only */}
  <button
  onClick={() => setOpen((v) => !v)}
  aria-label={open ? 'Close menu' : 'Open menu'}
@@ -441,9 +441,9 @@ export default function HomePage() {
  </div>
  </header>
 
- {/* ══════════════════════════════════════════
+ {/* ------------------------------------------
  HERO
- ══════════════════════════════════════════ */}
+ ------------------------------------------ */}
  <section className="border-b border-slate-200 bg-white">
  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
  <div className="grid grid-cols-1 items-start gap-10 py-12 lg:grid-cols-2 lg:gap-14 lg:py-0">
@@ -465,7 +465,7 @@ export default function HomePage() {
 
  <p className="mb-7 max-w-md leading-relaxed text-slate-500"
  style={{ fontSize: 'clamp(14px,1.5vw,16px)' }}>
- Property · Vehicles · Electronics · Fashion · Jobs · Services.<br className="hidden sm:block" />
+ Property � Vehicles � Electronics � Fashion � Jobs � Services.<br className="hidden sm:block" />
  Millions of premium listings. 12 African countries.
  </p>
 
@@ -502,7 +502,7 @@ export default function HomePage() {
  }
  if (e.key === 'Escape') setAcOpen(false);
  }}
- placeholder="Search items, sellers, categories…"
+ placeholder="Search items, sellers, categories, countries…"
  className="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-[14px] text-slate-800
  placeholder-slate-400 outline-none"
  />
@@ -523,10 +523,10 @@ export default function HomePage() {
                 {/* Search hint */}
  <p className="mt-2 text-[11px] text-slate-400 flex items-center gap-1.5">
  <MagnifyingGlass size={11} className="text-indigo-400 flex-shrink-0" />
- <span>Search by product name, category, or <strong className="text-indigo-500 font-semibold">seller name</strong></span>
+ <span>Search by product name, category, seller name, or <strong className="text-indigo-500 font-semibold">country</strong></span>
  </p>
 
-                {/* Location dropdown — rendered outside overflow-hidden bar */}
+                {/* Location dropdown � rendered outside overflow-hidden bar */}
  {locOpen && (
  <div
  data-loc-picker
@@ -598,7 +598,7 @@ export default function HomePage() {
                               </span>
                               {listing.city && (
                                 <>
-                                  <span className="text-slate-300">•</span>
+                                  <span className="text-slate-300">�</span>
                                   <span className="text-[10px] text-slate-400">{listing.city}</span>
                                 </>
                               )}
@@ -700,7 +700,7 @@ export default function HomePage() {
  )}
  </div>
 
-              {/* Category pills — navigate to filtered listings */}
+              {/* Category pills � navigate to filtered listings */}
  <div className="mb-8 flex flex-wrap gap-2">
  {([
  { label: 'All', href: '/listings', Icon: ShoppingBag },
@@ -731,7 +731,7 @@ export default function HomePage() {
 
               {/* Stats */}
  <div className="border-t border-slate-100 pt-5 mt-2">
-                {/* Mobile: 2×2 stat grid — clean text, no emoji */}
+                {/* Mobile: 2�2 stat grid � clean text, no emoji */}
  <div className="grid grid-cols-2 gap-3 sm:hidden">
  {[
  { v: 'Growing', l: 'Community', accent: '#4F46E5' },
@@ -770,7 +770,7 @@ export default function HomePage() {
  </div>
  </div>
 
-            {/* RIGHT — masonry collage, desktop only */}
+            {/* RIGHT � masonry collage, desktop only */}
  <div
  className="hidden lg:grid grid-cols-2 gap-2.5"
  style={{ gridTemplateRows: '200px 200px 140px', minHeight: 560 }}
@@ -810,16 +810,16 @@ export default function HomePage() {
  </div>
  </section>
 
- {/* ══════════════════════════════════════════
+ {/* ------------------------------------------
  LATEST LISTINGS all active, shown first on every visit
- ══════════════════════════════════════════ */}
+ ------------------------------------------ */}
  <section className="border-b border-slate-200 bg-white py-12 sm:py-16">
  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
  <div className="mb-7 flex items-end justify-between">
  <div>
  <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
  <TrendUp size={11} className="text-indigo-600" />
- {allLoading ? 'Loading…' : `${allData?.meta?.total ?? allListings.length} Active Listings`}
+ {allLoading ? 'Loading�' : `${allData?.meta?.total ?? allListings.length} Active Listings`}
  </div>
  <h2 className="font-black leading-tight text-slate-900"
  style={{ fontSize: 'clamp(1.4rem,2.5vw,2rem)', letterSpacing: '-0.03em' }}>
@@ -850,10 +850,10 @@ export default function HomePage() {
  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
  {allListings.map((listing) => {
  const typeEmoji: Record<string, string> = {
- vehicle: '🚗', property: '🏠', electronics: '📱',
- fashion: '👗', job: '💼', service: '🔧', physical: '📦',
+ vehicle: '??', property: '??', electronics: '??',
+ fashion: '??', job: '??', service: '??', physical: '??',
  };
- const emoji = typeEmoji[listing.listing_type?.toLowerCase() ?? ''] ?? '📦';
+ const emoji = typeEmoji[listing.listing_type?.toLowerCase() ?? ''] ?? '??';
  return (
  <Link
  key={listing.id}
@@ -954,9 +954,9 @@ export default function HomePage() {
  </div>
  </section>
 
- {/* ══════════════════════════════════════════
+ {/* ------------------------------------------
  VEHICLES real API data
- ══════════════════════════════════════════ */}
+ ------------------------------------------ */}
  {isVisible('vehicles') && (
  <section className="border-b border-slate-200 bg-[#F8F9FA] py-12 sm:py-16">
  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -966,7 +966,7 @@ export default function HomePage() {
  <div>
  <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
  <Lightning size={11} className="text-indigo-600" />
- {vehiclesLoading ? 'Loading…' : `${vehiclesData?.meta?.total ?? vehicles.length} Listings`}
+ {vehiclesLoading ? 'Loading�' : `${vehiclesData?.meta?.total ?? vehicles.length} Listings`}
  </div>
  <h2 className="font-black leading-tight text-slate-900"
  style={{ fontSize: 'clamp(1.4rem,2.5vw,2rem)', letterSpacing: '-0.03em' }}>
@@ -991,7 +991,7 @@ export default function HomePage() {
  <p className="text-[14px] font-semibold text-slate-400">No vehicle listings yet.</p>
  <Link href={ROUTES.register}
  className="mt-3 inline-block text-[13px] font-bold text-indigo-600 no-underline hover:underline">
- Post the first one →
+ Post the first one ?
  </Link>
  </div>
  ) : (
@@ -1052,7 +1052,7 @@ export default function HomePage() {
  )}
  <div className="block w-full rounded-lg bg-indigo-50 py-2.5 text-center
  text-[12px] font-bold text-indigo-600 transition-colors hover:bg-indigo-100">
- View Details →
+ View Details ?
  </div>
  </div>
  </Link>
@@ -1063,9 +1063,9 @@ export default function HomePage() {
  </section>
       )} {/* end vehicles */}
 
- {/* ══════════════════════════════════════════
+ {/* ------------------------------------------
  ELECTRONICS real API data
- ══════════════════════════════════════════ */}
+ ------------------------------------------ */}
  {isVisible('electronics') && (
  <section className="border-b border-slate-200 bg-white py-12 sm:py-16">
  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -1075,7 +1075,7 @@ export default function HomePage() {
  <div>
  <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
  <Sparkle size={11} className="text-violet-600" />
- {electronicsLoading ? 'Loading…' : `${electronicsData?.meta?.total ?? electronics.length} Listings`}
+ {electronicsLoading ? 'Loading�' : `${electronicsData?.meta?.total ?? electronics.length} Listings`}
  </div>
  <h2 className="font-black leading-tight text-slate-900"
  style={{ fontSize: 'clamp(1.4rem,2.5vw,2rem)', letterSpacing: '-0.03em' }}>
@@ -1100,7 +1100,7 @@ export default function HomePage() {
  <p className="text-[14px] font-semibold text-slate-400">No electronics listings yet.</p>
  <Link href={ROUTES.register}
  className="mt-3 inline-block text-[13px] font-bold text-violet-600 no-underline hover:underline">
- Post the first one →
+ Post the first one ?
  </Link>
  </div>
  ) : (
@@ -1163,9 +1163,9 @@ export default function HomePage() {
  </section>
       )} {/* end electronics */}
 
- {/* ══════════════════════════════════════════
+ {/* ------------------------------------------
  PROPERTY real API data
- ══════════════════════════════════════════ */}
+ ------------------------------------------ */}
  {isVisible('property') && (
  <section className="border-b border-slate-200 bg-[#F8F9FA] py-12 sm:py-16">
  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -1175,7 +1175,7 @@ export default function HomePage() {
  <div>
  <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
  <Shield size={11} className="text-sky-600" />
- {propertyLoading ? 'Loading…' : `${propertyData?.meta?.total ?? properties.length} Listings`}
+ {propertyLoading ? 'Loading�' : `${propertyData?.meta?.total ?? properties.length} Listings`}
  </div>
  <h2 className="font-black leading-tight text-slate-900"
  style={{ fontSize: 'clamp(1.4rem,2.5vw,2rem)', letterSpacing: '-0.03em' }}>
@@ -1200,7 +1200,7 @@ export default function HomePage() {
  <p className="text-[14px] font-semibold text-slate-400">No property listings yet.</p>
  <Link href={ROUTES.register}
  className="mt-3 inline-block text-[13px] font-bold text-sky-600 no-underline hover:underline">
- Post the first one →
+ Post the first one ?
  </Link>
  </div>
  ) : (
@@ -1263,9 +1263,9 @@ export default function HomePage() {
  </section>
       )} {/* end property */}
 
- {/* ══════════════════════════════════════════
+ {/* ------------------------------------------
  TESTIMONIALS static marketing copy
- ══════════════════════════════════════════ */}
+ ------------------------------------------ */}
  <section className="py-14 sm:py-20 bg-slate-900">
  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
  <div className="mb-12 text-center">
@@ -1298,7 +1298,7 @@ export default function HomePage() {
  </div>
  <div>
  <p className="text-[13px] font-bold text-white">{name}</p>
- <p className="text-[11px] text-slate-500">{role} · {city}</p>
+ <p className="text-[11px] text-slate-500">{role} � {city}</p>
  </div>
  </div>
  </div>
@@ -1307,9 +1307,9 @@ export default function HomePage() {
  </div>
  </section>
 
- {/* ══════════════════════════════════════════
+ {/* ------------------------------------------
  WHY VELONTRI
- ══════════════════════════════════════════ */}
+ ------------------------------------------ */}
  <section className="border-b border-slate-200 bg-white py-14 sm:py-20">
  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
  <div className="mb-12 text-center">
@@ -1352,9 +1352,9 @@ export default function HomePage() {
  </div>
  </section>
 
- {/* ══════════════════════════════════════════
+ {/* ------------------------------------------
  SELLER CTA
- ══════════════════════════════════════════ */}
+ ------------------------------------------ */}
  <section className="relative overflow-hidden" style={{ minHeight: 460 }}>
  <img
  src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=1920&q=88&fit=crop&crop=center"
@@ -1400,16 +1400,16 @@ export default function HomePage() {
  className="inline-flex h-12 items-center rounded-xl border border-white/25
  bg-white/10 px-7 text-[14px] font-semibold text-white no-underline
  backdrop-blur-sm transition-all hover:bg-white/18">
- View plans →
+ View plans ?
  </Link>
  </div>
  </div>
  </div>
  </section>
 
- {/* ══════════════════════════════════════════
+ {/* ------------------------------------------
  FOOTER
- ══════════════════════════════════════════ */}
+ ------------------------------------------ */}
  <footer className="relative overflow-hidden border-t border-slate-800/60">
         {/* World map background image */}
  <div className="pointer-events-none absolute inset-0" aria-hidden>
@@ -1429,7 +1429,7 @@ export default function HomePage() {
  </div>
  <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
 
-          {/* Top row — logo + tagline + CTA */}
+          {/* Top row � logo + tagline + CTA */}
  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 pb-8 border-b border-slate-800/60">
  <div>
  <Link href="/" className="inline-flex items-center gap-2 no-underline mb-2">
@@ -1555,22 +1555,22 @@ export default function HomePage() {
 
           {/* Bottom bar */}
           {/* Desktop: copyright left | status centre-right | monogram far right */}
-          {/* Mobile: copyright → status → monogram (stacked, monogram last) */}
+          {/* Mobile: copyright ? status ? monogram (stacked, monogram last) */}
  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-6
  text-[11px] text-slate-600">
 
             {/* Copyright */}
  <p className="order-1 sm:order-1">
- © {new Date().getFullYear()} Velontri Technologies Ltd. All rights reserved.
+ � {new Date().getFullYear()} Velontri Technologies Ltd. All rights reserved.
  </p>
 
             {/* Status */}
  <div className="order-2 sm:order-2 flex items-center gap-1.5">
  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
- <span>All systems operational · 🌍 12 countries</span>
+ <span>All systems operational � ?? 12 countries</span>
  </div>
 
-            {/* Gold monogram — desktop: far right | mobile: last item, centered */}
+            {/* Gold monogram � desktop: far right | mobile: last item, centered */}
  <div className="order-3 sm:order-3 flex items-center justify-center sm:justify-end gap-2 opacity-30">
               {/* Circle with gold gradient border + M inside */}
  <div
