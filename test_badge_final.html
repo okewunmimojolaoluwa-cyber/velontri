@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Final Badge Test - Direct Flex Child Approach</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; }
+    .test-wrapper { margin: 20px auto; max-width: 900px; }
+    .test-card { 
+      border: 2px solid #cbd5e1; 
+      border-radius: 16px; 
+      padding: 16px; 
+      background: white;
+      margin-bottom: 20px;
+    }
+    .width-label {
+      background: #3b82f6;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: bold;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 p-6">
+  <div class="test-wrapper">
+    <h1 class="text-3xl font-bold mb-6 text-slate-900">✅ Final Badge Solution - Direct Flex Child</h1>
+    
+    <div class="bg-blue-50 border-2 border-blue-300 rounded-xl p-4 mb-6">
+      <h2 class="font-bold text-lg mb-2 text-blue-900">What Changed</h2>
+      <ul class="text-sm space-y-1 text-blue-800 list-disc list-inside">
+        <li><strong>Removed</strong> wrapper div around price</li>
+        <li><strong>Price span</strong> is now direct flex child with <code>flex-1 min-w-0 truncate</code></li>
+        <li><strong>Badge</strong> stays <code>flex-shrink-0</code> (never shrinks)</li>
+        <li><strong>Smaller badge</strong>: text-[9px] (was 10px), px-1.5 (was 2)</li>
+        <li><strong>Tighter gap</strong>: gap-1 (was 1.5) = 4px gap</li>
+      </ul>
+    </div>
+
+    <!-- 280px - Galaxy Fold -->
+    <div style="width: 280px;" class="mx-auto">
+      <div class="width-label">280px - Galaxy Fold (Extreme)</div>
+      <div class="test-card">
+        <p class="text-xs text-slate-500 uppercase mb-1">Electronics</p>
+        <h3 class="text-sm font-semibold mb-2">iPhone 15 Pro Max 512GB</h3>
+        
+        <div class="flex items-center gap-1 pt-1">
+          <span class="flex-1 min-w-0 text-base font-bold text-indigo-600 leading-tight truncate">
+            ₦1,850,000
+          </span>
+          <span class="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
+            Negotiable
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 320px - iPhone SE -->
+    <div style="width: 320px;" class="mx-auto">
+      <div class="width-label">320px - iPhone SE</div>
+      <div class="test-card">
+        <p class="text-xs text-slate-500 uppercase mb-1">Vehicles</p>
+        <h3 class="text-sm font-semibold mb-2">Mercedes-Benz C300 4MATIC AWD</h3>
+        
+        <div class="flex items-center gap-1 pt-1">
+          <span class="flex-1 min-w-0 text-base font-bold text-indigo-600 leading-tight truncate">
+            $45,000
+          </span>
+          <span class="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
+            Negotiable
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 375px - iPhone 13/14/15 -->
+    <div style="width: 375px;" class="mx-auto">
+      <div class="width-label">375px - iPhone 13/14/15</div>
+      <div class="test-card">
+        <p class="text-xs text-slate-500 uppercase mb-1">Property</p>
+        <h3 class="text-sm font-semibold mb-2">3 Bedroom Apartment in Lekki Phase 1</h3>
+        
+        <div class="flex items-center gap-1 pt-1">
+          <span class="flex-1 min-w-0 text-base font-bold text-indigo-600 leading-tight truncate">
+            ₦85,000,000
+          </span>
+          <span class="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
+            Negotiable
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 390px - iPhone 12/13/14 Pro Max -->
+    <div style="width: 390px;" class="mx-auto">
+      <div class="width-label">390px - iPhone Pro Max</div>
+      <div class="test-card">
+        <p class="text-xs text-slate-500 uppercase mb-1">Electronics</p>
+        <h3 class="text-sm font-semibold mb-2">MacBook Pro 16" M3 Max 1TB SSD</h3>
+        
+        <div class="flex items-center gap-1 pt-1">
+          <span class="flex-1 min-w-0 text-base font-bold text-indigo-600 leading-tight truncate">
+            $3,499
+          </span>
+          <span class="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
+            Negotiable
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 768px - Tablet -->
+    <div style="width: 768px;" class="mx-auto">
+      <div class="width-label">768px+ - Tablet/Desktop</div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="test-card">
+          <p class="text-xs text-slate-500 uppercase mb-1">Fashion</p>
+          <h3 class="text-sm font-semibold mb-2">Gucci Leather Handbag - Brown</h3>
+          
+          <div class="flex items-center gap-1 pt-1">
+            <span class="flex-1 min-w-0 text-base font-bold text-indigo-600 leading-tight truncate">
+              $1,200
+            </span>
+            <span class="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
+              Negotiable
+            </span>
+          </div>
+        </div>
+
+        <div class="test-card">
+          <p class="text-xs text-slate-500 uppercase mb-1">Services</p>
+          <h3 class="text-sm font-semibold mb-2">Professional Photography Session</h3>
+          
+          <div class="flex items-center gap-1 pt-1">
+            <span class="flex-1 min-w-0 text-base font-bold text-indigo-600 leading-tight truncate">
+              ₦50,000
+            </span>
+            <span class="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
+              Negotiable
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success Checklist -->
+    <div class="bg-emerald-50 border-2 border-emerald-300 rounded-xl p-4 mt-8">
+      <h2 class="font-bold text-lg mb-3 text-emerald-900">✅ Success Criteria</h2>
+      <div class="space-y-2 text-sm text-emerald-800">
+        <div class="flex items-start gap-2">
+          <span class="text-emerald-600 font-bold">✓</span>
+          <span>Badge stays on same line as price (no wrapping)</span>
+        </div>
+        <div class="flex items-start gap-2">
+          <span class="text-emerald-600 font-bold">✓</span>
+          <span>Price truncates with "..." when too long</span>
+        </div>
+        <div class="flex items-start gap-2">
+          <span class="text-emerald-600 font-bold">✓</span>
+          <span>Badge never shrinks or overflows</span>
+        </div>
+        <div class="flex items-start gap-2">
+          <span class="text-emerald-600 font-bold">✓</span>
+          <span>Works on 280px, 320px, 375px, 390px, 768px+</span>
+        </div>
+        <div class="flex items-start gap-2">
+          <span class="text-emerald-600 font-bold">✓</span>
+          <span>4px gap between price and badge (tight but readable)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Technical Details -->
+    <div class="bg-slate-100 border-2 border-slate-300 rounded-xl p-4 mt-6">
+      <h2 class="font-bold text-lg mb-2 text-slate-900">🔧 Technical Implementation</h2>
+      <pre class="text-xs bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto"><code>&lt;div className="flex items-center gap-1 pt-1"&gt;
+  &lt;span className="flex-1 min-w-0 text-base font-bold text-primary leading-tight truncate"&gt;
+    {fmt(listing.price, listing.currency)}
+  &lt;/span&gt;
+  {listing.is_negotiable && (
+    &lt;span className="inline-flex items-center rounded-full bg-emerald-50 
+      border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold 
+      text-emerald-700 whitespace-nowrap leading-none flex-shrink-0"&gt;
+      Negotiable
+    &lt;/span&gt;
+  )}
+&lt;/div&gt;</code></pre>
+    </div>
+  </div>
+</body>
+</html>

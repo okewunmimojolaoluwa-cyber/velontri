@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Negotiable Badge Test - Detailed</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .test-container {
+      border: 2px solid #e2e8f0;
+      margin: 20px;
+      padding: 20px;
+      background: white;
+    }
+    .test-label {
+      font-weight: bold;
+      color: #475569;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    .width-indicator {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: #3b82f6;
+      color: white;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: bold;
+      border-radius: 0 0 0 8px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 p-4">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6 text-slate-900">Negotiable Badge Responsiveness Test</h1>
+    
+    <!-- Test 1: Current Implementation -->
+    <div class="test-container" style="width: 320px;">
+      <div class="width-indicator">320px (iPhone SE)</div>
+      <div class="test-label">Test 1: Current Implementation (Wrapper Div)</div>
+      
+      <div class="border border-slate-200 rounded-xl p-4 bg-white">
+        <div class="space-y-1.5">
+          <p class="text-xs text-slate-500 uppercase">Electronics</p>
+          <h3 class="text-sm font-semibold">iPhone 15 Pro Max 512GB Natural Titanium - Factory Unlocked</h3>
+          
+          <!-- Current Implementation -->
+          <div class="flex items-center gap-1.5 pt-1">
+            <div class="flex-1 min-w-0">
+              <span class="block text-base font-bold text-indigo-600 leading-tight truncate">
+                ₦1,850,000
+              </span>
+            </div>
+            <span class="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
+              Negotiable
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test 2: Alternative with max-width on price -->
+    <div class="test-container" style="width: 320px;">
+      <div class="width-indicator">320px</div>
+      <div class="test-label">Test 2: With max-width constraint on price</div>
+      
+      <div class="border border-slate-200 rounded-xl p-4 bg-white">
+        <div class="space-y-1.5">
+          <p class="text-xs text-slate-500 uppercase">Electronics</p>
+          <h3 class="text-sm font-semibold">iPhone 15 Pro Max 512GB Natural Titanium - Factory Unlocked</h3>
+          
+          <div class="flex items-center gap-1.5 pt-1">
+            <div class="flex-1 min-w-0 max-w-[calc(100%-80px)]">
+              <span class="block text-base font-bold text-indigo-600 leading-tight truncate">
+                ₦1,850,000
+              </span>
+            </div>
+            <span class="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
+              Negotiable
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test 3: Using overflow-hidden on parent -->
+    <div class="test-container" style="width: 320px;">
+      <div class="width-indicator">320px</div>
+      <div class="test-label">Test 3: With overflow-hidden on flex parent</div>
+      
+      <div class="border border-slate-200 rounded-xl p-4 bg-white">
+        <div class="space-y-1.5">
+          <p class="text-xs text-slate-500 uppercase">Electronics</p>
+          <h3 class="text-sm font-semibold">iPhone 15 Pro Max 512GB Natural Titanium - Factory Unlocked</h3>
+          
+          <div class="flex items-center gap-1.5 pt-1 overflow-hidden">
+            <div class="flex-1 min-w-0">
+              <span class="block text-base font-bold text-indigo-600 leading-tight truncate">
+                ₦1,850,000
+              </span>
+            </div>
+            <span class="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
+              Negotiable
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test 4: Smaller badge text and padding -->
+    <div class="test-container" style="width: 320px;">
+      <div class="width-indicator">320px</div>
+      <div class="test-label">Test 4: Smaller badge (text-[9px], px-1.5)</div>
+      
+      <div class="border border-slate-200 rounded-xl p-4 bg-white">
+        <div class="space-y-1.5">
+          <p class="text-xs text-slate-500 uppercase">Electronics</p>
+          <h3 class="text-sm font-semibold">iPhone 15 Pro Max 512GB Natural Titanium - Factory Unlocked</h3>
+          
+          <div class="flex items-center gap-1.5 pt-1">
+            <div class="flex-1 min-w-0">
+              <span class="block text-base font-bold text-indigo-600 leading-tight truncate">
+                ₦1,850,000
+              </span>
+            </div>
+            <span class="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
+              Negotiable
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test 5: Stack on very small screens -->
+    <div class="test-container" style="width: 280px;">
+      <div class="width-indicator">280px (Galaxy Fold)</div>
+      <div class="test-label">Test 5: Stack badge below price on ultra-narrow (280px)</div>
+      
+      <div class="border border-slate-200 rounded-xl p-4 bg-white">
+        <div class="space-y-1.5">
+          <p class="text-xs text-slate-500 uppercase">Electronics</p>
+          <h3 class="text-sm font-semibold">iPhone 15 Pro Max 512GB - Factory Unlocked</h3>
+          
+          <div class="pt-1">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-base font-bold text-indigo-600 leading-tight">
+                ₦1,850,000
+              </span>
+              <span class="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none">
+                Negotiable
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test 6: Grid approach -->
+    <div class="test-container" style="width: 320px;">
+      <div class="width-indicator">320px</div>
+      <div class="test-label">Test 6: CSS Grid (1fr auto)</div>
+      
+      <div class="border border-slate-200 rounded-xl p-4 bg-white">
+        <div class="space-y-1.5">
+          <p class="text-xs text-slate-500 uppercase">Electronics</p>
+          <h3 class="text-sm font-semibold">iPhone 15 Pro Max 512GB Natural Titanium - Factory Unlocked</h3>
+          
+          <div class="grid grid-cols-[1fr_auto] gap-1.5 items-center pt-1">
+            <span class="text-base font-bold text-indigo-600 leading-tight truncate overflow-hidden">
+              ₦1,850,000
+            </span>
+            <span class="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap leading-none">
+              Negotiable
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparison Section -->
+    <div class="test-container" style="width: 100%;">
+      <div class="test-label">Responsive Comparison (Resize Browser)</div>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Card 1 -->
+        <div class="border border-slate-200 rounded-xl p-4 bg-white">
+          <div class="space-y-1.5">
+            <p class="text-xs text-slate-500 uppercase">Electronics</p>
+            <h3 class="text-sm font-semibold line-clamp-2">iPhone 15 Pro Max 512GB</h3>
+            
+            <div class="flex items-center gap-1.5 pt-1">
+              <div class="flex-1 min-w-0">
+                <span class="block text-base font-bold text-indigo-600 leading-tight truncate">
+                  ₦1,850,000
+                </span>
+              </div>
+              <span class="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
+                Negotiable
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="border border-slate-200 rounded-xl p-4 bg-white">
+          <div class="space-y-1.5">
+            <p class="text-xs text-slate-500 uppercase">Vehicles</p>
+            <h3 class="text-sm font-semibold line-clamp-2">Mercedes-Benz C300 4MATIC</h3>
+            
+            <div class="flex items-center gap-1.5 pt-1">
+              <div class="flex-1 min-w-0">
+                <span class="block text-base font-bold text-indigo-600 leading-tight truncate">
+                  $45,000
+                </span>
+              </div>
+              <span class="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
+                Negotiable
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="border border-slate-200 rounded-xl p-4 bg-white">
+          <div class="space-y-1.5">
+            <p class="text-xs text-slate-500 uppercase">Property</p>
+            <h3 class="text-sm font-semibold line-clamp-2">3BR Apartment Lekki Phase 1</h3>
+            
+            <div class="flex items-center gap-1.5 pt-1">
+              <div class="flex-1 min-w-0">
+                <span class="block text-base font-bold text-indigo-600 leading-tight truncate">
+                  ₦85,000,000
+                </span>
+              </div>
+              <span class="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
+                Negotiable
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="test-container bg-blue-50 border-blue-300">
+      <h2 class="font-bold text-lg mb-2 text-blue-900">Testing Instructions</h2>
+      <ul class="text-sm space-y-1 text-blue-800">
+        <li>✅ Badge should stay on the same line as price</li>
+        <li>✅ Price should truncate with "..." when too long</li>
+        <li>✅ Badge should never wrap to next line</li>
+        <li>✅ Badge should never overflow container</li>
+        <li>✅ Test at: 280px, 320px, 375px, 390px, 768px+</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>
