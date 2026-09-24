@@ -503,11 +503,7 @@ async def _search_fallback(
     if city:
         extra_conditions.append("city ILIKE :city")
         all_params["city"] = f"%{city}%"
-    if country:
-        # Support both 2-letter codes (NG) and full country names (Nigeria)
-        extra_conditions.append("(country ILIKE :country OR country = :country_code)")
-        all_params["country"] = f"%{country}%"
-        all_params["country_code"] = country
+    # NOTE: Country filtering is handled by country_codes in search_clauses above
     if price_min is not None:
         extra_conditions.append("CAST(price AS NUMERIC) >= :pmin")
         all_params["pmin"] = price_min
