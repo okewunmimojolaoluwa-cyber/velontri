@@ -69,8 +69,8 @@ export function BackendWakeup() {
  />
  </span>
  {status === 'checking'
- ? 'Connecting to server\u2026'
- : 'Server is starting up \u2014 this may take 30\u201360 seconds on first load.'}
+ ? 'Initializing…'
+ : 'Starting up — this may take a moment on first load.'}
  </div>
  );
 }

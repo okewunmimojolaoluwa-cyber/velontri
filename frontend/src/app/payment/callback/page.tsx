@@ -157,7 +157,7 @@ export default function PaymentCallbackPage() {
  <CircleNotch className="h-14 w-14 animate-spin text-indigo-600 mx-auto mb-5" />
  <h2 className="text-[18px] font-black text-slate-900 mb-2">Verifying payment…</h2>
  <p className="text-[14px] text-slate-500">
- Please wait while we confirm your payment with Paystack.
+ Verifying your payment…
  </p>
  </>
  )}

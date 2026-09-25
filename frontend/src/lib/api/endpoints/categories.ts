@@ -230,7 +230,7 @@ export async function getCategoryPath(
       result.childCategory = await getCategory(childCategoryId);
     }
   } catch (error) {
-    console.error('Error fetching category path:', error);
+    // Silent fail - return empty result
   }
   
   return result;

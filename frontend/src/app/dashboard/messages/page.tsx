@@ -134,7 +134,6 @@ export default function UserMessagesPage() {
         ?? e?.message 
         ?? 'Failed to send message. Please check your connection and try again.';
       setSendErr(errorMsg);
-      console.error('Send message error:', e);
       // Keep focus on textarea
       textareaRef.current?.focus();
     },

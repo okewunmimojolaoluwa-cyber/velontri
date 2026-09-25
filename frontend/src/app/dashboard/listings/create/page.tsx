@@ -678,7 +678,7 @@ export default function CreateListingPage() {
  strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
  </svg>
  <p className="text-sm font-medium text-indigo-700">
- Connecting to server this may take up to 30 seconds on first use…
+ Preparing form…
  </p>
  </div>
  )}

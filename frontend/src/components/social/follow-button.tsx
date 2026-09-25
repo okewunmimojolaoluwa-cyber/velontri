@@ -86,7 +86,6 @@ export function FollowButton({
       setOptimisticFollowing(null);
       
       // Show error message
-      console.error('Failed to follow user:', error);
       alert('Failed to follow user. Please try again.');
     },
   });
@@ -118,7 +117,6 @@ export function FollowButton({
       }
       setOptimisticFollowing(null);
 
-      console.error('Failed to unfollow user:', error);
       alert('Failed to unfollow user. Please try again.');
     },
   });

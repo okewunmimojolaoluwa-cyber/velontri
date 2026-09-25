@@ -63,7 +63,7 @@ function LoginInner() {
  if (err instanceof VelontriApiError) {
  setError(err.status === 422 ? 'Invalid email/phone or password.' : err.message);
  } else if (err?.code === 'ERR_NETWORK' || err?.message === 'Network Error' || !err?.response) {
- setError('The server is starting up this can take 30–60 seconds on first load. Please wait and try again.');
+ setError('Unable to connect. Please check your connection and try again.');
  } else {
  setError('Sign in failed. Please try again.');
  }

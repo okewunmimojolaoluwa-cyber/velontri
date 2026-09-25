@@ -142,7 +142,7 @@ class AuthService:
                 wait = int(OTP_COOLDOWN_SECONDS - elapsed)
                 from shared.errors import RateLimitError
                 raise RateLimitError(
-                    f'Please wait {wait} seconds before requesting another code.'
+                    f'Too many requests. Try again in {wait} seconds.'
                 )
 
         await self._issue_and_send_email_otp(
@@ -489,7 +489,7 @@ class AuthService:
                 wait = int(OTP_COOLDOWN_SECONDS - elapsed)
                 from shared.errors import RateLimitError
                 raise RateLimitError(
-                    f'Please wait {wait} seconds before requesting another code.'
+                    f'Too many requests. Try again in {wait} seconds.'
                 )
 
         await self._issue_and_send_email_otp(
