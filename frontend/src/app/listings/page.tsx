@@ -236,7 +236,7 @@ export default function ListingsPage() {
 
  const [filters, setFilters] = useState<ListingFilters>(() => ({
  page: 1,
- page_size: 24,
+ page_size: 100, // Load 100 listings at once for faster experience
  seller_id: sellerIdParam || undefined,
  listing_type: listingTypeParam || undefined,
  category: categoryParam || undefined,
@@ -296,7 +296,7 @@ export default function ListingsPage() {
  }
 
  function clear() {
- setFilters({ page: 1, page_size: 24, seller_id: sellerIdParam || undefined, q: undefined });
+ setFilters({ page: 1, page_size: 100, seller_id: sellerIdParam || undefined, q: undefined });
  setActiveCat('');
  setSearch('');
  setFilterSidebarOpen(false);

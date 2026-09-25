@@ -235,8 +235,8 @@ export default function HomePage() {
 
   /* Fetch ALL active listings � with IMMEDIATE loading priority */
  const { data: allData, isLoading: allLoading } = useQuery({
- queryKey: listingKeys.list({ page: 1, page_size: 12 }),
- queryFn: () => listingsApi.browse({ page: 1, page_size: 12 }),
+ queryKey: listingKeys.list({ page: 1, page_size: 50 }),
+ queryFn: () => listingsApi.browse({ page: 1, page_size: 50 }),
  staleTime: 3 * 60 * 1000, // 3 minutes
  gcTime: 15 * 60 * 1000, // 15 minutes
  refetchOnWindowFocus: false,
@@ -248,8 +248,8 @@ export default function HomePage() {
 
   /* Fetch category sections with conditional loading */
  const { data: vehiclesData, isLoading: vehiclesLoading } = useQuery({
- queryKey: listingKeys.list({ listing_type: 'vehicle', page: 1, page_size: 8 }),
- queryFn: () => listingsApi.browse({ listing_type: 'vehicle', page: 1, page_size: 8 }),
+ queryKey: listingKeys.list({ listing_type: 'vehicle', page: 1, page_size: 20 }),
+ queryFn: () => listingsApi.browse({ listing_type: 'vehicle', page: 1, page_size: 20 }),
  staleTime: 5 * 60 * 1000,
  gcTime: 20 * 60 * 1000,
  refetchOnWindowFocus: false,
@@ -258,8 +258,8 @@ export default function HomePage() {
  });
 
  const { data: electronicsData, isLoading: electronicsLoading } = useQuery({
- queryKey: listingKeys.list({ category: 'Electronics', page: 1, page_size: 8 }),
- queryFn: () => listingsApi.browse({ category: 'Electronics', page: 1, page_size: 8 }),
+ queryKey: listingKeys.list({ category: 'Electronics', page: 1, page_size: 20 }),
+ queryFn: () => listingsApi.browse({ category: 'Electronics', page: 1, page_size: 20 }),
  staleTime: 5 * 60 * 1000,
  gcTime: 20 * 60 * 1000,
  refetchOnWindowFocus: false,
@@ -268,8 +268,8 @@ export default function HomePage() {
  });
 
  const { data: propertyData, isLoading: propertyLoading } = useQuery({
- queryKey: listingKeys.list({ listing_type: 'property', page: 1, page_size: 8 }),
- queryFn: () => listingsApi.browse({ listing_type: 'property', page: 1, page_size: 8 }),
+ queryKey: listingKeys.list({ listing_type: 'property', page: 1, page_size: 20 }),
+ queryFn: () => listingsApi.browse({ listing_type: 'property', page: 1, page_size: 20 }),
  staleTime: 5 * 60 * 1000,
  gcTime: 20 * 60 * 1000,
  refetchOnWindowFocus: false,
