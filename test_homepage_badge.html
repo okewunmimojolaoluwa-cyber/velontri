@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Homepage Negotiable Badge Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+  <h1 class="text-2xl font-bold mb-8">Homepage Negotiable Badge Responsiveness Test</h1>
+  
+  <!-- Test at different widths -->
+  <div class="space-y-8">
+    
+    <!-- 280px width (smallest) -->
+    <div>
+      <h2 class="text-lg font-semibold mb-3">280px Width (Galaxy Fold)</h2>
+      <div style="width: 280px" class="border-2 border-blue-500">
+        <div class="bg-white rounded-xl p-3.5 shadow">
+          <p class="text-[13px] font-bold leading-snug text-slate-900 line-clamp-2 mb-2">
+            2020 Toyota Camry XLE - Low Mileage
+          </p>
+          
+          <!-- FIXED: Latest Listings Badge -->
+          <div class="flex items-baseline gap-1 mb-1">
+            <p class="flex-1 min-w-0 text-[15px] font-black tracking-tight text-indigo-600 truncate">
+              ₦1,850,000
+            </p>
+            <span class="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none">
+              Negotiable
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 320px width (iPhone SE) -->
+    <div>
+      <h2 class="text-lg font-semibold mb-3">320px Width (iPhone SE)</h2>
+      <div style="width: 320px" class="border-2 border-green-500">
+        <div class="bg-white rounded-xl p-3.5 shadow">
+          <p class="text-[13px] font-bold leading-snug text-slate-900 line-clamp-2 mb-2">
+            Brand New Samsung Galaxy S24 Ultra 256GB
+          </p>
+          
+          <!-- FIXED: Electronics Badge -->
+          <div class="flex items-baseline gap-1 mt-2">
+            <span class="flex-1 min-w-0 text-[15px] font-black tracking-tight text-slate-900 truncate">
+              ₦1,299,999
+            </span>
+            <span class="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none">
+              Negotiable
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 375px width (iPhone 13/14/15) -->
+    <div>
+      <h2 class="text-lg font-semibold mb-3">375px Width (iPhone 13/14/15)</h2>
+      <div style="width: 375px" class="border-2 border-purple-500">
+        <div class="bg-white rounded-xl p-3.5 shadow">
+          <p class="text-[13px] font-bold leading-snug text-slate-900 line-clamp-2 mb-2">
+            2019 Honda Accord Sport - Excellent Condition
+          </p>
+          
+          <!-- FIXED: Vehicles Badge -->
+          <div class="mb-3 flex items-baseline gap-1">
+            <span class="flex-1 min-w-0 text-[16px] font-black tracking-tight text-slate-900 truncate">
+              ₦4,750,000
+            </span>
+            <span class="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none">
+              Negotiable
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 390px width (iPhone Pro Max) -->
+    <div>
+      <h2 class="text-lg font-semibold mb-3">390px Width (iPhone Pro Max)</h2>
+      <div style="width: 390px" class="border-2 border-orange-500">
+        <div class="bg-white rounded-xl p-3.5 shadow">
+          <p class="text-[13px] font-bold leading-snug text-slate-900 line-clamp-2 mb-2">
+            Luxury 4 Bedroom Duplex in Lekki Phase 1
+          </p>
+          
+          <!-- FIXED: Property Badge -->
+          <div class="flex items-baseline gap-1">
+            <p class="flex-1 min-w-0 text-[17px] font-black tracking-tight text-slate-900 truncate">
+              ₦85,000,000
+            </p>
+            <span class="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none">
+              Negotiable
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 768px width (Tablet) -->
+    <div>
+      <h2 class="text-lg font-semibold mb-3">768px Width (iPad)</h2>
+      <div style="width: 768px" class="border-2 border-pink-500">
+        <div class="bg-white rounded-xl p-3.5 shadow">
+          <p class="text-[13px] font-bold leading-snug text-slate-900 line-clamp-2 mb-2">
+            Luxury 5 Bedroom Detached Duplex with Pool
+          </p>
+          
+          <div class="flex items-baseline gap-1 mb-1">
+            <p class="flex-1 min-w-0 text-[15px] font-black tracking-tight text-indigo-600 truncate">
+              ₦125,000,000
+            </p>
+            <span class="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none">
+              Negotiable
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparison: BEFORE (broken) -->
+    <div>
+      <h2 class="text-lg font-semibold mb-3 text-red-600">❌ BEFORE (Broken at 320px)</h2>
+      <div style="width: 320px" class="border-2 border-red-500">
+        <div class="bg-white rounded-xl p-3.5 shadow">
+          <p class="text-[13px] font-bold leading-snug text-slate-900 line-clamp-2 mb-2">
+            2020 Toyota Camry XLE - Low Mileage
+          </p>
+          
+          <!-- OLD WAY: No flex-1, no min-w-0, no truncate -->
+          <div class="flex items-baseline gap-1.5 mb-1">
+            <p class="text-[15px] font-black tracking-tight text-indigo-600">
+              ₦1,850,000
+            </p>
+            <span class="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none">
+              Negotiable
+            </span>
+          </div>
+          <p class="text-xs text-red-600 mt-2">⚠️ Badge may wrap or overflow on narrow screens</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparison: AFTER (fixed) -->
+    <div>
+      <h2 class="text-lg font-semibold mb-3 text-green-600">✅ AFTER (Fixed at 320px)</h2>
+      <div style="width: 320px" class="border-2 border-green-500">
+        <div class="bg-white rounded-xl p-3.5 shadow">
+          <p class="text-[13px] font-bold leading-snug text-slate-900 line-clamp-2 mb-2">
+            2020 Toyota Camry XLE - Low Mileage
+          </p>
+          
+          <!-- NEW WAY: With flex-1, min-w-0, and truncate -->
+          <div class="flex items-baseline gap-1 mb-1">
+            <p class="flex-1 min-w-0 text-[15px] font-black tracking-tight text-indigo-600 truncate">
+              ₦1,850,000
+            </p>
+            <span class="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none">
+              Negotiable
+            </span>
+          </div>
+          <p class="text-xs text-green-600 mt-2">✓ Price truncates, badge stays visible</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="mt-12 p-6 bg-blue-50 rounded-xl border border-blue-200">
+    <h3 class="text-lg font-bold mb-3">✅ What Was Fixed</h3>
+    <ul class="space-y-2 text-sm">
+      <li class="flex items-start gap-2">
+        <span class="text-green-600 font-bold">✓</span>
+        <span><strong>Latest Listings:</strong> Added <code class="bg-blue-100 px-1 rounded">flex-1 min-w-0 truncate</code> to price</span>
+      </li>
+      <li class="flex items-start gap-2">
+        <span class="text-green-600 font-bold">✓</span>
+        <span><strong>Vehicles:</strong> Added <code class="bg-blue-100 px-1 rounded">flex-1 min-w-0 truncate</code> to price</span>
+      </li>
+      <li class="flex items-start gap-2">
+        <span class="text-green-600 font-bold">✓</span>
+        <span><strong>Electronics:</strong> Added <code class="bg-blue-100 px-1 rounded">flex-1 min-w-0 truncate</code> to price</span>
+      </li>
+      <li class="flex items-start gap-2">
+        <span class="text-green-600 font-bold">✓</span>
+        <span><strong>Property:</strong> Added <code class="bg-blue-100 px-1 rounded">flex-1 min-w-0 truncate</code> to price</span>
+      </li>
+      <li class="flex items-start gap-2">
+        <span class="text-green-600 font-bold">✓</span>
+        <span>Reduced gap from <code class="bg-blue-100 px-1 rounded">gap-1.5</code> to <code class="bg-blue-100 px-1 rounded">gap-1</code></span>
+      </li>
+      <li class="flex items-start gap-2">
+        <span class="text-green-600 font-bold">✓</span>
+        <span>Removed duplicate <code class="bg-blue-100 px-1 rounded">flex-shrink-0</code> from badges</span>
+      </li>
+    </ul>
+  </div>
+
+  <div class="mt-6 p-6 bg-yellow-50 rounded-xl border border-yellow-200">
+    <h3 class="text-lg font-bold mb-3">🔑 Key CSS Properties</h3>
+    <ul class="space-y-2 text-sm font-mono">
+      <li><strong>flex-1:</strong> Price takes all available space</li>
+      <li><strong>min-w-0:</strong> Allows price to shrink below content width (CRITICAL!)</li>
+      <li><strong>truncate:</strong> Adds ellipsis when text is too long</li>
+      <li><strong>flex-shrink-0:</strong> Badge never compresses</li>
+      <li><strong>gap-1:</strong> 4px spacing between price and badge</li>
+    </ul>
+  </div>
+
+</body>
+</html>
