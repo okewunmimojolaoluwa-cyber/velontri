@@ -911,12 +911,12 @@ export default function HomePage() {
  <p className="text-[13px] font-bold leading-snug text-slate-900 line-clamp-2 mb-2 min-h-[2.4rem]">
  {listing.title}
  </p>
- <div className="flex items-baseline gap-1.5 mb-1">
- <p className="text-[15px] font-black tracking-tight text-indigo-600">
+ <div className="flex items-baseline gap-1 mb-1">
+ <p className="flex-1 min-w-0 text-[15px] font-black tracking-tight text-indigo-600 truncate">
  {fmtPrice(listing.price, listing.currency)}
  </p>
  {listing.is_negotiable && (
- <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
+ <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none">
  Negotiable
  </span>
  )}
@@ -1035,12 +1035,12 @@ export default function HomePage() {
  </div>
  <div className="p-4">
  <p className="mb-1.5 text-[13px] font-bold leading-tight text-slate-900 line-clamp-2 min-h-[2.5rem]">{car.title}</p>
- <div className="mb-3 flex items-baseline gap-1.5">
- <span className="text-[16px] font-black tracking-tight text-slate-900">
+ <div className="mb-3 flex items-baseline gap-1">
+ <span className="flex-1 min-w-0 text-[16px] font-black tracking-tight text-slate-900 truncate">
  {fmtPrice(car.price, car.currency)}
  </span>
  {car.is_negotiable && (
- <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
+ <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none">
  Negotiable
  </span>
  )}
@@ -1139,12 +1139,12 @@ export default function HomePage() {
  </div>
  <div className="border-t border-slate-100 bg-white p-4">
  <p className="mb-1 text-[13px] font-bold leading-tight text-slate-900 line-clamp-2 min-h-[2.5rem]">{item.title}</p>
- <div className="flex items-baseline gap-1.5 mt-2">
- <span className="text-[15px] font-black tracking-tight text-slate-900">
+ <div className="flex items-baseline gap-1 mt-2">
+ <span className="flex-1 min-w-0 text-[15px] font-black tracking-tight text-slate-900 truncate">
  {fmtPrice(item.price, item.currency)}
  </span>
  {item.is_negotiable && (
- <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
+ <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none">
  Negotiable
  </span>
  )}
@@ -1244,12 +1244,12 @@ export default function HomePage() {
  <MapPin size={10} />{p.city}
  </p>
  )}
- <div className="flex items-baseline gap-1.5">
- <p className="text-[17px] font-black tracking-tight text-slate-900">
+ <div className="flex items-baseline gap-1">
+ <p className="flex-1 min-w-0 text-[17px] font-black tracking-tight text-slate-900 truncate">
  {fmtPrice(p.price, p.currency)}
  </p>
  {p.is_negotiable && (
- <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none flex-shrink-0">
+ <span className="flex-shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 whitespace-nowrap leading-none">
  Negotiable
  </span>
  )}
