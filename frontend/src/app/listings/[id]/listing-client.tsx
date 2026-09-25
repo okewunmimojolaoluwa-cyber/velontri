@@ -416,10 +416,47 @@ export default function ListingDetailPage() {
  }
 
  function handleShare() {
+ const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/listings/${id}`;
+ const shareData = {
+ title: listing?.title || 'Check out this listing on Velontri',
+ text: `${listing?.title}${listing?.price ? ` - ${fmt(listing.price, listing.currency || 'NGN')}` : ''}`,
+ url: shareUrl
+ };
+
  if (typeof navigator !== 'undefined' && navigator.share) {
- navigator.share({ title: listing?.title, url: window.location.href }).catch(() => {});
+ // Use native share (mobile)
+ navigator.share(shareData).catch(() => {
+ // Fallback to clipboard if share is cancelled
+ fallbackCopyLink(shareUrl);
+ });
  } else {
- navigator.clipboard?.writeText(window.location.href);
+ // Fallback to clipboard (desktop)
+ fallbackCopyLink(shareUrl);
+ }
+ }
+
+ function fallbackCopyLink(url: string) {
+ if (typeof navigator !== 'undefined' && navigator.clipboard) {
+ navigator.clipboard.writeText(url).then(() => {
+ alert('Link copied to clipboard!');
+ }).catch(() => {
+ alert('Could not copy link. Please copy manually: ' + url);
+ });
+ } else {
+ // Final fallback for older browsers
+ const textArea = document.createElement('textarea');
+ textArea.value = url;
+ textArea.style.position = 'fixed';
+ textArea.style.left = '-999999px';
+ document.body.appendChild(textArea);
+ textArea.select();
+ try {
+ document.execCommand('copy');
+ alert('Link copied to clipboard!');
+ } catch (err) {
+ alert('Could not copy link. Please copy manually: ' + url);
+ }
+ document.body.removeChild(textArea);
  }
  }
 
