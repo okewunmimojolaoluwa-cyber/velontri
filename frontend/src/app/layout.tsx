@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import { Providers } from '@/app/providers';
 import { BottomNavWrapper } from '@/components/layout/bottom-nav-wrapper';
 import { MaintenanceBannerWrapper } from '@/components/ui/maintenance-banner-wrapper';
+import { ChatbotWidget } from '@/components/chatbot/chatbot-widget';
 import './globals.css';
 
 const inter = Inter({
@@ -144,6 +145,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
  <MaintenanceBannerWrapper />
  {children}
  <BottomNavWrapper />
+ <ChatbotWidget />
  </Providers>
  </body>
  </html>
