@@ -19,6 +19,18 @@ const nextConfig = {
   
   // Output optimization
   output: 'standalone', // Optimized production output
+  
+  // Speed up build by disabling expensive tracing
+  outputFileTracingRoot: undefined,
+  outputFileTracingExcludes: {
+    '*': [
+      'node_modules/@swc/core-linux-x64-gnu',
+      'node_modules/@swc/core-linux-x64-musl',
+      'node_modules/@esbuild',
+      'node_modules/webpack',
+      'node_modules/terser',
+    ],
+  },
 
   // Public env vars — safe to commit, these are public-facing keys only.
   env: {
