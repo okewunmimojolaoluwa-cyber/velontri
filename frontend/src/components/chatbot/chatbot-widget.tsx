@@ -47,27 +47,6 @@ export function ChatbotWidget() {
             </button>
           </div>
 
-          {/* Welcome banner - makes it clear this is a chatbot */}
-          <div className="bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-950/30 dark:to-violet-950/30 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-            <div className="flex items-start gap-2.5">
-              <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-lg bg-black flex items-center justify-center overflow-hidden">
-                <img
-                  src="/logo.png"
-                  alt="Velontri"
-                  className="w-5 h-5 object-contain"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 leading-snug">
-                  Hi! I'm your Velontri AI Assistant 👋
-                </p>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed mt-0.5">
-                  Ask me anything about listings, buying, selling, or using Velontri. I'm here 24/7!
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Iframe container - loads the existing chatbot */}
           <div className="w-[380px] h-[480px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-240px)] sm:w-[380px] sm:h-[480px]">
             <iframe
