@@ -61,30 +61,30 @@ export function ChatbotWidget() {
         </div>
       )}
 
-      {/* Floating launcher button with Velontri logo - always visible */}
+      {/* Floating launcher button - just Velontri logo with online dot */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 z-[9998] h-14 w-14 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center group"
+        className="fixed bottom-4 right-4 z-[9998] transition-all duration-200 hover:scale-105 active:scale-95 relative"
         aria-label={isOpen ? 'Close Velontri AI Assistant' : 'Open Velontri AI Assistant'}
         aria-expanded={isOpen}
         title="Chat with Velontri AI"
       >
         {isOpen ? (
-          <X className="h-6 w-6 text-white" weight="bold" />
+          <div className="w-14 h-14 flex items-center justify-center bg-white dark:bg-slate-900 rounded-lg shadow-lg">
+            <X className="h-6 w-6 text-slate-900 dark:text-white" weight="bold" />
+          </div>
         ) : (
           <>
-            {/* Logo container with white background */}
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white dark:bg-white shadow-sm">
-              <img
-                src="/logo.png"
-                alt="Velontri"
-                className="w-8 h-8 object-contain"
-              />
-            </div>
-            {/* Pulsing indicator */}
-            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+            {/* Just the Velontri logo */}
+            <img
+              src="/logo.png"
+              alt="Velontri"
+              className="w-14 h-14 object-contain drop-shadow-lg"
+            />
+            {/* Pulsing online indicator dot */}
+            <span className="absolute top-0 right-0 flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500 ring-2 ring-white dark:ring-slate-900"></span>
             </span>
           </>
         )}
