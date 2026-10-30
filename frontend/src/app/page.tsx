@@ -1569,42 +1569,6 @@ export default function HomePage() {
  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
  <span>All systems operational � ?? 12 countries</span>
  </div>
-
-            {/* Gold monogram � desktop: far right | mobile: last item, centered */}
- <div className="order-3 sm:order-3 flex items-center justify-center sm:justify-end gap-2 opacity-30">
-              {/* Circle with gold gradient border + M inside */}
- <div
- className="flex-shrink-0 flex items-center justify-center rounded-full"
- style={{
- width: 28,
- height: 28,
- background: 'linear-gradient(135deg, #c9a84c 0%, #f5d98b 40%, #b8860b 70%, #e4b84d 100%)',
- padding: 1.5,
- }}
- >
- <div className="w-full h-full rounded-full bg-[#0a0f1e] flex items-center justify-center">
- <span
- style={{
- fontFamily: 'Georgia, "Times New Roman", serif',
- fontSize: 13,
- fontWeight: 700,
- fontStyle: 'italic',
- background: 'linear-gradient(135deg, #c9a84c 0%, #f5d98b 45%, #e4b84d 100%)',
- WebkitBackgroundClip: 'text',
- WebkitTextFillColor: 'transparent',
- backgroundClip: 'text',
- letterSpacing: '-0.03em',
- lineHeight: 1,
- }}
- >
- M
- </span>
- </div>
- </div>
- <span className="text-[10px] tracking-wide" style={{ color: '#7a6030' }}>
- crafted by Mojolaoluwa....
- </span>
- </div>
  </div>
  </div>
  </footer>
