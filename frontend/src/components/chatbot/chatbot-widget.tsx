@@ -49,7 +49,7 @@ export function ChatbotWidget() {
               className="w-full h-full border-0"
               title="Velontri AI Chatbot"
               allow="clipboard-write"
-              sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+              sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation"
               loading="lazy"
             />
           </div>
