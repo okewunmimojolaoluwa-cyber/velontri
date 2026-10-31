@@ -41,10 +41,10 @@ export function ChatbotWidget() {
         </div>
       )}
 
-      {/* Floating launcher button - logo clipped to circular shape */}
+      {/* Floating launcher button - smaller circle with logo only */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 z-[9998] w-16 h-16 rounded-full shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 overflow-hidden"
+        className="fixed bottom-4 right-4 z-[9998] w-12 h-12 rounded-full shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 overflow-hidden"
         aria-label={isOpen ? 'Close Velontri AI Assistant' : 'Open Velontri AI Assistant'}
         aria-expanded={isOpen}
         title="Chat with Velontri AI"
@@ -52,22 +52,17 @@ export function ChatbotWidget() {
       >
         {isOpen ? (
           <div className="w-full h-full flex items-center justify-center bg-white dark:bg-slate-900">
-            <X className="h-6 w-6 text-slate-900 dark:text-white" weight="bold" />
+            <X className="h-5 w-5 text-slate-900 dark:text-white" weight="bold" />
           </div>
         ) : (
-          <div className="relative w-full h-full">
-            {/* Velontri logo clipped to circle */}
+          <div className="w-full h-full">
+            {/* Velontri logo clipped to circle - no online indicator */}
             <img
               src="/logo.png"
               alt="Velontri AI Assistant"
               className="w-full h-full object-cover"
               style={{ display: 'block' }}
             />
-            {/* Pulsing online indicator dot */}
-            <span className="absolute top-1 right-1 flex h-3.5 w-3.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-green-500 ring-2 ring-white dark:ring-slate-900"></span>
-            </span>
           </div>
         )}
       </button>
