@@ -465,8 +465,8 @@ export default function HomePage() {
 
  <p className="mb-7 max-w-md leading-relaxed text-slate-500"
  style={{ fontSize: 'clamp(14px,1.5vw,16px)' }}>
- Property � Vehicles � Electronics � Fashion � Jobs � Services.<br className="hidden sm:block" />
- Millions of premium listings. 12 African countries.
+ Property • Vehicles • Electronics • Fashion • Jobs • Services<br className="hidden sm:block" />
+ <span className="text-slate-600 font-medium">Millions of premium listings across 12 African countries.</span>
  </p>
 
               {/* Search bar */}
