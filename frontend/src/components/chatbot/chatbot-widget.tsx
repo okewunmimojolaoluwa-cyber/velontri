@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from '@phosphor-icons/react';
 
 /**
@@ -19,8 +19,23 @@ import { X } from '@phosphor-icons/react';
 export function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
 
-  // The existing deployed chatbot URL - DO NOT CHANGE
+  // Chatbot URL
   const CHATBOT_URL = 'https://velo.pxxlspace.cv';
+
+  // Add navigation listener when component mounts
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'navigate') {
+        window.location.href = e.data.url;
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, []);
 
   return (
     <>
