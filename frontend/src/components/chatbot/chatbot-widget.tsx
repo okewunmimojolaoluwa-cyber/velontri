@@ -58,26 +58,26 @@ export function ChatbotWidget() {
         </div>
       )}
 
-      {/* Floating launcher button - circular with Velontri logo */}
+      {/* Floating launcher button - logo clipped to circular shape */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 z-[9998] w-16 h-16 rounded-full shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700"
+        className="fixed bottom-4 right-4 z-[9998] w-16 h-16 rounded-full shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 overflow-hidden"
         aria-label={isOpen ? 'Close Velontri AI Assistant' : 'Open Velontri AI Assistant'}
         aria-expanded={isOpen}
         title="Chat with Velontri AI"
         style={{ position: 'fixed', bottom: '16px', right: '16px' }}
       >
         {isOpen ? (
-          <div className="w-full h-full flex items-center justify-center">
+          <div className="w-full h-full flex items-center justify-center bg-white dark:bg-slate-900">
             <X className="h-6 w-6 text-slate-900 dark:text-white" weight="bold" />
           </div>
         ) : (
-          <div className="relative w-full h-full flex items-center justify-center p-2">
-            {/* Just the Velontri logo */}
+          <div className="relative w-full h-full">
+            {/* Velontri logo clipped to circle */}
             <img
               src="/logo.png"
               alt="Velontri AI Assistant"
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover"
               style={{ display: 'block' }}
             />
             {/* Pulsing online indicator dot */}
