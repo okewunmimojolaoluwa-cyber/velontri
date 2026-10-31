@@ -37,17 +37,16 @@ export function ChatbotWidget() {
       }
     };
     
-    // Detect and send dark mode status to chatbot
+    // Detect and send dark mode status to chatbot based on Velontri's theme system
     const sendDarkModeStatus = () => {
       if (!iframe?.contentWindow) return;
       
-      const isDark = 
-        document.documentElement.classList.contains('dark') ||
-        document.documentElement.classList.contains('dark-mode') ||
-        document.documentElement.getAttribute('data-theme') === 'dark' ||
-        document.body.classList.contains('dark') ||
-        document.body.classList.contains('dark-mode') ||
-        document.body.getAttribute('data-theme') === 'dark';
+      // Check localStorage first (Velontri's source of truth)
+      const storedTheme = localStorage.getItem('velontri-theme');
+      
+      // Determine dark mode: prioritize localStorage, fallback to DOM class
+      const isDark = storedTheme === 'dark' || 
+                    (storedTheme !== 'light' && document.documentElement.classList.contains('dark'));
       
       iframe.contentWindow.postMessage({
         type: 'darkModeChange',
@@ -58,6 +57,7 @@ export function ChatbotWidget() {
     // Send initial dark mode status when iframe loads
     const handleIframeLoad = () => {
       setTimeout(sendDarkModeStatus, 500);
+      setTimeout(sendDarkModeStatus, 1000);
     };
     
     if (iframe) {
@@ -66,33 +66,36 @@ export function ChatbotWidget() {
     
     window.addEventListener('message', handleMessage);
     
-    // Watch for dark mode changes using MutationObserver
+    // Watch for dark mode changes on <html> element (where Velontri applies 'dark' class)
     const htmlObserver = new MutationObserver(sendDarkModeStatus);
-    const bodyObserver = new MutationObserver(sendDarkModeStatus);
     
     htmlObserver.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['class', 'data-theme']
+      attributeFilter: ['class']
     });
     
-    bodyObserver.observe(document.body, {
-      attributes: true,
-      attributeFilter: ['class', 'data-theme']
-    });
+    // Watch for localStorage changes (for cross-tab sync)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'velontri-theme') {
+        sendDarkModeStatus();
+      }
+    };
     
-    // Periodic check as fallback
-    const intervalId = setInterval(sendDarkModeStatus, 1000);
+    window.addEventListener('storage', handleStorageChange);
     
-    // Initial check
-    setTimeout(sendDarkModeStatus, 1000);
+    // Periodic check as fallback (every 2 seconds)
+    const intervalId = setInterval(sendDarkModeStatus, 2000);
+    
+    // Initial check immediately
+    sendDarkModeStatus();
     
     return () => {
       window.removeEventListener('message', handleMessage);
+      window.removeEventListener('storage', handleStorageChange);
       if (iframe) {
         iframe.removeEventListener('load', handleIframeLoad);
       }
       htmlObserver.disconnect();
-      bodyObserver.disconnect();
       clearInterval(intervalId);
     };
   }, []);
