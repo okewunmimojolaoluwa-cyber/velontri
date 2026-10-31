@@ -41,14 +41,19 @@ export function ChatbotWidget() {
         </div>
       )}
 
-      {/* Floating launcher button - smaller circle with logo only */}
+      {/* Floating launcher button - smaller circle with subtle breathing animation */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 z-[9998] w-12 h-12 rounded-full shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 overflow-hidden"
+        className="fixed bottom-4 right-4 z-[9998] w-12 h-12 rounded-full shadow-lg transition-all duration-200 hover:scale-110 active:scale-95 overflow-hidden animate-pulse-subtle"
         aria-label={isOpen ? 'Close Velontri AI Assistant' : 'Open Velontri AI Assistant'}
         aria-expanded={isOpen}
         title="Chat with Velontri AI"
-        style={{ position: 'fixed', bottom: '16px', right: '16px' }}
+        style={{ 
+          position: 'fixed', 
+          bottom: '16px', 
+          right: '16px',
+          animation: isOpen ? 'none' : 'breathe 3s ease-in-out infinite'
+        }}
       >
         {isOpen ? (
           <div className="w-full h-full flex items-center justify-center bg-white dark:bg-slate-900">
@@ -56,7 +61,7 @@ export function ChatbotWidget() {
           </div>
         ) : (
           <div className="w-full h-full">
-            {/* Velontri logo clipped to circle - no online indicator */}
+            {/* Velontri logo clipped to circle with breathing effect */}
             <img
               src="/logo.png"
               alt="Velontri AI Assistant"
@@ -66,6 +71,20 @@ export function ChatbotWidget() {
           </div>
         )}
       </button>
+      
+      {/* Breathing animation keyframes */}
+      <style jsx>{`
+        @keyframes breathe {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+          }
+          50% {
+            transform: scale(1.08);
+            box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.3), 0 10px 10px -5px rgba(99, 102, 241, 0.2);
+          }
+        }
+      `}</style>
     </>
   );
 }
