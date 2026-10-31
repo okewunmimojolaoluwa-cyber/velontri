@@ -27,23 +27,20 @@ export function ChatbotWidget() {
       {/* Floating chat panel - only visible when open */}
       {isOpen && (
         <div className="fixed bottom-20 right-4 z-[9999] flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-          {/* Panel header with branding */}
-          <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white">
-            <div className="flex items-center gap-2.5">
-              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/20">
-                <Robot className="h-4 w-4" weight="fill" />
+          {/* Simple classic header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center">
+                <Robot className="h-4 w-4 text-white" weight="fill" />
               </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-[13px] leading-tight">Velontri AI Assistant</span>
-                <span className="text-[10px] text-white/80 leading-tight">Powered by AI • Always here to help</span>
-              </div>
+              <span className="font-semibold text-slate-900 dark:text-white text-sm">Chat</span>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-white/20 transition-colors flex-shrink-0"
+              className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               aria-label="Close chatbot"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4 text-slate-600 dark:text-slate-400" />
             </button>
           </div>
 
@@ -61,32 +58,32 @@ export function ChatbotWidget() {
         </div>
       )}
 
-      {/* Floating launcher button - just Velontri logo with online dot */}
+      {/* Floating launcher button - circular with Velontri logo */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 z-[9998] w-14 h-14 transition-all duration-200 hover:scale-105 active:scale-95"
+        className="fixed bottom-4 right-4 z-[9998] w-16 h-16 rounded-full shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700"
         aria-label={isOpen ? 'Close Velontri AI Assistant' : 'Open Velontri AI Assistant'}
         aria-expanded={isOpen}
         title="Chat with Velontri AI"
         style={{ position: 'fixed', bottom: '16px', right: '16px' }}
       >
         {isOpen ? (
-          <div className="w-full h-full flex items-center justify-center bg-white dark:bg-slate-900 rounded-lg shadow-lg">
+          <div className="w-full h-full flex items-center justify-center">
             <X className="h-6 w-6 text-slate-900 dark:text-white" weight="bold" />
           </div>
         ) : (
-          <div className="relative w-full h-full">
+          <div className="relative w-full h-full flex items-center justify-center p-2">
             {/* Just the Velontri logo */}
             <img
               src="/logo.png"
               alt="Velontri AI Assistant"
-              className="w-full h-full object-contain drop-shadow-lg"
+              className="w-full h-full object-contain"
               style={{ display: 'block' }}
             />
             {/* Pulsing online indicator dot */}
-            <span className="absolute top-0 right-0 flex h-3 w-3">
+            <span className="absolute top-1 right-1 flex h-3.5 w-3.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500 ring-2 ring-white dark:ring-slate-900"></span>
+              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-green-500 ring-2 ring-white dark:ring-slate-900"></span>
             </span>
           </div>
         )}
