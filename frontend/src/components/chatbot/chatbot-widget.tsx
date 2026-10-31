@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Robot } from '@phosphor-icons/react';
+import { X } from '@phosphor-icons/react';
 
 /**
  * Chatbot Widget - Embeds the existing deployed chatbot
@@ -27,24 +27,7 @@ export function ChatbotWidget() {
       {/* Floating chat panel - only visible when open */}
       {isOpen && (
         <div className="fixed bottom-20 right-4 z-[9999] flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-          {/* Simple classic header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center">
-                <Robot className="h-4 w-4 text-white" weight="fill" />
-              </div>
-              <span className="font-semibold text-slate-900 dark:text-white text-sm">Chat</span>
-            </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              aria-label="Close chatbot"
-            >
-              <X className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-            </button>
-          </div>
-
-          {/* Iframe container - loads the existing chatbot */}
+          {/* Iframe container - loads the existing chatbot directly without header */}
           <div className="w-[380px] h-[480px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-240px)] sm:w-[380px] sm:h-[480px]">
             <iframe
               src={CHATBOT_URL}
