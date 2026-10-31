@@ -22,18 +22,78 @@ export function ChatbotWidget() {
   // Chatbot URL
   const CHATBOT_URL = 'https://velo.pxxlspace.cv';
 
-  // Add navigation listener when component mounts
+  // Add navigation listener and dark mode sync when component mounts
   useEffect(() => {
+    const iframe = document.querySelector('iframe[src*="velo.pxxlspace.cv"]') as HTMLIFrameElement;
+    
+    // Handle navigation messages from chatbot
     const handleMessage = (e: MessageEvent) => {
       if (e.data?.type === 'navigate') {
         window.location.href = e.data.url;
       }
+      // Handle dark mode requests from chatbot
+      if (e.data?.type === 'requestDarkMode') {
+        sendDarkModeStatus();
+      }
     };
+    
+    // Detect and send dark mode status to chatbot
+    const sendDarkModeStatus = () => {
+      if (!iframe?.contentWindow) return;
+      
+      const isDark = 
+        document.documentElement.classList.contains('dark') ||
+        document.documentElement.classList.contains('dark-mode') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.classList.contains('dark-mode') ||
+        document.body.getAttribute('data-theme') === 'dark';
+      
+      iframe.contentWindow.postMessage({
+        type: 'darkModeChange',
+        isDark
+      }, '*');
+    };
+    
+    // Send initial dark mode status when iframe loads
+    const handleIframeLoad = () => {
+      setTimeout(sendDarkModeStatus, 500);
+    };
+    
+    if (iframe) {
+      iframe.addEventListener('load', handleIframeLoad);
+    }
     
     window.addEventListener('message', handleMessage);
     
+    // Watch for dark mode changes using MutationObserver
+    const htmlObserver = new MutationObserver(sendDarkModeStatus);
+    const bodyObserver = new MutationObserver(sendDarkModeStatus);
+    
+    htmlObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class', 'data-theme']
+    });
+    
+    bodyObserver.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['class', 'data-theme']
+    });
+    
+    // Periodic check as fallback
+    const intervalId = setInterval(sendDarkModeStatus, 1000);
+    
+    // Initial check
+    setTimeout(sendDarkModeStatus, 1000);
+    
     return () => {
       window.removeEventListener('message', handleMessage);
+      if (iframe) {
+        iframe.removeEventListener('load', handleIframeLoad);
+      }
+      htmlObserver.disconnect();
+      bodyObserver.disconnect();
+      clearInterval(intervalId);
     };
   }, []);
 
