@@ -45,11 +45,23 @@ export function ChatbotWidget() {
     }
   };
 
-  // Send dark mode immediately when theme changes
+  // Reload iframe when opening chatbot to ensure correct theme is loaded
   useEffect(() => {
+    if (isOpen) {
+      console.log('[Chatbot Widget] Chatbot opened, loading with theme:', isDark ? 'dark' : 'light');
+      setIframeKey(prev => prev + 1);
+    }
+  }, [isOpen, isDark]);
+
+  // Send dark mode immediately when theme changes AND reload iframe if chatbot is open
+  useEffect(() => {
+    if (isOpen) {
+      // If chatbot is open, reload iframe with new theme
+      console.log('[Chatbot Widget] Theme changed while open, reloading iframe with theme:', isDark ? 'dark' : 'light');
+      setIframeKey(prev => prev + 1);
+    }
+    // Always send postMessage as well (belt and suspenders approach)
     sendDarkModeToIframe(isDark);
-    // Also reload iframe with new theme parameter
-    setIframeKey(prev => prev + 1);
   }, [isDark]);
 
   // Handle messages from chatbot iframe
