@@ -19,29 +19,37 @@ import { useTheme } from '@/lib/hooks/use-theme';
  */
 export function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
+  const [iframeKey, setIframeKey] = useState(0); // Key to force iframe reload on theme change
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { isDark } = useTheme(); // Get theme state from Velontri's theme hook
 
   // Chatbot URL
   const CHATBOT_URL = 'https://velo.pxxlspace.cv';
+  // Chatbot URL with theme parameter
+  const chatbotUrl = `${CHATBOT_URL}${isDark ? '?theme=dark' : '?theme=light'}`;
 
   // Send dark mode status to chatbot iframe
   const sendDarkModeToIframe = (darkMode: boolean) => {
     if (iframeRef.current?.contentWindow) {
       try {
+        console.log('[Chatbot Widget] Sending dark mode to chatbot:', darkMode);
         iframeRef.current.contentWindow.postMessage({
           type: 'darkModeChange',
           isDark: darkMode
         }, '*');
       } catch (error) {
-        console.error('Failed to send dark mode to chatbot:', error);
+        console.error('[Chatbot Widget] Failed to send dark mode to chatbot:', error);
       }
+    } else {
+      console.warn('[Chatbot Widget] Iframe not ready to receive dark mode message');
     }
   };
 
   // Send dark mode immediately when theme changes
   useEffect(() => {
     sendDarkModeToIframe(isDark);
+    // Also reload iframe with new theme parameter
+    setIframeKey(prev => prev + 1);
   }, [isDark]);
 
   // Handle messages from chatbot iframe
@@ -80,8 +88,9 @@ export function ChatbotWidget() {
           {/* Iframe container - loads the existing chatbot directly without header */}
           <div className="w-[380px] h-[480px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-240px)] sm:w-[380px] sm:h-[480px]">
             <iframe
+              key={iframeKey}
               ref={iframeRef}
-              src={CHATBOT_URL}
+              src={chatbotUrl}
               className="w-full h-full border-0"
               title="Velontri AI Chatbot"
               allow="clipboard-write"
