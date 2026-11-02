@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X } from '@phosphor-icons/react';
+import { useTheme } from '@/lib/hooks/use-theme';
 
 /**
  * Chatbot Widget - Embeds the existing deployed chatbot
@@ -13,92 +14,63 @@ import { X } from '@phosphor-icons/react';
  * This widget provides:
  * - A floating Velontri logo launcher button
  * - An iframe that loads the existing chatbot
- * - Clear welcome message so users know it's a chatbot
+ * - Dark mode synchronization with website theme
  * - Open/close functionality
  */
 export function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const { isDark } = useTheme(); // Get theme state from Velontri's theme hook
 
   // Chatbot URL
   const CHATBOT_URL = 'https://velo.pxxlspace.cv';
 
-  // Add navigation listener and dark mode sync when component mounts
+  // Send dark mode status to chatbot iframe
+  const sendDarkModeToIframe = (darkMode: boolean) => {
+    if (iframeRef.current?.contentWindow) {
+      try {
+        iframeRef.current.contentWindow.postMessage({
+          type: 'darkModeChange',
+          isDark: darkMode
+        }, '*');
+      } catch (error) {
+        console.error('Failed to send dark mode to chatbot:', error);
+      }
+    }
+  };
+
+  // Send dark mode immediately when theme changes
   useEffect(() => {
-    const iframe = document.querySelector('iframe[src*="velo.pxxlspace.cv"]') as HTMLIFrameElement;
-    
-    // Handle navigation messages from chatbot
+    sendDarkModeToIframe(isDark);
+  }, [isDark]);
+
+  // Handle messages from chatbot iframe
+  useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
-      if (e.data?.type === 'navigate') {
+      // Handle navigation requests from chatbot
+      if (e.data?.type === 'navigate' && e.data?.url) {
         window.location.href = e.data.url;
       }
       // Handle dark mode requests from chatbot
       if (e.data?.type === 'requestDarkMode') {
-        sendDarkModeStatus();
+        sendDarkModeToIframe(isDark);
       }
     };
-    
-    // Detect and send dark mode status to chatbot based on Velontri's theme system
-    const sendDarkModeStatus = () => {
-      if (!iframe?.contentWindow) return;
-      
-      // Check localStorage first (Velontri's source of truth)
-      const storedTheme = localStorage.getItem('velontri-theme');
-      
-      // Determine dark mode: prioritize localStorage, fallback to DOM class
-      const isDark = storedTheme === 'dark' || 
-                    (storedTheme !== 'light' && document.documentElement.classList.contains('dark'));
-      
-      iframe.contentWindow.postMessage({
-        type: 'darkModeChange',
-        isDark
-      }, '*');
-    };
-    
-    // Send initial dark mode status when iframe loads
-    const handleIframeLoad = () => {
-      setTimeout(sendDarkModeStatus, 500);
-      setTimeout(sendDarkModeStatus, 1000);
-    };
-    
-    if (iframe) {
-      iframe.addEventListener('load', handleIframeLoad);
-    }
     
     window.addEventListener('message', handleMessage);
     
-    // Watch for dark mode changes on <html> element (where Velontri applies 'dark' class)
-    const htmlObserver = new MutationObserver(sendDarkModeStatus);
-    
-    htmlObserver.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    });
-    
-    // Watch for localStorage changes (for cross-tab sync)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'velontri-theme') {
-        sendDarkModeStatus();
-      }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Periodic check as fallback (every 2 seconds)
-    const intervalId = setInterval(sendDarkModeStatus, 2000);
-    
-    // Initial check immediately
-    sendDarkModeStatus();
-    
     return () => {
       window.removeEventListener('message', handleMessage);
-      window.removeEventListener('storage', handleStorageChange);
-      if (iframe) {
-        iframe.removeEventListener('load', handleIframeLoad);
-      }
-      htmlObserver.disconnect();
-      clearInterval(intervalId);
     };
-  }, []);
+  }, [isDark]);
+
+  // Send initial dark mode status when iframe loads
+  const handleIframeLoad = () => {
+    // Send multiple times with delays to ensure chatbot receives it
+    setTimeout(() => sendDarkModeToIframe(isDark), 100);
+    setTimeout(() => sendDarkModeToIframe(isDark), 500);
+    setTimeout(() => sendDarkModeToIframe(isDark), 1000);
+  };
 
   return (
     <>
@@ -108,12 +80,14 @@ export function ChatbotWidget() {
           {/* Iframe container - loads the existing chatbot directly without header */}
           <div className="w-[380px] h-[480px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-240px)] sm:w-[380px] sm:h-[480px]">
             <iframe
+              ref={iframeRef}
               src={CHATBOT_URL}
               className="w-full h-full border-0"
               title="Velontri AI Chatbot"
               allow="clipboard-write"
               sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation"
               loading="lazy"
+              onLoad={handleIframeLoad}
             />
           </div>
         </div>
