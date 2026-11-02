@@ -1,5 +1,6 @@
 [app]
 name = "velontri"
+# Updated: 2026-11-02
 
 [build]
 install = "cd frontend && npm install"
