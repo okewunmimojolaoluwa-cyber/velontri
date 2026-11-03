@@ -17,11 +17,21 @@ import { useTheme } from '@/lib/hooks/use-theme';
  * - Dark mode synchronization with website theme
  * - Open/close functionality
  */
+const CHATBOT_STORAGE_KEY = 'velontri-chatbot-open';
+
 export function ChatbotWidget() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [iframeKey, setIframeKey] = useState(0); // Force reload on theme change
-  const iframeRef = useRef<HTMLIFrameElement>(null);
   const { isDark } = useTheme(); // Get theme state from Velontri's theme hook
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [iframeKey, setIframeKey] = useState(0); // Force reload on theme change
+  
+  // Initialize isOpen from localStorage to persist across page refreshes
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(CHATBOT_STORAGE_KEY);
+      return saved === 'true';
+    }
+    return false;
+  });
 
   // Chatbot URL with current theme parameter
   const CHATBOT_URL = 'https://velo.pxxlspace.cv';
@@ -51,6 +61,16 @@ export function ChatbotWidget() {
       setIframeKey(prev => prev + 1);
     }
   }, [isDark, isOpen]);
+
+  // Persist chatbot open/close state to localStorage
+  useEffect(() => {
+    localStorage.setItem(CHATBOT_STORAGE_KEY, String(isOpen));
+  }, [isOpen]);
+
+  // Toggle chatbot and save state
+  const toggleChatbot = () => {
+    setIsOpen(prev => !prev);
+  };
 
   // Handle messages from chatbot iframe
   useEffect(() => {
@@ -105,7 +125,7 @@ export function ChatbotWidget() {
 
       {/* Floating launcher button - smaller circle with subtle breathing animation */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleChatbot}
         className="fixed bottom-4 right-4 z-[9998] w-12 h-12 rounded-full shadow-lg transition-all duration-200 hover:scale-110 active:scale-95 overflow-hidden animate-pulse-subtle"
         aria-label={isOpen ? 'Close Velontri AI Assistant' : 'Open Velontri AI Assistant'}
         aria-expanded={isOpen}
