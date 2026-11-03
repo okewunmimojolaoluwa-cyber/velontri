@@ -22,7 +22,6 @@ const CHATBOT_STORAGE_KEY = 'velontri-chatbot-open';
 export function ChatbotWidget() {
   const { isDark } = useTheme(); // Get theme state from Velontri's theme hook
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [iframeKey, setIframeKey] = useState(0); // Force reload on theme change
   
   // Initialize isOpen from localStorage to persist across page refreshes
   const [isOpen, setIsOpen] = useState(() => {
@@ -37,7 +36,7 @@ export function ChatbotWidget() {
   const CHATBOT_URL = 'https://velo.pxxlspace.cv';
   const chatbotUrl = `${CHATBOT_URL}${isDark ? '?theme=dark' : '?theme=light'}`;
 
-  // Send dark mode status to chatbot iframe
+  // Send dark mode status to chatbot iframe (NO reload needed)
   const sendDarkModeToIframe = (darkMode: boolean) => {
     if (iframeRef.current?.contentWindow) {
       try {
@@ -49,16 +48,18 @@ export function ChatbotWidget() {
       } catch (error) {
         console.error('[Chatbot Widget] Failed to send dark mode to chatbot:', error);
       }
-    } else {
-      console.warn('[Chatbot Widget] Iframe not ready to receive dark mode message');
     }
   };
 
-  // Reload iframe immediately when theme changes (if chatbot is open)
+  // Send theme changes instantly via postMessage (NO iframe reload)
   useEffect(() => {
     if (isOpen) {
-      console.log('[Chatbot Widget] Theme changed to:', isDark ? 'dark' : 'light', '- Reloading iframe');
-      setIframeKey(prev => prev + 1);
+      console.log('[Chatbot Widget] Theme changed to:', isDark ? 'dark' : 'light', '- Sending to iframe');
+      // Send immediately
+      sendDarkModeToIframe(isDark);
+      // Send again after short delay to ensure it's received
+      const timer = setTimeout(() => sendDarkModeToIframe(isDark), 100);
+      return () => clearTimeout(timer);
     }
   }, [isDark, isOpen]);
 
@@ -75,10 +76,18 @@ export function ChatbotWidget() {
   // Handle messages from chatbot iframe
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
-      // Handle navigation requests from chatbot
+      console.log('[Chatbot Widget] Received message:', e.data);
+      
+      // Handle navigation requests from chatbot - open in SAME tab WITHOUT closing chatbot
       if (e.data?.type === 'navigate' && e.data?.url) {
-        window.location.href = e.data.url;
+        console.log('[Chatbot Widget] Navigating to:', e.data.url);
+        // Use pushState to navigate without page reload and keep chatbot open
+        window.history.pushState({}, '', e.data.url);
+        // Trigger Next.js navigation
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        // Chatbot stays open because we're not changing window.location
       }
+      
       // Handle dark mode requests from chatbot
       if (e.data?.type === 'requestDarkMode') {
         sendDarkModeToIframe(isDark);
@@ -109,7 +118,6 @@ export function ChatbotWidget() {
           {/* Iframe container - loads the existing chatbot directly without header */}
           <div className="w-[380px] h-[480px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-240px)] sm:w-[380px] sm:h-[480px]">
             <iframe
-              key={iframeKey}
               ref={iframeRef}
               src={chatbotUrl}
               className="w-full h-full border-0"
