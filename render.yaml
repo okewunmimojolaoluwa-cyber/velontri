@@ -154,6 +154,12 @@ services:
         value: "okewunmimojolaoluwa@gmail.com"
       - key: EMAIL_FROM_NAME
         value: "Velontri"
+      - key: BREVO_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        value: "okewunmimojolaoluwa@gmail.com"
+      - key: EMAIL_FROM_NAME
+        value: "Velontri"
       - key: GMAIL_USER
         value: "okewunmimojolaoluwa@gmail.com"
       - key: GMAIL_APP_PASSWORD
