@@ -116,16 +116,20 @@ export function ChatbotWidget() {
       {isOpen && (
         <div className="fixed bottom-20 right-4 z-[9999] flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
           {/* Iframe container - loads the existing chatbot directly without header */}
-          <div className="w-[380px] h-[480px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-240px)] sm:w-[380px] sm:h-[480px]">
+          <div 
+            className="w-[380px] h-[480px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-240px)] sm:w-[380px] sm:h-[480px]"
+            suppressHydrationWarning={true}
+          >
             <iframe
               ref={iframeRef}
               src={chatbotUrl}
               className="w-full h-full border-0"
               title="Velontri AI Chatbot"
               allow="clipboard-write"
-              sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation"
+              sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation allow-storage-access-by-user-activation"
               loading="lazy"
               onLoad={handleIframeLoad}
+              suppressHydrationWarning={true}
             />
           </div>
         </div>
