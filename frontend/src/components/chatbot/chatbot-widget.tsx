@@ -19,13 +19,13 @@ import { useTheme } from '@/lib/hooks/use-theme';
  */
 export function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
+  const [iframeKey, setIframeKey] = useState(0); // Force reload on theme change
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { isDark } = useTheme(); // Get theme state from Velontri's theme hook
-  const [initialTheme] = useState(() => isDark); // Capture initial theme on mount
 
-  // Chatbot URL with initial theme parameter (only used on first load)
+  // Chatbot URL with current theme parameter
   const CHATBOT_URL = 'https://velo.pxxlspace.cv';
-  const chatbotUrl = `${CHATBOT_URL}${initialTheme ? '?theme=dark' : '?theme=light'}`;
+  const chatbotUrl = `${CHATBOT_URL}${isDark ? '?theme=dark' : '?theme=light'}`;
 
   // Send dark mode status to chatbot iframe
   const sendDarkModeToIframe = (darkMode: boolean) => {
@@ -44,34 +44,11 @@ export function ChatbotWidget() {
     }
   };
 
-  // Send dark mode to chatbot immediately when theme changes
-  // NO iframe reload - chatbot will handle theme change via postMessage
+  // Reload iframe immediately when theme changes (if chatbot is open)
   useEffect(() => {
-    // Only send if iframe is loaded (when chatbot is open)
-    if (isOpen && iframeRef.current?.contentWindow) {
-      console.log('[Chatbot Widget] Theme changed to:', isDark ? 'dark' : 'light', '- Sending to chatbot');
-      
-      // Send postMessage immediately
-      try {
-        iframeRef.current.contentWindow.postMessage({
-          type: 'darkModeChange',
-          isDark
-        }, '*');
-        console.log('[Chatbot Widget] ✅ Theme change message sent successfully');
-      } catch (error) {
-        console.error('[Chatbot Widget] ❌ Failed to send theme change:', error);
-      }
-      
-      // Send again after a short delay to ensure it's received
-      setTimeout(() => {
-        if (iframeRef.current?.contentWindow) {
-          iframeRef.current.contentWindow.postMessage({
-            type: 'darkModeChange',
-            isDark
-          }, '*');
-          console.log('[Chatbot Widget] ✅ Theme change message re-sent (delayed)');
-        }
-      }, 100);
+    if (isOpen) {
+      console.log('[Chatbot Widget] Theme changed to:', isDark ? 'dark' : 'light', '- Reloading iframe');
+      setIframeKey(prev => prev + 1);
     }
   }, [isDark, isOpen]);
 
@@ -97,11 +74,10 @@ export function ChatbotWidget() {
 
   // Send initial dark mode status when iframe loads
   const handleIframeLoad = () => {
-    console.log('[Chatbot Widget] Iframe loaded, sending initial theme:', isDark ? 'dark' : 'light');
+    console.log('[Chatbot Widget] Iframe loaded with theme:', isDark ? 'dark' : 'light');
     // Send multiple times with delays to ensure chatbot receives it
     setTimeout(() => sendDarkModeToIframe(isDark), 100);
-    setTimeout(() => sendDarkModeToIframe(isDark), 300);
-    setTimeout(() => sendDarkModeToIframe(isDark), 600);
+    setTimeout(() => sendDarkModeToIframe(isDark), 500);
     setTimeout(() => sendDarkModeToIframe(isDark), 1000);
   };
 
@@ -113,6 +89,7 @@ export function ChatbotWidget() {
           {/* Iframe container - loads the existing chatbot directly without header */}
           <div className="w-[380px] h-[480px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-240px)] sm:w-[380px] sm:h-[480px]">
             <iframe
+              key={iframeKey}
               ref={iframeRef}
               src={chatbotUrl}
               className="w-full h-full border-0"
